@@ -2,7 +2,6 @@
 
 ## merox-erudite
 
-[![License](https://img.shields.io/github/license/meroxdotdev/merox-erudite?color=0a0a0a&logo=github&logoColor=fff&style=for-the-badge)](LICENSE)
 
 </div>
 
