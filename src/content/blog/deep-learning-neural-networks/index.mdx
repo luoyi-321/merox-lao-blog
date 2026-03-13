@@ -1,0 +1,128 @@
+---
+title: "ເຄືອຂ່າຍປະສາດທຽມ ສຳລັບ Deep Learning"
+description: "ແນະນຳເຄືອຂ່າຍປະສາດທຽມປະເພດຕ່າງໆ ທີ່ໃຊ້ໃນ Deep Learning - Introduction to Neural Network Architectures"
+date: 2026-03-11
+tags: ["DeepLearning", "NeuralNetworks", "AI", "MachineLearning"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ໃນບົດຄວາມນີ້ ເຮົາຈະມາຮູ້ຈັກກັບເຄືອຂ່າຍປະສາດທຽມ (Neural Networks) ປະເພດຕ່າງໆ ທີ່ໃຊ້ໃນ Deep Learning.
+
+## 1. Convolutional Neural Network (CNN)
+
+**ເຄືອຂ່າຍປະສາດ Convolutional**
+
+ໂມເດລ Deep Learning ສຳລັບຂໍ້ມູນຕາຂ່າຍ, ໃຊ້ຢ່າງກວ້າງໃນ **Computer Vision**.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** ການຈຳແນກຮູບພາບ, Object Detection, Face Recognition
+</Callout>
+
+---
+
+## 2. Recurrent Neural Network (RNN)
+
+**ເຄືອຂ່າຍປະສາດ Recurrent**
+
+ເຄືອຂ່າຍປະສາດທີ່ມີການເຊື່ອມຕໍ່ແບບວົງ ສຳລັບຂໍ້ມູນລຳດັບ. ອັບເດດ **Hidden State** ໃນແຕ່ລະ timestep.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** ການປະມວນຜົນພາສາ, Time Series, ຂໍ້ມູນລຳດັບ
+</Callout>
+
+---
+
+## 3. Generative Adversarial Network (GAN)
+
+**ເຄືອຂ່າຍ Generative Adversarial**
+
+ສະຖາປັດຕະຍະກຳ Deep Learning ທີ່ **Generator** ສ້າງຂໍ້ມູນໃໝ່ ຕ້ານກັບ **Discriminator** ທີ່ພະຍາຍາມແຍກຂໍ້ມູນຈິງ ແລະ ປອມ.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** ສ້າງຮູບພາບ, Image-to-Image Translation, Style Transfer
+</Callout>
+
+---
+
+## 4. Autoencoder
+
+**ຕົວເຂົ້າລະຫັດອັດຕະໂນມັດ**
+
+ໂມເດລ **Unsupervised Learning** ທີ່ຫຍໍ້ Input ໃຫ້ເປັນ **Latent Vector** ຈາກນັ້ນ Decode ກັບຄືນ.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** ຫຍໍ້ຂໍ້ມູນ, Anomaly Detection, Denoising
+</Callout>
+
+---
+
+## 5. Graph Neural Network (GNN)
+
+**ເຄືອຂ່າຍປະສາດ Graph**
+
+ໂມເດລ Deep Learning ສຳລັບຂໍ້ມູນໂຄງສ້າງ Graph. **Aggregate** ຂໍ້ມູນຈາກ Neighbor nodes.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** Social Network Analysis, Molecular Structure, Recommendation Systems
+</Callout>
+
+---
+
+## 6. Long Short-Term Memory (LSTM)
+
+**ເຄືອຂ່າຍໜ່ວຍຄວາມຈຳໄລຍະສັ້ນ-ຍາວ**
+
+ຮູບແບບ RNN ທີ່ໃຊ້ **Gate** ສາມຊ່ອງ:
+- **Forget Gate** - ລືມຂໍ້ມູນເກົ່າ
+- **Input Gate** - ຮັບຂໍ້ມູນໃໝ່
+- **Output Gate** - ສົ່ງຂໍ້ມູນອອກ
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** ແກ້ໄຂບັນຫາ Vanishing Gradient, Long-term Dependencies
+</Callout>
+
+---
+
+## 7. Artificial Neural Network (ANN)
+
+**ເຄືອຂ່າຍປະສາດທຽມ**
+
+ໂມເດລການຄຳນວນທີ່ໄດ້ຮັບແຮງບັນດານໃຈຈາກລະບົບປະສາດຂອງມະນຸດ. ຮຽນຮູ້ **Feature** ຈາກຂໍ້ມູນຜ່ານ Layers.
+
+<Callout variant="tip">
+**ການນຳໃຊ້:** Classification, Regression, Pattern Recognition
+</Callout>
+
+---
+
+## 8. Transformer
+
+**ທລານຟອມເມີ້**
+
+ສະຖາປັດຕະຍະກຳ Neural ທີ່ໃຊ້ **Attention** ລ້ວນ, ບໍ່ມີ Recurrence. ປະກອບດ້ວຍ:
+- **Encoder** - ປະມວນຜົນ Input
+- **Decoder** - ສ້າງ Output
+
+<Callout variant="note">
+**ເປັນພື້ນຖານຂອງ:** GPT, BERT, LLaMA, ແລະ Large Language Models ທັງໝົດ
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+| Neural Network | ເໝາະສຳລັບ |
+|----------------|----------|
+| CNN | ຮູບພາບ, Video |
+| RNN/LSTM | ຂໍ້ມູນລຳດັບ, ພາສາ |
+| GAN | ສ້າງຂໍ້ມູນໃໝ່ |
+| Autoencoder | ຫຍໍ້ຂໍ້ມູນ |
+| GNN | ຂໍ້ມູນ Graph |
+| Transformer | NLP, LLM |
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Deep Learning ແລະ AI ສຳລັບພາສາລາວ*

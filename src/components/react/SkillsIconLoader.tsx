@@ -22,7 +22,6 @@ import {
   SiGit,
   SiFlux,
   SiRancher,
-  SiOracle,
   SiCloudflare,
   SiCilium,
   SiPortainer,
@@ -73,7 +72,7 @@ export const iconMap: { [key: string]: IconType } = {
   'simple-icons:flux': SiFlux,
   'simple-icons:rancher': SiRancher,
   'lucide:cloud': Cloud,
-  'simple-icons:oracle': SiOracle,
+  'simple-icons:oracle': Cloud, // Oracle icon not available in react-icons
   'simple-icons:cloudflare': SiCloudflare,
   'lucide:server': Server,
   'lucide:cloud-cog': CloudCog,

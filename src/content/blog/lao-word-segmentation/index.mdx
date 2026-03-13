@@ -1,0 +1,76 @@
+---
+title: "Lao Word Segmentation (ການຕັດຄຳພາສາລາວ)"
+description: "ການຕັດຄຳແມ່ນພື້ນຖານສຳຄັນຂອງ NLP ສຳລັບພາສາລາວ - Word Segmentation is the foundation of Lao NLP"
+date: 2026-03-13
+tags: ["LaoNLP", "WordSegmentation", "AI", "NLP"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ໃນການພັດທະນາ AI ແລະ NLP ສຳລັບພາສາລາວ ໜຶ່ງໃນບັນຫາທີ່ສຳຄັນຄື **Word Segmentation** ຫຼື **ການຕັດຄຳ**.
+
+## ບັນຫາຂອງພາສາລາວ
+
+ພາສາລາວເປັນພາສາທີ່ຂຽນແບບ **ບໍ່ມີ space ລະຫວ່າງຄຳ** ຄືພາສາອັງກິດ.
+
+**ຕົວຢ່າງ:**
+
+```
+ຂ້ອຍກຳລັງຮຽນປັນຍາປະດິດ
+```
+
+ສຳລັບຄົນ ພວກເຮົາອ່ານແລະເຂົ້າໃຈໄດ້ທັນທີ. ແຕ່ສຳລັບຄອມພິວເຕີ ມັນເຫັນເປັນພຽງ string ຍາວໆ:
+
+```
+ຂ້ອຍກຳລັງຮຽນປັນຍາປະດິດ
+```
+
+ດັ່ງນັ້ນ ພວກເຮົາຈຶ່ງຕ້ອງມີ **Word Segmentation Algorithm** ເພື່ອແຍກຄຳໃຫ້ຖືກຕ້ອງ:
+
+<Callout variant="tip">
+**ຜົນລັບ:** ຂ້ອຍ | ກຳລັງ | ຮຽນ | ປັນຍາ | ປະດິດ
+</Callout>
+
+## ວິທີການ Word Segmentation ທີ່ນິຍົມ
+
+### 1. Dictionary-based Segmentation
+- ໃຊ້ຄຳສັບຈາກ dictionary
+- ເຊັ່ນ **Maximum Matching** algorithm
+
+### 2. Rule-based Segmentation
+- ໃຊ້ກົດພາສາ ແລະ pattern
+- ກຳນົດກົດການຕັດຄຳຕາມໂຄງສ້າງພາສາ
+
+### 3. Machine Learning
+- **CRF** (Conditional Random Fields)
+- **HMM** (Hidden Markov Models)
+- **BiLSTM** (Bidirectional LSTM)
+
+### 4. Deep Learning / LLM
+- **Transformer** architecture
+- **BERT** style models
+
+## ເປັນຫຍັງ Lao Word Segmentation ຈຶ່ງສຳຄັນ?
+
+ມັນເປັນ **ພື້ນຖານຂອງ NLP** ຫຼາຍຢ່າງ:
+
+| Application | Description |
+|-------------|-------------|
+| Search Engine | ຄົ້ນຫາຂໍ້ມູນເປັນພາສາລາວ |
+| Chatbot | ສົນທະນາກັບ AI ເປັນພາສາລາວ |
+| Machine Translation | ແປພາສາລາວ ↔ ພາສາອື່ນ |
+| Speech Recognition | ຮັບຟັງ ແລະ ເຂົ້າໃຈພາສາລາວ |
+| Text-to-Speech | ອ່ານຂໍ້ຄວາມເປັນສຽງພາສາລາວ |
+| Large Language Model | LLM ສຳລັບພາສາລາວ |
+
+<Callout variant="note">
+**ສະຫຼຸບ:** ການພັດທະນາ Lao NLP ຍັງມີອີກຫຼາຍສິ່ງທີ່ຕ້ອງສ້າງ ແລະ Word Segmentation ແມ່ນກ້າວທຳອິດທີ່ສຳຄັນ.
+
+ຖ້າພວກເຮົາມີ segmentation ທີ່ດີ → ໂມເດລ AI ສຳລັບພາສາລາວຈະເຮັດວຽກໄດ້ດີຂຶ້ນຫຼາຍ.
+</Callout>
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Lao NLP ແລະ AI*

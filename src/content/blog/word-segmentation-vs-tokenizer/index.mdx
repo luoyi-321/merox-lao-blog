@@ -1,0 +1,99 @@
+---
+title: "Word Segmentation vs Tokenizer ຕ່າງກັນແນວໃດ?"
+description: "ໃນ NLP ສຳລັບພາສາລາວ ສອງຄຳນີ້ມັກຖືກໃຊ້ປົນກັນ ແຕ່ມີຄວາມໝາຍຕ່າງກັນ - Understanding the difference between Word Segmentation and Tokenizer"
+date: 2026-03-14
+tags: ["LaoNLP", "Tokenizer", "WordSegmentation", "AI", "LLM"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ໃນ NLP ສຳລັບພາສາລາວ ສອງຄຳນີ້ມັກຈະຖືກໃຊ້ປົນກັນ ແຕ່ຈິງໆແລ້ວມັນມີຄວາມໝາຍຕ່າງກັນ.
+
+## 1. Word Segmentation (ການຕັດຄຳ)
+
+**ເປົ້າໝາຍ:** ແຍກ **ຄຳໃນພາສາ** ຕາມຫຼັກພາສາສາດ
+
+**ຕົວຢ່າງ:**
+
+```
+ຂ້ອຍກຳລັງຮຽນAI
+```
+
+**Word Segmentation:**
+
+```
+ຂ້ອຍ | ກຳລັງ | ຮຽນ | AI
+```
+
+<Callout variant="tip">
+ເປັນການແຍກຕາມ **ຄຳສັບຂອງພາສາ** - ແຕ່ລະສ່ວນແມ່ນຄຳທີ່ມີຄວາມໝາຍໃນພາສາລາວ
+</Callout>
+
+---
+
+## 2. Tokenizer
+
+**ເປົ້າໝາຍ:** ແຍກ text ເພື່ອໃຫ້ **AI ເຂົ້າໃຈ ແລະ ປະມວນຜົນ**
+
+Tokenizer ບາງຄັ້ງ **ບໍ່ຈຳເປັນຕ້ອງແຍກເປັນຄຳ** ທີ່ມີຄວາມໝາຍ
+
+**ຕົວຢ່າງ:**
+
+```
+ຂ້ອຍກຳລັງຮຽນAI
+```
+
+**Tokenizer ອາດຈະໄດ້:**
+
+```
+ຂ້ອຍ | ກຳ | ລັງ | ຮຽນ | A | I
+```
+
+ຫຼື
+
+```
+ຂ້ | ອຍ | ກຳລັງ | ຮຽນAI
+```
+
+<Callout variant="note">
+ຂຶ້ນກັບ algorithm ຂອງ tokenizer ເຊັ່ນ: **BPE**, **WordPiece**, **SentencePiece**
+</Callout>
+
+---
+
+## ສະຫຼຸບຄວາມແຕກຕ່າງ
+
+| ປະເພດ | ເປົ້າໝາຍ | ຜົນລັບ |
+|-------|---------|--------|
+| **Word Segmentation** | ແຍກຄຳຂອງພາສາ | ຄຳທີ່ມີຄວາມໝາຍຕາມຫຼັກພາສາ |
+| **Tokenizer** | ແຍກ text ໃຫ້ AI ໃຊ້ | Subword units ສຳລັບ model |
+
+---
+
+## ໃນການສ້າງ Lao NLP / Lao LLM
+
+ບາງລະບົບໃຊ້:
+- **Word Segmentation + Tokenizer** ຮ່ວມກັນ
+
+ບາງລະບົບ:
+- ໃຊ້ **Tokenizer ຢ່າງດຽວ** (ເຊັ່ນ SentencePiece)
+
+<Callout variant="tip">
+ການເລືອກໃຊ້ຂຶ້ນກັບ architecture ຂອງ model ແລະ ປະເພດຂອງ task ທີ່ຕ້ອງການເຮັດ
+</Callout>
+
+---
+
+## ໂພສຕໍ່ໄປ
+
+ໃນບົດຄວາມຕໍ່ໄປ ຈະເລົ່າກ່ຽວກັບ:
+- ວິທີສ້າງ **Lao Tokenizer** ຈາກ 0
+- **BPE** ແມ່ນຫຍັງ
+- **SentencePiece** ເຮັດວຽກແນວໃດ
+- ຝຶກ tokenizer ສຳລັບພາສາລາວ
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Lao NLP ແລະ AI*

@@ -10,40 +10,168 @@ import { SITE } from '@/consts'
 const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
-  "name": SITE.title,
+  "name": "Sulixay Vilaiphone",
   "url": SITE.href,
-  "description": SITE.description
+  "description": "AI Researcher specializing in NLP, LLM, and Wireless Sensing for Lao language",
+  "nationality": "Laos",
+  "alumniOf": "Xihua University",
+  "sameAs": [
+    "https://github.com/luoyi-321",
+    "https://huggingface.co/LuoYiSULIXAY"
+  ]
 }
 ---
 <Layout class="max-w-3xl">
-  <PageHead slot="head" title="About" />
-  
+  <PageHead slot="head" title="ກ່ຽວກັບ | About" />
+
   <!-- Person Schema for About page SEO -->
   <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
-  
-  <Breadcrumbs items={[{ label: 'About', icon: 'lucide:user' }]} />
+
+  <Breadcrumbs items={[{ label: 'ກ່ຽວກັບ', icon: 'lucide:user' }]} />
 
   <section class="flex flex-col gap-8">
     <!-- Header -->
     <div class="flex flex-col gap-4">
       <div>
-        <h1 class="text-3xl md:text-4xl font-bold">About</h1>
+        <h1 class="text-3xl md:text-4xl font-bold">Sulixay Vilaiphone (罗意)</h1>
         <p class="text-sm text-muted-foreground font-mono mt-1">
-          Learn more about this blog
+          AI Researcher | NLP & Wireless Sensing
         </p>
       </div>
     </div>
 
     <!-- Main Content -->
-    <div class="prose prose-sm dark:prose-invert max-w-none space-y-6">
-      <p class="text-muted-foreground leading-relaxed">
-        Welcome to <strong class="text-primary">{SITE.title}</strong>! 
-        This is a placeholder about page. Customize this content to tell your visitors about yourself, your blog, or your interests.
+    <div class="prose prose-sm dark:prose-invert max-w-none space-y-8">
+
+      <!-- Intro -->
+      <p class="text-muted-foreground leading-relaxed text-lg">
+        ຍິນດີຕ້ອນຮັບສູ່ <strong class="text-primary">{SITE.title}</strong>!
+        ຂ້ອຍແມ່ນນັກຄົ້ນຄວ້າ AI ຈາກປະເທດລາວ ທີ່ເນັ້ນໃສ່ການພັດທະນາ NLP ແລະ LLM ສຳລັບພາສາລາວ.
       </p>
 
-      <p class="text-muted-foreground leading-relaxed">
-        You can edit this page by modifying <code class="text-sm bg-muted px-1.5 py-0.5 rounded">src/pages/about.astro</code>.
-      </p>
+      <!-- Education -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:graduation-cap" class="w-5 h-5" />
+          ການສຶກສາ | Education
+        </h2>
+        <div class="space-y-4 mt-4">
+          <div class="border-l-2 border-primary pl-4">
+            <h3 class="font-medium">Master's Degree in Computer Science</h3>
+            <p class="text-sm text-muted-foreground">Xihua University | 2022 - 2025</p>
+            <ul class="text-sm mt-2 space-y-1">
+              <li>Research focus: Artificial Intelligence - Wireless Sensing</li>
+            </ul>
+          </div>
+          <div class="border-l-2 border-muted pl-4">
+            <h3 class="font-medium">Bachelor's Degree in Computer Science</h3>
+            <p class="text-sm text-muted-foreground">Xihua University | 2020 - 2022</p>
+            <ul class="text-sm mt-2 space-y-1">
+              <li>"The Best Ideas" Award - National Startup Competition of Laos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Projects -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:rocket" class="w-5 h-5" />
+          ໂຄງການປັດຈຸບັນ | Current Projects
+        </h2>
+        <div class="space-y-4 mt-4">
+          <div class="p-4 bg-muted/50 rounded-lg">
+            <h3 class="font-medium">Lao Language Speech Recognition & Synthesis</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              ພັດທະນາລະບົບ Speech-to-Text ແລະ Text-to-Speech ສຳລັບພາສາລາວ ໂດຍໃຊ້ neural network architectures ແລະ acoustic modeling.
+            </p>
+          </div>
+          <div class="p-4 bg-muted/50 rounded-lg">
+            <h3 class="font-medium">Cropchai: AI-Powered Crop Disease Detection</h3>
+            <p class="text-sm text-muted-foreground mt-1">
+              ແອັບພລິເຄຊັນ AI ສຳລັບກວດຫາພະຍາດພືດ ແລະ ແນະນຳວິທີການປິ່ນປົວ.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Research -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:book-open" class="w-5 h-5" />
+          ຜົນງານວິໄຈ | Research
+        </h2>
+        <ul class="space-y-3 mt-4">
+          <li class="text-sm">
+            <strong>1st Author:</strong> "WiFi Person Pose Estimation via Interpretable Convolutional Modular for Person Spatial Map"
+            <span class="text-muted-foreground">(IEEE Signal Processing Letters, SCI Q2, IF: 3.89)</span>
+          </li>
+          <li class="text-sm">
+            <strong>1st Author:</strong> "SSEM-LSEM Enhanced Multi-Space Fusion: Cost-Efficient Pose Estimation from WiFi Signals"
+            <span class="text-muted-foreground">(IEEE Internet of Things, IF: 8.9)</span>
+          </li>
+          <li class="text-sm">
+            <strong>Patent:</strong> "A Real-Time Through-Wall Human State Estimation Method Based on WiFi Devices"
+            <span class="text-muted-foreground">(Application No. 202411866951.7)</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Skills -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:code" class="w-5 h-5" />
+          ທັກສະ | Skills
+        </h2>
+        <div class="flex flex-wrap gap-2 mt-4">
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Python</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">PyTorch</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Deep Learning</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">NLP</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Speech Synthesis</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">WiFi CSI</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">CUDA</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Computer Vision</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">YOLO</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">FastAPI</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Docker</span>
+          <span class="px-2 py-1 bg-primary/10 text-primary rounded text-xs">Git</span>
+        </div>
+      </div>
+
+      <!-- Languages -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:languages" class="w-5 h-5" />
+          ພາສາ | Languages
+        </h2>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <div class="text-sm"><strong>ລາວ:</strong> ພາສາແມ່</div>
+          <div class="text-sm"><strong>ຈີນ:</strong> HSK6+</div>
+          <div class="text-sm"><strong>ໄທ:</strong> ຄ່ອງແຄ້ວ</div>
+          <div class="text-sm"><strong>ອັງກິດ:</strong> ດີ</div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div>
+        <h2 class="text-xl font-semibold flex items-center gap-2">
+          <Icon name="lucide:mail" class="w-5 h-5" />
+          ຕິດຕໍ່ | Contact
+        </h2>
+        <div class="flex flex-wrap gap-4 mt-4">
+          <Link href="https://github.com/luoyi-321" class="flex items-center gap-2 text-sm hover:text-primary">
+            <Icon name="lucide:github" class="w-4 h-4" /> GitHub
+          </Link>
+          <Link href="https://huggingface.co/LuoYiSULIXAY" class="flex items-center gap-2 text-sm hover:text-primary">
+            <Icon name="simple-icons:huggingface" class="w-4 h-4" /> Hugging Face
+          </Link>
+          <Link href="mailto:sulixay2001@gmail.com" class="flex items-center gap-2 text-sm hover:text-primary">
+            <Icon name="lucide:mail" class="w-4 h-4" /> Email
+          </Link>
+        </div>
+      </div>
+
     </div>
   </section>
 </Layout>

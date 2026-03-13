@@ -1,0 +1,110 @@
+---
+title: "Data Sparsity ແມ່ນຫຍັງ? (ປັນຫາທີ່ພົບເລື້ອຍໃນ NLP)"
+description: "ຄວາມເບົາບາງຂອງຂໍ້ມູນ ຫຼື ປັນຫາຂໍ້ມູນມີນ້ອຍເກີນໄປ - Understanding Data Sparsity in NLP and Low-resource Languages"
+date: 2026-03-12
+tags: ["LaoNLP", "DataSparsity", "AI", "NLP", "LLM"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+**Data Sparsity** ໃນພາສາລາວ ສາມາດແປໄດ້ວ່າ "ຄວາມເບົາບາງຂອງຂໍ້ມູນ" ຫຼື "ປັນຫາຂໍ້ມູນມີນ້ອຍເກີນໄປ"
+
+<Callout variant="note">
+**ເວົ້າໃຫ້ເຂົ້າໃຈງ່າຍໆ:** Data sparsity ແມ່ນສະຖານະການທີ່ dataset ມີຂໍ້ມູນຈຳນວນນ້ອຍ ຫຼື ຂໍ້ມູນສ່ວນໃຫຍ່ເປັນຄ່າວ່າງ/ສູນ (0) ເຮັດໃຫ້ model ຮຽນຮູ້ຮູບແບບໄດ້ຍາກ.
+</Callout>
+
+---
+
+## ຕົວຢ່າງ Data Sparsity
+
+### 1. ໃນ NLP (Natural Language Processing)
+
+ຖ້າ dataset ມີປະໂຫຍກຫຼາຍ ແຕ່ບາງຄຳປາກົດນ້ອຍຫຼາຍ:
+
+| ປະເພດຄຳ | ຄຳ | ຈຳນວນຄັ້ງ |
+|---------|-----|----------|
+| ຄຳທົ່ວໄປ | ກິນ | 10,000 ຄັ້ງ |
+| ຄຳທີ່ພົບນ້ອຍ | ອັດສະຈັນໃຈ | 2 ຄັ້ງ |
+
+<Callout variant="tip">
+ຄຳທີ່ປາກົດນ້ອຍຫຼາຍ ຈະເຮັດໃຫ້ model ຮຽນຮູ້ pattern ໄດ້ຍາກ - ນີ້ແມ່ນ **Data Sparsity**
+</Callout>
+
+---
+
+### 2. ໃນ Matrix (Recommendation System)
+
+```
+user    movie1    movie2    movie3
+A       5         0         0
+B       0         0         4
+C       0         3         0
+```
+
+ເຫັນວ່າຕາຕະລາງມີ **0 ຈຳນວນຫຼາຍ** - ຂໍ້ມູນຈິງມີນ້ອຍ ເຮັດໃຫ້ matrix ມີລັກສະນະ **sparse**
+
+---
+
+## Data Sparsity ໃນ Language Model
+
+ປັນຫານີ້ມັກເກີດໃນ:
+- **N-gram model**
+- **Low-resource language** (ເຊັ່ນ ພາສາລາວ)
+
+**ຕົວຢ່າງ bigram:**
+
+ຖ້າ dataset ມີ:
+```
+ຂ້ອຍ ກິນ
+```
+
+ແຕ່ບໍ່ເຄີຍມີ:
+```
+ຂ້ອຍ ດື່ມ
+```
+
+Model ຈະຄິດວ່າ: **Probability = 0**
+
+ເພາະ dataset ບໍ່ເຄີຍເຫັນ - ນີ້ແມ່ນ **Data Sparsity Problem**
+
+---
+
+## ວິທີແກ້ປັນຫາ Data Sparsity
+
+### 1. Smoothing
+
+ເຊັ່ນ **Laplace smoothing**, **Kneser-Ney smoothing** ເພື່ອບໍ່ໃຫ້ probability = 0
+
+### 2. Subword Tokenization
+
+ເຊັ່ນ **BPE**, **SentencePiece** ຊ່ວຍແຍກຄຳເປັນ subword ເພື່ອຫຼຸດປັນຫາຄຳທີ່ພົບນ້ອຍ
+
+### 3. ໃຊ້ Neural Network
+
+ເຊັ່ນ **word embedding**, **transformer language model** ຊ່ວຍໃຫ້ model ເຂົ້າໃຈ semantic ຂອງຄຳ
+
+---
+
+## ສຳລັບການພັດທະນາ Lao Language Model
+
+ພາສາລາວເປັນ **Low-resource language** ດັ່ງນັ້ນ Data Sparsity ຈະເກີດບໍ່ນ້ອຍ:
+
+- Dataset ນ້ອຍ
+- ຄຳທີ່ພົບຍາກ
+- ປະໂຫຍກຊ້ຳກັນນ້ອຍ
+
+<Callout variant="tip">
+ດັ່ງນັ້ນ **tokenizer** ແລະ **subword model** ເປັນສິ່ງສຳຄັນຫຼາຍສຳລັບ Lao NLP
+</Callout>
+
+---
+
+## ໂພສຕໍ່ໄປ
+
+ໃນບົດຄວາມຕໍ່ໄປ ຈະອະທິບາຍ: **"ວິທີສ້າງ Lao Tokenizer ສຳລັບ Language Model"**
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Lao NLP ແລະ AI*

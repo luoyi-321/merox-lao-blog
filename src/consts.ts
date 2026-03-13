@@ -1,12 +1,12 @@
 import type { IconMap, SocialLink, Site } from '@/types'
 
 export const SITE: Site = {
-  title: 'Your Blog Name',
+  title: 'Lao AI Blog',
   description:
-    'A brief description of your blog. This will be used in meta tags and social sharing.',
+    'ບລັອກກ່ຽວກັບ NLP ແລະ LLM ສຳລັບພາສາລາວ | Blog about NLP and LLM for Lao language',
   href: 'https://yourdomain.com',
-  author: 'your-author-id',
-  locale: 'en-US',
+  author: 'sulixay',
+  locale: 'lo',
   featuredPostCount: 2,
   postsPerPage: 6,
 }
@@ -44,25 +44,25 @@ export const BREVO = {
 export const NAV_LINKS: SocialLink[] = [
   {
     href: '/blog',
-    label: 'Blog',
+    label: 'ບລັອກ',
   },
   {
     href: '/about',
-    label: 'About',
+    label: 'ກ່ຽວກັບ',
   },
 ]
 
 export const SOCIAL_LINKS: SocialLink[] = [
   {
-    href: 'https://github.com/username',
+    href: 'https://github.com/luoyi-321',
     label: 'GitHub',
   },
   {
-    href: 'https://twitter.com/username',
-    label: 'Twitter',
+    href: 'https://huggingface.co/LuoYiSULIXAY',
+    label: 'Hugging Face',
   },
   {
-    href: 'mailto:your@email.com',
+    href: 'mailto:sulixay2001@gmail.com',
     label: 'Email',
   },
   {
@@ -78,6 +78,7 @@ export const ICON_MAP: IconMap = {
   Twitter: 'lucide:twitter',
   Email: 'lucide:mail',
   RSS: 'lucide:rss',
+  'Hugging Face': 'simple-icons:huggingface',
 }
 
 // Newsletter consent text (centralized for GDPR compliance)
