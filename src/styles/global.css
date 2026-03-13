@@ -26,7 +26,7 @@
 
 @font-face {
   font-family: 'Geist';
-  src: url('/fonts/GeistVF.woff2') format('woff2-variations');
+  src: url('/merox-lao-blog/fonts/GeistVF.woff2') format('woff2-variations');
   font-weight: 100 900;
   font-style: normal;
   font-display: optional;
@@ -34,7 +34,7 @@
 
 @font-face {
   font-family: 'Geist Mono';
-  src: url('/fonts/GeistMonoVF.woff2') format('woff2-variations');
+  src: url('/merox-lao-blog/fonts/GeistMonoVF.woff2') format('woff2-variations');
   font-weight: 100 900;
   font-style: normal;
   font-display: optional;
@@ -194,7 +194,7 @@
   z-index: 0;
   pointer-events: none;
   /* Background image with WebP support and fallback */
-  background-image: url('/static/homelab.webp');
+  background-image: url('/merox-lao-blog/static/homelab.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -210,9 +210,9 @@
 }
 
 /* Fallback for browsers that don't support WebP */
-@supports not (background-image: url('/static/homelab.webp')) {
+@supports not (background-image: url('/merox-lao-blog/static/homelab.webp')) {
   .hero-bg-container {
-    background-image: url('/static/homelab.png');
+    background-image: url('/merox-lao-blog/static/homelab.png');
   }
 }
 
