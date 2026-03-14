@@ -1,0 +1,254 @@
+---
+title: "ວິທີສ້າງ Lao Tokenizer ຈາກ 0: ຈາກ BPE ຫາ WordPiece ແລະ SentencePiece"
+description: "ແບ່ງປັນທັງພາກ theory ແລະ implementation ຂອງການຝຶກ Lao tokenizer ຈາກ 0 - BPE ແມ່ນຫຍັງ? SentencePiece ເຮັດວຽກແນວໃດ?"
+date: 2026-03-15
+tags: ["LaoNLP", "Tokenizer", "BPE", "WordPiece", "SentencePiece", "AI", "LLM"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ໃນໂລກຂອງ NLP ແລະ LLM, ສິ່ງທີ່ຄົນມັກເຫັນຄື model ໃຫຍ່, GPU ແຮງ, parameter ຫຼາຍ, ແຕ່ສິ່ງທີ່ຢູ່ຂ້າງລຸ່ມສຸດ ແລະສຳຄັນຫຼາຍ ຄື **tokenizer**.
+
+ຖ້າ tokenizer ບໍ່ດີ, model ກໍຈະຮຽນຮູ້ໄດ້ບໍ່ເຕັມທີ່.
+
+ສຳລັບພາສາລາວ, ບັນຫານີ້ຍິ່ງໃຫຍ່ຂຶ້ນ ເພາະພາສາລາວເປັນພາສາທີ່ບໍ່ມີ space ແບ່ງຄຳແບບຊັດເຈນຄືພາສາອັງກິດ, ແຖມຍັງມີຄຳປະສົມ, ຮູບແບບການຂຽນຫຼາຍແບບ, ແລະຂໍ້ມູນຝຶກທີ່ຍັງຈຳກັດ.
+
+ໃນ blog ນີ້ ຂ້ອຍຢາກແບ່ງປັນທັງພາກ theory ແລະພາກ implementation ຂອງການຝຶກ Lao tokenizer ຈາກ 0, ໂດຍຈະເລີ່ມຈາກຄຳຖາມພື້ນຖານທີ່ສຸດກ່ອນ: BPE ແມ່ນຫຍັງ? SentencePiece ເຮັດວຽກແນວໃດ? ແລະຖ້າພວກເຮົາຢາກຝຶກ tokenizer ສຳລັບພາສາລາວແບບຈິງໆ ຄວນເຮັດແນວໃດ.
+
+---
+
+## Tokenizer ແມ່ນຫຍັງ?
+
+Tokenizer ແມ່ນຕົວແປງຂໍ້ຄວາມໃຫ້ກາຍເປັນ token ແລະຈາກ token ໄປເປັນ id ຕົວເລກ.
+
+ເວລາ model ເຫັນຂໍ້ຄວາມ `"ຂ້ອຍຮັກພາສາລາວ"` model ບໍ່ໄດ້ເຫັນເປັນຄວາມໝາຍໂດຍກົງ, ແຕ່ຈະເຫັນເປັນລຳດັບຂອງ token IDs.
+
+<Callout variant="note">
+ດັ່ງນັ້ນ tokenizer ບໍ່ແມ່ນພຽງແຕ່ "ແບ່ງຄຳ" ເທົ່ານັ້ນ, ແຕ່ມັນເປັນ **ປະຕູດ່ານທຳອິດ** ທີ່ກຳນົດວ່າ model ຈະເຂົ້າໃຈພາສາຂອງເຮົາແນວໃດ.
+</Callout>
+
+---
+
+## BPE ແມ່ນຫຍັງ?
+
+**BPE** ຫຼື **Byte Pair Encoding** ແມ່ນແນວຄິດການສ້າງ subword token ໂດຍເລີ່ມຈາກຫນ່ວຍນ້ອຍໆ ແລ້ວ merge ຄູ່ທີ່ປາກົດບ່ອຍທີ່ສຸດເຂົ້າຫາກັນ.
+
+ແນວຄິດມັນງ່າຍຫຼາຍ: ຖ້າອັກສອນຫຼືຊຸດອັກສອນໃດປາກົດຄູ່ກັນຊ້ຳໆ, ພວກເຮົາກໍລວມມັນເປັນ token ໃໝ່.
+
+ສຳລັບພາສາລາວ, ແນວຄິດນີ້ມີປະໂຫຍດຫຼາຍ ເພາະຄຳລາວຈຳນວນຫຼາຍບໍ່ໄດ້ຖືກຂັ້ນດ້ວຍ space. BPE ຊ່ວຍໃຫ້ model ຮຽນຮູ້ຮູບແບບຂອງຫນ່ວຍຄຳ ຫຼື subword ໄດ້ດີກວ່າການແບ່ງເປັນ character ລ້ວນໆ.
+
+---
+
+## SentencePiece ເຮັດວຽກແນວໃດ?
+
+**SentencePiece** ແມ່ນ toolkit ສຳລັບຝຶກ tokenizer ຈາກ raw text ໂດຍກົງ.
+
+ຂໍ້ດີຫຼັກຂອງມັນຄື ພວກເຮົາບໍ່ຈຳເປັນຕ້ອງແບ່ງຄຳລ່ວງໜ້າ. ມັນສາມາດຮຽນຈາກ raw corpus ໄດ້ເລີຍ ແລະມັກຈະໃຊ້ກັບພາສາທີ່ບໍ່ມີ whitespace segmentation ຊັດເຈນ.
+
+<Callout variant="tip">
+SentencePiece ຮອງຮັບທັງ **BPE** ແລະ **Unigram**.
+ໃນທາງປະຕິບັດ ຖ້າເຮົາຢາກທົດລອງຫຼາຍແນວ, SentencePiece ແມ່ນເຄື່ອງມືທີ່ຍືດຫຍຸ່ນຫຼາຍ.
+</Callout>
+
+---
+
+## ຈາກ theory ມາຫາ implementation: ຂ້ອຍຝຶກ WordPiece ແນວໃດ
+
+ໃນການລອງຂອງຂ້ອຍ, ຂ້ອຍໄດ້ train WordPiece tokenizer ໂດຍໃຊ້ `tokenizers` library ແລະ wrap ເຂົ້າກັບ `PreTrainedTokenizerFast` ຂອງ Hugging Face.
+
+ສິ່ງທີ່ນ່າສົນໃຈຄື ຂ້ອຍກຳນົດ `initial_alphabet` ເອງ ເພື່ອໃຫ້ຮວມ:
+- ອັກສອນລາວ
+- ໂຕເລກອາຣາບິກ
+- ໂຕເລກລາວ
+- Punctuation
+- ກຸ່ມຕົວປະສົມເຊັ່ນ `ຫນ`, `ຫມ`, `ຫຍ`, `ຫງ`, `ຫລ`, `ຫວ`, `ໝ`, `ໜ`
+
+ຂ້ອຍໃຊ້ `BertPreTokenizer()` ເປັນ pre-tokenizer, ຕັ້ງ `vocab_size=30000`, `min_frequency=2`, ແລະໃສ່ special tokens ເຊັ່ນ `[PAD]`, `[UNK]`, `[CLS]`, `[SEP]`, `[MASK]`, `<s>`, `</s>`.
+
+ຫຼັງຈາກ train ສຳເລັດ, ຂ້ອຍ save ເປັນ tokenizer JSON ແລະເພີ່ມ token ພິເສດ `<url>` ເພື່ອຮອງຮັບ text ຈາກເວັບ ຫຼື social media.
+
+### ຜົນ Tokenization
+
+ຈຸດທີ່ຂ້ອຍມັກແມ່ນ ເມື່ອເອົາໄປທົດສອບກັບຂໍ້ຄວາມລາວ ຜົນ tokenization ອອກມາຄ່ອນຂ້າງດີ:
+
+**Input:**
+```
+ເປັນແນວໃດ ສະບາຍດີ ບໍເຈົ້າຮູ້ບໍວ່າຂ້ອຍ ແມ່ນ ໃຜAI123
+```
+
+**Output:**
+```python
+['ເປັນ', 'ແນວໃດ', 'ສະບາຍ', 'ດີ', 'ບໍ', 'ເຈົ້າ', 'ຮູ້', 'ບໍ', 'ວ່າ', 'ຂ້ອຍ', 'ແມ່ນ', 'ໃຜ', 'AI', '12', '3']
+```
+
+ອັນນີ້ສະແດງວ່າ tokenizer ສາມາດຈັບທັງຄຳລາວ ແລະ alphanumeric pattern ໄດ້ໃນລະດັບໜຶ່ງ.
+
+---
+
+## ຕົວຢ່າງຜົນທົດສອບ
+
+ເມື່ອຂ້ອຍ load tokenizer ຈາກ repo ແລະ encode ປະໂຫຍກ:
+
+**Input:**
+```
+ນີ້ແມ່ນການທົດສອບ
+```
+
+**Tokens:**
+```python
+['ນີ້', 'ແມ່ນ', 'ການ', 'ທົດສອບ']
+```
+
+**IDs:**
+```python
+[558, 808, 171, 5420]
+```
+
+ຈາກຈຸດນີ້ ຂ້ອຍຮູ້ສຶກວ່າ tokenizer ທີ່ train ໄວ້ເລີ່ມຈັບຫນ່ວຍຄຳທີ່ເປັນທຳມະຊາດຂອງພາສາລາວໄດ້ດີຂຶ້ນ.
+
+---
+
+## Implementation Code
+
+{/* TODO: ໃສ່ code snippet ຫຼືຮູບ training pipeline */}
+
+{/* TODO: ໃສ່ dataset preprocessing ເຊັ່ນ clean text, dedup, normalize, remove emoji, remove broken unicode */}
+
+{/* TODO: ໃສ່ຈຳນວນ corpus, ຈຳນວນ line, ຈຳນວນ token, ຫຼື source ຂອງຂໍ້ມູນ */}
+
+---
+
+## ຂ້ອຍໄດ້ໃຊ້ dataset ຫຍັງ?
+
+ໃນ implementation ນີ້, ຂ້ອຍໄດ້ train tokenizer ຈາກ local dataset ຂອງຕົນເອງ ແລະໄດ້ publish ຜົນບາງສ່ວນໄວ້ໃນ Hugging Face:
+
+- [LuoYiSULIXAY/laonlp-enhanced-update](https://huggingface.co/LuoYiSULIXAY/laonlp-enhanced-update)
+- [LuoYiSULIXAY/laonlp-enhanced-wordPiece](https://huggingface.co/LuoYiSULIXAY/laonlp-enhanced-wordPiece) - ສຳລັບສາຍ WordPiece
+
+ທັງສອງ model/repo ປາກົດໃນ Hugging Face profile ຂອງຂ້ອຍ ແລະມີການ update ໃນຊ່ວງເດືອນສິງຫາ 2025.
+
+---
+
+## ສິ່ງທີ່ຮຽນຮູ້ຈາກການ train Lao tokenizer
+
+ຈາກປະສົບການຂອງຂ້ອຍ, ການສ້າງ Lao tokenizer ບໍ່ແມ່ນແຄ່ເລືອກ algorithm ໃຫ້ຖືກ.
+
+ຫຼາຍຄັ້ງ ຜົນລັບທີ່ດີຫຼືບໍ່ດີ ຂຶ້ນກັບ:
+
+- **ຄຸນນະພາບຂອງ corpus**
+- **ການ clean text**
+- **ການ normalize unicode**
+- **ການຈັດການພາສາປະສົມ** Lao + English + number
+- **ການເລືອກ vocab size**
+- **ການຕັ້ງ pre-tokenizer**
+
+<Callout variant="warning">
+ບາງເທື່ອ algorithm ດີ ແຕ່ corpus ບໍ່ດີ ຜົນກໍອອກມາບໍ່ດີ.
+ບາງເທື່ອ corpus ດີ ແຕ່ pre-tokenizer ບໍ່ເໝາະ ກໍທຳໃຫ້ token ແຕກແປກໆໄດ້.
+</Callout>
+
+---
+
+## ຄວາມເຫັນສ່ວນໂຕຂອງຂ້ອຍ
+
+### WordPiece ສຳລັບພາສາລາວ: ຂໍ້ດີ ແລະ ຂໍ້ຈຳກັດ
+
+ຈາກການທົດລອງ train tokenizer ດ້ວຍ WordPiece, ຂ້ອຍພົບວ່າ WordPiece ມີຂໍ້ດີຫຼາຍສຳລັບການນຳໄປໃຊ້ກັບ model ປະເພດ BERT ຫຼື encoder-based model.
+
+WordPiece ມັກຈະສ້າງ token ທີ່ມີຂະໜາດຄ່ອນຂ້າງສົມດຸນ ແລະຊ່ວຍຫຼຸດຈຳນວນ unknown token ໄດ້ດີ.
+
+ສຳລັບພາສາລາວ, WordPiece ຍັງຊ່ວຍໃຫ້ model ຮຽນຮູ້ subword ທີ່ມີຄວາມໝາຍ ເຊັ່ນ:
+- `ການ`
+- `ທົດ`
+- `ສອບ`
+
+ແທນທີ່ຈະແຕກເປັນ character ລະດັບຕໍ່າເກີນໄປ.
+
+**ແຕ່ WordPiece ກໍມີຂໍ້ຈຳກັດ:**
+
+- ຖ້າ corpus ມີຄວາມຫຼາກຫຼາຍບໍ່ພໍ ຫຼືຂໍ້ມູນບໍ່ສະອາດ, WordPiece ອາດຈະສ້າງ token ທີ່ບໍ່ເປັນທຳມະຊາດ
+- ການແຕກຄຳແບບຜິດໆ ຫຼືການຮວມ character ທີ່ບໍ່ຄ່ອຍມີຄວາມໝາຍ
+- ພາສາລາວບໍ່ມີ whitespace segmentation ທີ່ຊັດເຈນ, ດັ່ງນັ້ນ WordPiece ບາງຄັ້ງຈະພຶ່ງພາ pre-tokenizer ຫຼາຍ
+
+### SentencePiece ແລະ Unigram ອາດຈະເໝາະກັບພາສາລາວຫຼາຍກວ່າບໍ?
+
+ໃນຄວາມເຫັນຂອງຂ້ອຍ, **SentencePiece** ໂດຍສະເພາະ **Unigram LM** ອາດຈະເໝາະກັບພາສາລາວຫຼາຍກວ່າ WordPiece ໃນບາງສະຖານະການ.
+
+**ເຫດຜົນ:**
+1. SentencePiece ສາມາດ train ຈາກ raw text ໂດຍກົງ ໂດຍບໍ່ຕ້ອງແບ່ງຄຳລ່ວງໜ້າ
+2. ເໝາະກັບພາສາທີ່ບໍ່ມີ space segmentation ຊັດເຈນ ເຊັ່ນ Lao, Thai ຫຼື Khmer
+3. ວິທີ Unigram model ຈະເລືອກ token ຈາກ candidate vocabulary ໂດຍອີງໃສ່ probability, ຊຶ່ງບາງຄັ້ງສາມາດສ້າງ segmentation ທີ່ເປັນທຳມະຊາດກວ່າ WordPiece
+
+<Callout variant="note">
+ແນ່ນອນ ທັງ WordPiece ແລະ SentencePiece ລ້ວນມີຈຸດແຂງຂອງຕົນເອງ, ແລະບາງຄັ້ງຜົນລັບກໍຂຶ້ນກັບ corpus ແລະ preprocessing ຫຼາຍກວ່າ algorithm.
+</Callout>
+
+---
+
+## ບັນຫາທີ່ຂ້ອຍພົບເວລາ train tokenizer ຈາກ dataset ພາສາລາວ
+
+ເວລາທີ່ຂ້ອຍ train tokenizer ຈາກ dataset ພາສາລາວຈິງ, ຂ້ອຍພົບບັນຫາຫຼາຍຢ່າງ:
+
+### 1. Data Noise
+Dataset ຈາກ social media ຫຼາຍຄັ້ງມີ:
+- Emoji
+- URL
+- HTML fragment
+- Unicode ທີ່ບໍ່ຖືກຕ້ອງ
+
+### 2. ການປະສົມພາສາ
+ຂໍ້ຄວາມລາວຈຳນວນຫຼາຍມັກມີ:
+- Lao + English
+- Lao + number
+- Lao + emoji
+
+ຕົວຢ່າງ:
+```
+AI123
+ChatGPTລາວ
+2025AI
+```
+
+Tokenizer ຈຶ່ງຕ້ອງຮອງຮັບ pattern ແບບນີ້ໃຫ້ດີ.
+
+### 3. Unicode Normalization
+ບາງ dataset ມີ character ທີ່ຮູບຄ້າຍກັນ ແຕ່ເປັນ unicode ຄົນລະ code point.
+
+<Callout variant="warning">
+ຖ້າບໍ່ normalize ກ່ອນ train, tokenizer ອາດຈະສ້າງ token ທີ່ຊ້ຳກັນໂດຍບໍ່ຈຳເປັນ.
+</Callout>
+
+---
+
+## ຂ້ອຍຢາກໃຫ້ຊຸມຊົນ Lao NLP ຮ່ວມກັນເຮັດຫຍັງ
+
+ໃນຄວາມເຫັນຂອງຂ້ອຍ, ການພັດທະນາ Lao NLP ຈະເຕີບໂຕໄດ້ໄວ ຖ້າຊຸມຊົນມີການຮ່ວມມືກັນສ້າງ infrastructure ພື້ນຖານ:
+
+- **Lao NLP benchmark**
+- **Lao open dataset**
+- **Lao tokenizer standard**
+- **Lao language model evaluation**
+
+ຖ້າມີ benchmark ທີ່ຊັດເຈນ, ນັກວິຈັຍ ແລະ developer ສາມາດປຽບທຽບ model ຂອງຕົນເອງໄດ້ງ່າຍຂຶ້ນ.
+
+ນອກຈາກນັ້ນ ການມີ tokenizer ແບບ open-source ທີ່ດີ ກໍຈະຊ່ວຍໃຫ້ຄົນອື່ນສາມາດສ້າງ model ສຳລັບພາສາລາວໄດ້ງ່າຍຂຶ້ນ.
+
+<Callout variant="tip">
+ສຸດທ້າຍແລ້ວ ການພັດທະນາ AI ສຳລັບພາສາລາວ ບໍ່ແມ່ນວຽກຂອງຄົນດຽວ, ແຕ່ເປັນວຽກຂອງຊຸມຊົນ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+ການສ້າງ Lao tokenizer ຈາກ 0 ບໍ່ແມ່ນເລື່ອງງ່າຍ, ແຕ່ມັນເປັນວຽກທີ່ຄຸ້ມຄ່າຫຼາຍ.
+
+**BPE**, **WordPiece**, ແລະ **SentencePiece** ລ້ວນແຕ່ເປັນເຄື່ອງມືທີ່ດີ, ແຕ່ສິ່ງທີ່ສຳຄັນກວ່າ algorithm ຄື **ຄຸນນະພາບຂອງ corpus** ແລະ **ການເຂົ້າໃຈພາສາລາວຢ່າງແທ້ຈິງ**.
+
+ຖ້າເຮົາຢາກສ້າງ Lao LLM ທີ່ດີ, ການເຮັດ tokenizer ໃຫ້ດີຄືບາດກ້າວທຳອິດທີ່ຫຼີກບໍ່ໄດ້.
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Lao NLP ແລະ AI*
