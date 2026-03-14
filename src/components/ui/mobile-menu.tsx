@@ -26,6 +26,10 @@ const MobileMenu = () => {
     return href.startsWith('http')
   }
 
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const resolveHref = (href: string) =>
+    isExternalLink(href) ? href : `${baseUrl}${href}`
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={(val) => setIsOpen(val)}>
       <DropdownMenuTrigger asChild onClick={() => setIsOpen((val) => !val)}>
@@ -41,7 +45,7 @@ const MobileMenu = () => {
           return (
             <DropdownMenuItem key={item.href} asChild>
               <a
-                href={item.href}
+                href={resolveHref(item.href)}
                 target={isExternal ? '_blank' : '_self'}
                 rel={isExternal ? 'noopener noreferrer' : undefined}
                 className={`w-full text-lg font-medium capitalize flex items-center gap-2 ${
