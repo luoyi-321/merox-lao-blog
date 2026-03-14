@@ -131,9 +131,10 @@ const PaginationComponent: React.FC<PaginationProps> = ({
 }) => {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
 
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const getPageUrl = (page: number) => {
-    if (page === 1) return baseUrl
-    return `${baseUrl}${page}`
+    if (page === 1) return `${base}${baseUrl}`
+    return `${base}${baseUrl}${page}`
   }
 
   return (

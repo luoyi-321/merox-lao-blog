@@ -22,6 +22,9 @@ interface Props {
 
 const { items } = Astro.props
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+const resolveHref = (href: string) => `${base}${href}`
+
 // Generate BreadcrumbList schema for SEO
 const breadcrumbItems = [
   {
@@ -51,7 +54,7 @@ const breadcrumbSchema = {
 <Breadcrumb>
   <BreadcrumbList>
     <BreadcrumbItem>
-      <BreadcrumbLink href="/">
+      <BreadcrumbLink href={resolveHref('/')}>
         <Icon name="lucide:home" class="size-4 shrink-0" />
       </BreadcrumbLink>
     </BreadcrumbItem>
@@ -70,7 +73,7 @@ const breadcrumbSchema = {
                 </span>
               </BreadcrumbPage>
             ) : (
-              <BreadcrumbLink href={item.href}>
+              <BreadcrumbLink href={item.href ? resolveHref(item.href) : undefined}>
                 <span class="flex items-center gap-x-2">
                   {item.icon && (
                     <Icon name={item.icon} class="size-4 shrink-0" />
