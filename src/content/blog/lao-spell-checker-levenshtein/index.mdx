@@ -1,0 +1,302 @@
+---
+title: "ສ້າງ Lao Spell Checker ດ້ວຍ Levenshtein Distance ແລະ RapidFuzz"
+description: "ເຂົ້າໃຈ Levenshtein Distance ເລິກໆ ຈາກ algorithm ຮອດການ implement — ແລະ ວິທີນຳໃຊ້ RapidFuzz ສ້າງລະບົບ Spell Checker ພາສາລາວ"
+date: 2026-03-15
+tags: ["LaoNLP", "SpellChecker", "Levenshtein", "RapidFuzz", "Python", "NLP"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ໜຶ່ງໃນ NLP tools ພື້ນຖານທີ່ສຳຄັນທີ່ສຸດຄື **Spell Checker** — ລະບົບທີ່ກວດ ແລະ ສະເໜີການແກ້ໄຂຄຳທີ່ສະກົດຜິດ. ໃນບົດຄວາມນີ້ຈະ build `LaoSpellChecker` ດ້ວຍ Python ໂດຍໃຊ້ **Levenshtein Distance** ຜ່ານ library **RapidFuzz** — ພ້ອມອະທິບາຍ **ຫຍັງ** ແລະ **ເປັນຫຍັງ** ທຸກຈຸດ.
+
+---
+
+## Levenshtein Distance — ເຂົ້າໃຈເລິກໆ
+
+### ຄຳນິຍາມ
+
+**Levenshtein Distance** (ຫຼື Edit Distance) ຄືຈຳນວນ **ຄັ້ງນ້ອຍທີ່ສຸດ** ທີ່ຕ້ອງ "ດັດແກ້" ຕົວອັກສອນ ເພື່ອປ່ຽນ string `A` ໄປເປັນ string `B`.
+
+ການ "ດັດແກ້" 1 ຄັ້ງ = ໜຶ່ງໃນ 3 operation:
+
+| Operation | ຄຳອະທິບາຍ | ຕົວຢ່າງ |
+|---|---|---|
+| **Insert** | ໃສ່ຕົວອັກສອນ 1 ຕົວ | `"ຮຽນ"` → `"ຮຽນດ"` |
+| **Delete** | ລຶບຕົວອັກສອນ 1 ຕົວ | `"ຮຽນດ"` → `"ຮຽນ"` |
+| **Replace** | ແທນຕົວອັກສອນ 1 ຕົວ | `"ຮຽນ"` → `"ຮ້ານ"` |
+
+---
+
+### ຕົວຢ່າງ Step-by-Step: `"ຜຸ້ໃຫຍ"` → `"ຜູ້ໃຫຍ່"`
+
+```
+ຄຳຕົ້ນ:   ຜ ຸ ້ ໃ ຫ ຍ        (6 ຕົວ)
+ຄຳເປົ້າ:  ຜ ູ ້ ໃ ຫ ຍ ່      (7 ຕົວ)
+```
+
+| ຂັ້ນ | Operation | String |
+|---|---|---|
+| ເລີ່ມ | — | `ຜຸ້ໃຫຍ` |
+| 1 | **Replace** `ຸ` → `ູ` | `ຜູ້ໃຫຍ` |
+| 2 | **Insert** `່` ຕໍ່ທ້າຍ | `ຜູ້ໃຫຍ່` ✅ |
+
+**Levenshtein Distance = 2**
+
+ການ insert ກໍ່ = Delete ໃນທິດທາງກັບກັນ. distance ວັດ **ຕາຍ-ທາງທີ່ດີທີ່ສຸດ** ເທົ່ານັ້ນ.
+
+---
+
+### ວິທີຄຳນວນ: Dynamic Programming Matrix
+
+ຫຼັກ Levenshtein ໃຊ້ **Dynamic Programming** — ສ້າງ matrix ທີ່ `dp[i][j]` = distance ລະຫວ່າງ A[:i] ແລະ B[:j].
+
+**ຕົວຢ່າງ: `"ລາວ"` vs `"ລາ"`**
+
+```
+     ""  ລ  າ
+""  [ 0  1  2 ]
+ລ   [ 1  0  1 ]
+າ   [ 2  1  0 ]
+ວ   [ 3  2  1 ]
+```
+
+ຜ່ານ **3 rule**:
+
+```
+1. dp[i][0] = i           (ລຶບ i ຕົວຈາກ A)
+2. dp[0][j] = j           (ໃສ່ j ຕົວເຂົ້າ A)
+3. dp[i][j] =
+     dp[i-1][j-1]          ຖ້າ A[i] == B[j]  (match, ບໍ່ຕ້ອງ op)
+     1 + min(
+       dp[i-1][j],          Delete
+       dp[i][j-1],          Insert
+       dp[i-1][j-1]         Replace
+     )                     ຖ້າ A[i] != B[j]
+```
+
+**ຄ່າ bottom-right = distance ສຸດທ້າຍ** = `1` ໃນຕົວຢ່າງນີ້ (ລຶບ "ວ" 1 ຕົວ).
+
+<Callout type="info">
+  ຄວາມຊັບຊ້ອນ: **O(m·n)** ເວລາ ແລະ space ທີ່ m, n ຄືຄວາມຍາວ string. ສຳລັບ dict 100k ຄຳ ຕ້ອງທຽບ 100k ຄັ້ງ — ນີ້ຄືເຫດຜົນທີ່ RapidFuzz (C++) ໄວກວ່າ pure Python ຫຼາຍ.
+</Callout>
+
+---
+
+### ເປັນຫຍັງ Levenshtein ເໝາະກັບ Spell Checking?
+
+ການສະກົດຜິດຂອງມະນຸດ **ສ່ວນໃຫຍ່** ເກີດຈາກ:
+
+| ສາເຫດ | ແຜ່ mapping |
+|---|---|
+| ກົດຄີທີ່ຜິດ | Replace (ຄ່ານ້ອຍ) |
+| ລືມຕົວ | Delete (ຄ່ານ້ອຍ) |
+| ກົດຄີ 2 ຄັ້ງ | Insert (ຄ່ານ້ອຍ) |
+| ຂຽນຕົວຜິດຫຼາຍ | distance ສູງ (ສ່ວນໃຫຍ່ບໍ່ໃຊ່ typo) |
+
+ດ້ວຍເຫດນີ້ ຄຳທີ່ distance ນ້ອຍ (1–2) ຈຶ່ງ **ໂດຍທຳມະຊາດ** ເໝາະສົມໃນການ suggest.
+
+**ຕົວຢ່າງ distance ຂອງ typo ທີ່ຜິດຂັ້ນຕ່າງໆ:**
+
+```
+"ຮຽນ" → "ຮ້ຽນ"    distance = 1  (ໃສ່ວັນນະຍຸດ)
+"ຮຽນ" → "ລຽນ"     distance = 1  (Replace ຕົວໜ້າ)
+"ຮຽນ" → "ຮນ"      distance = 1  (Delete "ຽ")
+"ຮຽນ" → "ຂຽນ"     distance = 1  (Replace)
+"ຮຽນ" → "ເຮີຍນ"   distance = 2
+"ຮຽນ" → "ກິນ"     distance = 3  (ຜິດຫຼາຍ, ຄົງບໍ່ແມ່ນ typo)
+```
+
+---
+
+### Levenshtein vs ການວັດ String ອື່ນໆ
+
+| Algorithm | ວັດຫຍັງ | ເໝາະກັບ |
+|---|---|---|
+| **Levenshtein** | Insert + Delete + Replace | Spell checking (ທົ່ວໄປ) |
+| **Hamming** | Replace ເທົ່ານັ້ນ (string ຍາວເທົ່າກັນ) | DNA comparison |
+| **Jaro-Winkler** | Transposition + prefix weight | ຊື່ຄົນ, ຊື່ສະຖານທີ່ |
+| **Cosine Similarity** | ທິດທາງ vector | Document similarity |
+
+**ເປັນຫຍັງເລືອກ Levenshtein?** ຍ້ອນຮອງຮັບ Insert+Delete+Replace ທັງໝົດ — ຄອບຄຸມ typo pattern ຂອງມະນຸດໄດ້ຄົບຖ້ວນທີ່ສຸດ.
+
+---
+
+## ໂຄງສ້າງ: `__init__` ແລະ ການໂຫລດ Dictionary
+
+```python
+class LaoSpellChecker:
+    def __init__(self, dicts='wiki'):
+        self.dict1_path = '/content/wiktionary-20210720.txt'
+        self.dict2_path = '/content/dictionary.txt'
+        self.dict3_path = '/content/lo_spellcheck_dict.txt'
+        self.word_set = set()
+
+        if dicts == 'wiki':
+            self.load_dict(self.dict1_path)
+        elif dicts == 'dict':
+            self.load_dict(self.dict2_path)
+        elif dicts == 'lo_spell':
+            self.load_dict(self.dict3_path)
+        else:
+            raise ValueError("Invalid dicts value.")
+```
+
+**ເປັນຫຍັງຈຶ່ງມີ 3 dictionary?**
+
+Dictionary ແຕ່ລະອັນ **ຄອບຄຸມ domain ຕ່າງກັນ** — ການໃຫ້ user ເລືອກຊ່ວຍໃຫ້ tune ໄດ້ຕາມ use case ໂດຍບໍ່ຕ້ອງ rewrite code.
+
+| ຊື່ | ເໝາະສຳລັບ |
+|---|---|
+| `wiki` | ຂໍ້ຄວາມທົ່ວໄປ, Wikipedia-style |
+| `dict` | ວັດຈະນານຸກົມລາວມາດຕະຖານ |
+| `lo_spell` | ເໝາະ spell-check ໂດຍສະເພາະ |
+
+**ເປັນຫຍັງໃຊ້ `set()` ແທນ `list`?**
+
+```python
+self.word_set = set()    # O(1) lookup
+```
+
+- `"ຄຳ" in list` → scan ທຸກ element = **O(n)**
+- `"ຄຳ" in set` → hash table lookup = **O(1)**
+
+ສຳລັບ dict 100,000 ຄຳ: list ຕ້ອງທຽບ ≤100k ຄັ້ງ, set ທຽບ ~1 ຄັ້ງ. ຄວາມແຕກຕ່າງຈະສຳຄັນຫຼາຍເພາະ `spell_candidates()` ຖືກເອີ້ນທຸກຄຳໃນ text.
+
+---
+
+## `spell_candidates()` — ຫາຄຳທີ່ໃກ້ຄຽງ
+
+```python
+def spell_candidates(self, word, limit=5):
+    if word in self.word_set:
+        return [word]
+
+    results = process.extract(
+        word,
+        self.word_set,
+        scorer=Levenshtein.distance,
+        limit=limit
+    )
+    return [r[0] for r in results]
+```
+
+**ເປັນຫຍັງ check `word in self.word_set` ກ່ອນ?**
+
+Short-circuit: ຖ້າຄຳຖືກຕ້ອງ → return ທັນທີ, skip ການ compute distance ກັບ 100k ຄຳ. ປະຫຍັດ compute ສ່ວນໃຫຍ່ ເພາະ text ທີ່ດີສ່ວນຫຼາຍຂຽນຖືກ.
+
+**ເປັນຫຍັງໃຊ້ `RapidFuzz` ແທນ pure Python loop?**
+
+```python
+# ❌ naive loop — ຊ້າ O(n·m) ໃນ Python
+best = min(word_set, key=lambda w: Levenshtein.distance(word, w))
+
+# ✅ RapidFuzz — C++ implementation, ໄວຫຼາຍ
+results = process.extract(word, word_set, scorer=Levenshtein.distance, limit=5)
+```
+
+RapidFuzz implement Levenshtein ໃນ C++ ແລ້ວ expose ໃຫ້ Python — ໄວກວ່າ 10–50x ສຳລັບ dict ຂະໜາດໃຫຍ່.
+
+**`r[0]` ໝາຍຄວາມວ່າຫຍັງ?**
+
+`process.extract()` ສົ່ງ tuples: `(word, score, index)`.
+
+```python
+# results = [("ຜູ້ໃຫຍ່", 2, 1045), ("ໃຫຍ່", 4, 302), ...]
+return [r[0] for r in results]   # ເອົາສະເພາະຄຳ
+```
+
+---
+
+## `correct()` — ສົ່ງຄຳທີ່ຖືກທີ່ສຸດ
+
+```python
+def correct(self, word):
+    candidates = self.spell_candidates(word, limit=10)
+    if candidates:
+        best_word = min(candidates, key=lambda w: Levenshtein.distance(word, w))
+        return best_word
+    return word
+```
+
+**ເປັນຫຍັງດຶງ `limit=10` ກ່ອນ ແລ້ວ `min()` ອີກຄັ້ງ?**
+
+`process.extract()` optimize ເພື່ອ speed — ອາດ sort ບໍ່ precise ສຳລັບ tie cases. `min()` ດ້ວຍ `Levenshtein.distance` ໂດຍກົງໃຫ້ຄວາມ **ຖືກຕ້ອງ 100%** ໃນ top-10 ໂດຍບໍ່ຕ້ອງ scan dict ທັງໝົດໃໝ່.
+
+**ເປັນຫຍັງ return `word` ຖ້າ candidates ວ່າງ?**
+
+ບໍ່ຄວນ **ທຳລາຍ input** — ຖ້າຫາ correction ບໍ່ໄດ້ ສົ່ງຄືນຕົ້ນສະບັບດີກວ່າ error ຫຼື empty string. ສຳຄັນໃນ production pipeline ທີ່ spell checker ເປັນພຽງ 1 ຂັ້ນຕອນ.
+
+---
+
+## ຕົວຢ່າງ: ເຮັດວຽກ Step-by-Step
+
+```python
+checker = LaoSpellChecker('dict')
+word = "ຜຸ້ໃຫຍ"
+```
+
+```
+ຂັ້ນ 1: "ຜຸ້ໃຫຍ" in word_set?  → ບໍ່
+
+ຂັ້ນ 2: RapidFuzz ທຽບ Levenshtein.distance ກັບທຸກຄຳ
+        "ຜູ້ໃຫຍ່" → distance 2  ✅
+        "ໃຫຍ່"   → distance 4
+        "ຜູ້"     → distance 5
+        ...
+
+ຂັ້ນ 3: return top-5 candidates
+
+ຂັ້ນ 4 (correct): min() → "ຜູ້ໃຫຍ່"  ✅
+```
+
+---
+
+## ຂໍ້ຈຳກັດ ແລະ ທາງແກ້
+
+| ຂໍ້ຈຳກັດ | ເຫດຜົນ | ທາງແກ້ |
+|---|---|---|
+| ຊ້າກັບ dict ໃຫຍ່ | scan O(n) ທຸກຄຳ | BK-Tree, SymSpell |
+| ບໍ່ຮູ້ context | distance ທຽບ string ລ້ວນ | Language Model re-rank |
+| ຕ້ອງ tokenize ກ່ອນ | ລາວບໍ່ມີ space | Word Segmentation ກ່ອນ |
+| Unicode sensitive | ວັນນະຍຸດ multi-codepoint | NFC normalize ກ່ອນ |
+
+<Callout type="warning">
+  ພາສາລາວ encode ວັນນະຍຸດ ແລະ ສະລະໃນຫຼາຍ codepoint — ຄວນ **NFC normalize** ທັງ dict ແລະ input ກ່ອນທຽບ ຫຼຸດ false distance.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+```
+"ຄຳ input"
+    ↓
+ຢູ່ໃນ dict?  ── ແມ່ນ ──→ return ເດີມ (O(1))
+    ↓ ບໍ່
+RapidFuzz + Levenshtein.distance (C++ speed)
+    ↓
+top-10 candidates (distance ນ້ອຍທີ່ສຸດ)
+    ↓
+min() verify → best correction
+    ↓
+return result (ຫຼື input ຖ້ານ candidates ວ່າງ)
+```
+
+| ການຕັດສິນໃຈ | ເຫດຜົນ |
+|---|---|
+| `set()` | O(1) lookup, ປະຫຍັດໃນ dict ໃຫຍ່ |
+| `RapidFuzz` | C++ speed, ໄວ 10–50x vs pure Python |
+| `Levenshtein` | ຈຳລອງ typo ໄດ້ດີທີ່ສຸດ |
+| check dict ກ່ອນ | skip compute ທີ່ບໍ່ຈຳເປັນ |
+| `limit=10` + `min()` | balance speed vs accuracy |
+| return `word` ຖ້າວ່າງ | ຮັກສາ pipeline integrity |
+
+<Callout type="info">
+  Spell Checker ຄືໜຶ່ງໃນ NLP tools ພື້ນຖານໃນ [ແຜນທີ່ LLM ພາສາລາວ](/blog/lao-llm-roadmap) — ຊັ້ນ 1: NLP Toolchain.
+</Callout>
+
+---
+
+*ຕິດຕາມບົດຄວາມເພີ່ມເຕີມກ່ຽວກັບ Lao NLP ແລະ AI*
