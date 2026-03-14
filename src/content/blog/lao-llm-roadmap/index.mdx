@@ -1,0 +1,230 @@
+---
+title: "ແຜນທີ່ເສັ້ນທາງ LLM ສຳລັບພາສາລາວ: ຈາກ NLP ຫາ AI ທີ່ເຂົ້າໃຈລາວ"
+description: "ແຜນທີ່ເສັ້ນທາງທີ່ສົມບູນສຳລັບການສ້າງ Large Language Model ພາສາລາວ ເລີ່ມຈາກ NLP Toolchain → SLM → LLM → ການນຳໃຊ້ຕົວຈິງ"
+date: 2026-03-14
+tags: ["LaoNLP", "LLM", "SLM", "AI", "Roadmap", "NLP"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+ການສ້າງ AI ທີ່ "ເຂົ້າໃຈ" ພາສາລາວ ບໍ່ແມ່ນວຽກທີ່ເຮັດໄດ້ໃນຄືນດຽວ. ມັນຕ້ອງການ **ເສັ້ນທາງທີ່ຊັດເຈນ** — ຈາກການສ້າງພື້ນຖານ NLP ໄປຫາ Small Language Model (SLM) ແລ້ວຈຶ່ງໄປຫາ Large Language Model (LLM) ທີ່ສາມາດໃຊ້ງານໄດ້ຕົວຈິງ.
+
+<Callout type="info">
+  ແຜນທີ່ນີ້ຮຽງລຳດັບຈາກ **ພື້ນຖານ → ເຄື່ອງມື → ຮູບແບບ → ການນຳໃຊ້** — ແຕ່ລະຂັ້ນຕ້ອງໄດ້ຮັບການລົງທຶນທີ່ໝັ້ນຄົງກ່ອນທີ່ຈະຂຶ້ນຂັ້ນຕໍ່ໄປ.
+</Callout>
+
+---
+
+## ພາບລວມ: ເສັ້ນທາງ 4 ຂັ້ນ
+
+```
+ຊັ້ນ 0: ຊັບພະຍາກອນພາສາ (Language Resources)
+    ↓
+ຊັ້ນ 1: NLP Toolchain (ເຄື່ອງມື NLP)
+    ↓
+ຊັ້ນ 2: SLM — Small Language Model
+    ↓
+ຊັ້ນ 3: LLM — Large Language Model
+    ↓
+ຊັ້ນ 4: ການນຳໃຊ້ & ລະບົບນິເວດ
+```
+
+---
+
+## ຊັ້ນ 0 — ພື້ນຖານຊັບພະຍາກອນດ້ານພາສາ
+
+> ນີ້ຄືໜ້າດິນ. ຖ້າບໍ່ມີ ທຸກຢ່າງທີ່ຢູ່ຂ້າງເທິງຈະສ້າງໄດ້ຍາກຫຼືສ້າງບໍ່ໄດ້.
+
+- **ຊຸດຂໍ້ມູນຂະໜາດໃຫຍ່ (Corpora)**
+  - ຂ່າວ, ວັນນະກຳ, ການສົນທະນາ, ສື່ສັງຄົມ
+  - ເອກະສານລັດຖະບານ, ຕຳລາຮຽນ, ສຽງທີ່ຖ່າຍທອດ
+- **ວັດຈະນານຸກົມ & ລາຍການຄຳສັບ**
+  - ຄຳທົ່ວໄປ, ຊື່ສະເພາະ, ຄຳພາສາຖິ່ນ, ຄຳສັບວິຊາການ
+- **ຊັບພະຍາກອນດ້ານໄວຍະກອນ**
+  - POS Tagging (ການຕິດປ້າຍສ່ວນຂອງຄຳເວົ້າ)
+  - Dependency Treebank
+  - Named Entity Recognition (NER) library
+
+<Callout type="warning">
+  ພາສາລາວ **ບໍ່ມີ space ລະຫວ່າງຄຳ** — ດັ່ງນັ້ນຊຸດຂໍ້ມູນທີ່ໄດ້ຮັບການ annotate ຢ່າງຖືກຕ້ອງຈຶ່ງມີຄ່າສູງຫຼາຍ.
+</Callout>
+
+---
+
+## ຊັ້ນ 1 — NLP Toolchain (NLP ໃນຖານະ "ເຄື່ອງມື")
+
+> NLP ໃນຂັ້ນນີ້ຄື **ກ່ອງເຄື່ອງມື** ທີ່ຈຳເປັນກ່ອນຈະສ້າງ Model ໃດກໍໄດ້.
+
+- **Tokenizer / Subword Model**
+  - WordPiece, BPE, SentencePiece ສຳລັບລາວ
+  - ຕ້ອງ handle ການຕັດຄຳ (Word Segmentation) ທີ່ຖືກຕ້ອງ
+- **Sentence Splitter** — ແຍກປະໂຫຍກ
+- **POS Tagger** — ຕິດປ້າຍສ່ວນຂອງຄຳເວົ້າ (ຄຳນາມ, ຄຳກິລິຍາ ...)
+- **Dependency Parser** — ວິເຄາະໂຄງສ້າງໄວຍະກອນ
+- **NER Model** — ຈຳແນກຊື່ຄົນ, ສະຖານທີ່, ອົງກອນ
+- **Spell Checker / Orthography Tools** — ກວດການສະກົດ
+- **Machine Translation Baseline** — ລາວ ↔ ອັງກິດ / ໄທ ເປັນ baseline
+
+```
+Input Text (ລາວ)
+    → Tokenizer
+    → Sentence Splitter
+    → POS Tagger
+    → NER
+    → Parser
+    → ຂໍ້ມູນທີ່ structured ສຳລັບ Model ຕໍ່ໄປ
+```
+
+---
+
+## ຊັ້ນ 2 — SLM: Small Language Model
+
+> ຂັ້ນນີ້ຄືການ "ທົດລອງ" — ສ້າງ Model ຂະໜາດນ້ອຍກ່ອນ ເພື່ອຕອບໂຈດສະເພາະ ແລະ ຮຽນຮູ້ pipeline.
+
+### ປະເພດ SLM ທີ່ຄວນສ້າງ
+
+- **Word Embeddings:** word2vec, fastText ສຳລັບລາວ
+  - ໃຫ້ Model "ຮູ້ຈັກ" ຄວາມໝາຍຄຳສັບ
+- **Lightweight Transformer:** BERT ຂະໜາດນ້ອຍ fine-tuned ດ້ວຍຂໍ້ມູນລາວ
+  - ໃຊ້ mBERT ຫຼື XLM-R ເປັນຈຸດເລີ່ມຕົ້ນ (multilingual pre-trained)
+- **Task-Specific Models:**
+  - ຈຳແນກຂ່າວ (Text Classification)
+  - ວິເຄາະຄວາມຮູ້ສຶກ (Sentiment Analysis)
+  - ຕອບຄຳຖາມງ່າຍໆ (Simple QA)
+
+### ເປົ້າໝາຍຂອງ SLM
+
+| ເປົ້າໝາຍ | ລາຍລະອຽດ |
+|---|---|
+| ທົດສອບ pipeline | ຕັດຄຳ → embed → classify ເຮັດວຽກໄດ້ຮືເປົ່າ? |
+| ສ້າງ benchmark | ວັດຜົນໄດ້ຜົນ (accuracy, F1) ທຽບເທົ່າ baseline |
+| ເກັບ feedback | ເຂົ້າໃຈ error ທີ່ specific ສຳລັບລາວ |
+| ຝຶກທີມ | ໃຫ້ທີມຄຸ້ນເຄີຍກ່ອນ scale ຂຶ້ນ |
+
+<Callout type="info">
+  SLM ທີ່ດີ = ໃຊ້ compute ໜ້ອຍ + deploy ງ່າຍ + explainable. ເໝາະສຳລັບ **proof-of-concept** ແລະ **production edge cases**.
+</Callout>
+
+---
+
+## ຊັ້ນ 3 — LLM: Large Language Model
+
+> ນີ້ຄືເປົ້າໝາຍໃຫຍ່ — ແຕ່ຕ້ອງຜ່ານຊັ້ນ 0–2 ກ່ອນຈຶ່ງຈະໄດ້ຜົນຕົວຈິງ.
+
+### 3 ເສັ້ນທາງຫຼັກ
+
+```
+ທາງ A: Fine-tune LLM ທີ່ມີຢູ່ແລ້ວ
+─────────────────────────────────
+LLaMA / Mistral / Qwen (multilingual)
+    → Fine-tune ດ້ວຍ Lao corpus ຂະໜາດໃຫຍ່
+    → Lao-instruction tuning (Lao SFT dataset)
+    → RLHF / DPO ດ້ວຍ feedback ຂອງຄົນລາວ
+
+ທາງ B: Continual Pre-training
+─────────────────────────────────
+ເລືອກ base model ທີ່ supports Lao script
+    → Continual pre-train ດ້ວຍ Lao text
+    → ຮັກສາຄວາມສາມາດ multilingual ໄວ້
+    → Fine-tune ໃນ downstream tasks
+
+ທາງ C: Train from Scratch (ໄລຍະຍາວ)
+─────────────────────────────────
+ຕ້ອງການ: corpus ຂະໜາດໃຫຍ່ + compute ຫຼາຍ
+ເໝາະສຳລັບ: ສະຖາບັນ/ລັດຖະບານ + ຄູ່ຮ່ວມງານ
+```
+
+### Dataset ທີ່ຕ້ອງການ
+
+- **Pre-training corpus:** ຂໍ້ຄວາມລາວ > 10GB
+- **Instruction tuning dataset (SFT):** ຄຳຖາມ-ຄຳຕອບພາສາລາວ ທີ່ມີຄຸນນະພາບ
+- **Alignment dataset:** ການຈັດລຳດັບຄຳຕອບ (ສຳລັບ RLHF/DPO)
+- **Benchmark:** ຊຸດທົດສອບທີ່ standardized
+
+### Benchmarks ທີ່ຕ້ອງມີ
+
+| ໜ້າວຽກ | ລາຍລະອຽດ |
+|---|---|
+| Text Classification | ຈຳແນກໝວດໝູ່ຂ່າວ, sentiment |
+| NER | ຊື່ຄົນ, ສະຖານທີ່, ອົງກອນ |
+| Machine Translation | ລາວ ↔ ອັງກິດ / ໄທ |
+| Question Answering | ຕອບຄຳຖາມຈາກ context |
+| Dialogue | ສົນທະນາ, customer service |
+| ASR / TTS | ສຽງ → ຂໍ້ຄວາມ / ຂໍ້ຄວາມ → ສຽງ |
+
+---
+
+## ຊັ້ນ 4 — ການນຳໃຊ້ & ລະບົບນິເວດ
+
+> LLM ທີ່ດີຕ້ອງໄດ້ "ອອກໄປໃຊ້ງານ" ບໍ່ແມ່ນພຽງຢູ່ໃນ paper.
+
+### ການນຳໃຊ້ຕົວຈິງ
+
+- **ການແປພາສາ** — ລາວ ↔ ອັງກິດ / ໄທ / ຈີນ (ການຄ້າຂ້າມຊາຍແດນ, ການທ່ອງທ່ຽວ)
+- **ຫຸ່ນຍົນສົນທະນາ** — Chatbot ສຳລັບ customer service, ສຶກສາ
+- **ເຄື່ອງຈັກຊອກຫາ** — Search ເນື້ອຫາລາວ
+- **ເຄື່ອງມືສຶກສາ** — ກວດການສະກົດ, ແກ້ໄຂບົດຂຽນ
+- **ຜູ້ຊ່ວຍສຽງ** — ASR + LLM + TTS ໃນພາສາລາວ
+- **ການສະຫຼຸບຂໍ້ຄວາມ** — ສຳລັບ media, ລັດຖະບານ
+
+### ລະບົບນິເວດ (Ecosystem)
+
+- **Open-source:** ເຜີຍແຜ່ dataset, model weights ໃນ HuggingFace / GitHub
+- **ເອກະສານ & ມາດຕະຖານ:** annotation guidelines, tokenization standards
+- **ການຄົ້ນຄວ້າ:** ຂຽນ paper ໃນ ACL, EMNLP, COLING, SEA-NLP
+- **ຊຸມຊົນ:** developer/researcher community ທີ່ active
+
+---
+
+## ສະຫຼຸບ: ແຜນທີ່ທັງໝົດ
+
+```
+ຊັ້ນ 0: RESOURCES
+├── Corpora (ຂ່າວ, ວັນນະກຳ, ສົນທະນາ, ລັດຖະບານ)
+├── Dictionary & Word Lists
+└── POS / NER / Treebank annotations
+
+        ↓
+
+ຊັ້ນ 1: NLP TOOLCHAIN
+├── Tokenizer / Subword (BPE/SentencePiece)
+├── Sentence Splitter
+├── POS Tagger
+├── Dependency Parser
+├── NER Model
+├── Spell Checker
+└── MT Baseline (ລາວ ↔ ອັງກິດ)
+
+        ↓
+
+ຊັ້ນ 2: SLM
+├── Word Embeddings (word2vec, fastText)
+├── Fine-tuned mBERT / XLM-R
+└── Task-Specific Models (classify, sentiment, QA)
+
+        ↓
+
+ຊັ້ນ 3: LLM
+├── Fine-tune (LLaMA / Mistral / Qwen + Lao data)
+├── Continual Pre-training
+├── Instruction Tuning (Lao SFT)
+├── Alignment (RLHF / DPO)
+└── Benchmarks (MT, NER, QA, Dialogue, ASR)
+
+        ↓
+
+ຊັ້ນ 4: APPLICATION & ECOSYSTEM
+├── ການແປ, Chatbot, Search, Education, Voice
+├── HuggingFace / GitHub open-source
+└── ຊຸມຊົນ + ການຄົ້ນຄວ້າ
+```
+
+<Callout type="info">
+  ການສ້າງ LLM ພາສາລາວ ບໍ່ແມ່ນຄວາມຝັນທີ່ໄກເກີນໄປ — ແຕ່ຕ້ອງການ **ການຮ່ວມມື** ລະຫວ່າງ ນັກຄົ້ນຄວ້າ, ນັກພັດທະນາ, ສະຖາບັນການສຶກສາ, ແລະ ພາກລັດ. ທຸກການປະກອບສ່ວນ — ບໍ່ວ່າຈະເປັນ dataset, model, ຫຼື tool — ລ້ວນມີຄ່າ.
+</Callout>
+
+---
+
+*ຂຽນໂດຍ Sulixay · ອ້າງອີງ: ບົດຄົ້ນຄວ້າ SEA-NLP, HuggingFace Lao resources, ACL Anthology*
