@@ -8,7 +8,7 @@ export const SITE: Site = {
   author: 'sulixay',
   locale: 'lo',
   featuredPostCount: 2,
-  postsPerPage: 6,
+  postsPerPage: 20,
 }
 
 // Google Analytics

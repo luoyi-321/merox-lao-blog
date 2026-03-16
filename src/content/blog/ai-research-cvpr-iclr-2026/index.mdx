@@ -1,0 +1,157 @@
+---
+title: "ສະຫຼຸບງານວິຈັຍ AI ໜ້າສົນໃຈ: CVPR 2026 & ICLR 2026"
+description: "ສະຫຼຸບ 2 paper ໜ້າສົນໃຈຈາກ ICLR 2026 ແລະ CVPR 2026 ກ່ຽວກັບ Multimodal LLMs — ຈາກການຫຼຸດ Hallucination ດ້ວຍ DMAS ຮອດການອ່ານ-ສ້າງ Floor Plan ດ້ວຍ HouseMind"
+date: 2026-03-16
+tags: ["CVPR", "ICLR", "MultimodalAI", "LLM", "VisionLanguage", "AI", "ResearchPaper"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+ໃນຊ່ວງນີ້ມີງານວິຈັຍຫຼາຍຊິ້ນທີ່ໜ້າສົນໃຈ ໂດຍສະເພາະໃນດ້ານ **Multimodal Large Language Models (MLLMs)** ທີ່ສາມາດເຂົ້າໃຈທັງຂໍ້ຄວາມ ແລະ ຮູບພາບ.
+
+ບົດຄວາມນີ້ຈະສະຫຼຸບ **2 paper** ທີ່ໜ້າສົນໃຈຈາກ:
+
+- **ICLR 2026** — DMAS: ຫຼຸດ Hallucination ໃນ Vision-Language Models
+- **CVPR 2026** — HouseMind: AI ທີ່ເຂົ້າໃຈ ແລະ ສ້າງແຜນຜັງບ້ານ
+
+---
+
+## 👁️ ICLR 2026 — DMAS: ຫຼຸດ Hallucination ໃນ Vision-Language Models
+
+**Paper:** *Dynamic Multimodal Activation Steering for Hallucination Mitigation in Large Vision-Language Models*
+
+**Large Vision-Language Models (LVLMs)** ເຊັ່ນ GPT-4V ຫຼື Gemini Vision ມັກຈະເກີດບັນຫາ **Hallucination** — ຄື AI ສ້າງຄຳອະທິບາຍທີ່ **ບໍ່ກົງກັບຮູບພາບ** ຕົວຈິງ.
+
+### ວິທີແກ້ໄຂ: DMAS
+
+Paper ນີ້ສະເໜີ **Dynamic Multimodal Activation Steering (DMAS)** ເພື່ອຫຼຸດ hallucination ໂດຍ **ບໍ່ຕ້ອງ retrain ໂມເດວ**.
+
+### ຈຸດຄົ້ນພົບສຳຄັນ
+
+ນັກວິຈັຍພົບວ່າ:
+
+1. **Truthfulness** (ຄວາມຖືກຕ້ອງ)
+2. **Visual perception** (ການຮັບຮູ້ຮູບພາບ)
+
+ໃນ LVLM ເກີດຈາກ **attention heads ທີ່ແຕກຕ່າງກັນ** — ດັ່ງນັ້ນ ຖ້າ steering ໄດ້ຖືກ heads ກໍ່ສາມາດຫຼຸດ hallucination ໄດ້ໂດຍກົງ.
+
+### ກົດການຂອງ DMAS
+
+DMAS ເຮັດວຽກ 3 ຂັ້ນຕອນ:
+
+| ຂັ້ນຕອນ | ການເຮັດວຽກ |
+|---|---|
+| **1. ສ້າງ Steering Vector DB** | ສ້າງຖານຂໍ້ມູນ truthfulness steering vectors |
+| **2. ເລືອກ Vector ຕາມ Context** | ເລືອກ vector ທີ່ເໝາະກັບ semantic similarity ຂອງ input |
+| **3. ປັບ Activation** | ເລືອກ Top-K attention heads ແລ້ວປັບ activation ໃນ inference time |
+
+### ຂໍ້ດີຂອງ DMAS
+
+- ✅ **ບໍ່ຕ້ອງ retrain model** — plug-and-play
+- ✅ **ຮັນໄດ້ໄວ** — ໃຊ້ໃນ production ໄດ້ທັນທີ
+- ✅ **Deploy ໄດ້ງ່າຍ** — ຕິດຕັ້ງໃສ່ LLM ທີ່ມີຢູ່ແລ້ວໄດ້ເລີຍ
+
+<Callout type="tip">
+DMAS ຊ່ວຍໃຫ້ Vision-Language Models **ເຊື່ອຖືໄດ້ຫຼາຍຂຶ້ນ** ໂດຍບໍ່ຕ້ອງ fine-tune ໃໝ່ — ເໝາະຫຼາຍສຳລັບ production deployment.
+</Callout>
+
+---
+
+## 🏠 CVPR 2026 — HouseMind: AI ທີ່ເຂົ້າໃຈ ແລະ ສ້າງແຜນຜັງບ້ານ
+
+**Paper:** *Tokenization Allows Multimodal Large Language Models to Understand, Generate and Edit Architectural Floor Plans*
+
+Paper ນີ້ propose ໂມເດວ **HouseMind** — Multimodal LLM ທີ່ສາມາດ:
+
+- ✅ **ເຂົ້າໃຈ** floor plan (understanding)
+- ✅ **ສ້າງ** floor plan (generation)
+- ✅ **ແກ້ໄຂ** floor plan (editing)
+
+ໂດຍໃຊ້ການແປງໂຄງສ້າງທາງພື້ນທີ່ໃຫ້ເປັນ **token** ເພື່ອໃຫ້ LLM reasoning ໄດ້.
+
+### ແນວຄິດຫຼັກ
+
+ການອອກແບບ architectural floor plan ຕ້ອງອາໄສການ reasoning ພ້ອມກັນຫຼາຍຢ່າງ:
+
+```
+Floor Plan Reasoning
+├── Geometry        (ຮູບທໍລະນີ)
+├── Semantic        (ຄວາມໝາຍຂອງຫ້ອງ)
+└── Spatial Hierarchy (ຊັ້ນໂຄງສ້າງ)
+```
+
+AI ສ່ວນໃຫຍ່ຍັງຈັດການສິ່ງເຫຼົ່ານີ້ **ໄດ້ບໍ່ດີ** — HouseMind ຈຶ່ງສ້າງ representation ໃໝ່ທີ່ເອີ້ນວ່າ **spatial tokens**.
+
+### ຈຸດນວັດຕະກຳຫຼັກ 3 ຢ່າງ
+
+#### 1️⃣ Room Instance Token
+
+ສ້າງ **room-instance tokens** ເພື່ອແທນ:
+- ຫ້ອງ (rooms)
+- ກຳແພງ (walls)
+- ຮູບຮ່າງ layout
+
+ໃຫ້ກາຍເປັນ token ທີ່ LLM ສາມາດ **ປະມວນຜົນໄດ້** ຄືກັບ text token.
+
+#### 2️⃣ ຮວມ 3 Task ໃນໂມເດວດຽວ
+
+| Task | ຄຳອະທິບາຍ |
+|---|---|
+| **Understanding** | ອ່ານ floor plan ແລ້ວຕອບຄຳຖາມ |
+| **Generation** | ສ້າງ floor plan ຈາກ text description |
+| **Editing** | ແກ້ໄຂ floor plan ຕາມຄຳສັ່ງ |
+
+ທຸກ task ຖືກແປງເປັນ **sequence modeling problem** — LLM ດຽວ handle ທຸກຢ່າງ.
+
+#### 3️⃣ ໂມເດວຂະໜາດກະທັດຮັດ
+
+HouseMind ຖືກອອກແບບໃຫ້:
+- **Geometric validity ສູງ** — layout ທີ່ gen ອອກມາ valid
+- **ຄວບຄຸມ layout ໄດ້ດີ** — ສາມາດ specify constraints ໄດ້
+- **Deploy ໄດ້ໃນ local machine** — ບໍ່ຕ້ອງ cloud
+
+### ການນຳໄປໃຊ້ຕົວຈິງ
+
+HouseMind ສາມາດນຳໄປໃຊ້ໃນ:
+- 🏠 **AI ຊ່ວຍອອກແບບບ້ານ**
+- 🛋️ **Interior design tools**
+- 🏗️ **Smart architecture systems**
+
+<Callout type="info">
+ນີ້ເປັນການນຳ **Multimodal AI** ເຂົ້າສູ່ວົງການ **architectural design** ໂດຍກົງ — ໂດຍໃຊ້ tokenization ເປັນ bridge ລະຫວ່າງ spatial structure ແລະ LLM reasoning.
+</Callout>
+
+---
+
+## ຄວາມຄິດເຫັນ
+
+2 paper ນີ້ສະແດງໃຫ້ເຫັນ 2 ທິດທາງທີ່ຕ່າງກັນຂອງ Multimodal AI:
+
+| | DMAS (ICLR) | HouseMind (CVPR) |
+|---|---|---|
+| **ເປົ້າໝາຍ** | ຫຼຸດ hallucination | ເຂົ້າໃຈ spatial structure |
+| **ວິທີ** | Activation steering | Spatial tokenization |
+| **Training** | ບໍ່ຕ້ອງ retrain | ຕ້ອງ train ໃໝ່ |
+| **ການນຳໃຊ້** | Production-ready | Architecture design |
+
+ໃນອະນາຄົດ AI ອາດຈະສາມາດ:
+- 🏙️ ວາງແຜນເມືອງ
+- 🏠 ອອກແບບບ້ານ
+- 👁️ ວິເຄາະຮູບພາບແບບມະນຸດ
+
+ໄດ້ດີຂຶ້ນຫຼາຍ — ແລະ 2 paper ນີ້ຄືຂັ້ນຕອນໃນທິດທາງນັ້ນ.
+
+---
+
+## 📚 Paper References
+
+- **DMAS (ICLR 2026):** [Dynamic Multimodal Activation Steering for Hallucination Mitigation](https://openreview.net/pdf?id=YtWZdwEG5K)
+- **HouseMind (CVPR 2026):** [Tokenization Allows MLLMs to Understand, Generate and Edit Architectural Floor Plans](https://arxiv.org/html/2603.11640v1)
