@@ -1,5 +1,6 @@
 ---
 import Breadcrumbs from '@/components/Breadcrumbs.astro'
+import ShareButtons from '@/components/ShareButtons'
 import Disqus from '@/components/Disqus.astro'
 import Link from '@/components/Link.astro'
 import PostHead from '@/components/PostHead.astro'
@@ -270,6 +271,10 @@ try {
     <article class="prose col-start-2 max-w-none">
       <Content />
     </article>
+
+    <div class="col-start-2 border-t pt-6">
+      <ShareButtons title={post.data.title} client:load />
+    </div>
 
     {
       (hasChildPosts || isCurrentSubpost) && (
