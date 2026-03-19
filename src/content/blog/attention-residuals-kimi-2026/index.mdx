@@ -1,0 +1,220 @@
+---
+title: "Attention Residuals: ວິທະຍາສາດ AI ທີ່ຫາກໍ Shake ໂລກ!"
+description: "ຈາກ RNN ຮອດ Transformer ຮອດ AttnRes — ອ່ານຈົນເຂົ້າໃຈວ່າ Moonshot AI ສ້າງ architecture ທີ່ປະຫຍັດ GPU 20% ຍ້ອນຫຍັງ ແລະ ແນວໃດ"
+date: 2026-03-19
+tags: ["Transformer", "Attention", "LLM", "Architecture", "Kimi", "MoonshotAI", "ResearchPaper", "AI"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+ລອງຈິນຕະນາການວ່າເຈົ້າກຳລັງອ່ານປຶ້ມ. ທຸກຄັ້ງທີ່ອ່ານປະໂຫຍກໃໝ່, ສະໝອງເຈົ້າບໍ່ໄດ້ **ລືມ** ທຸກຢ່າງທີ່ຜ່ານມາ — ມັນ *ເລືອກ* ໃຊ້ຂໍ້ມູນທີ່ກ່ຽວຂ້ອງ. ນີ້ຄືຈຸດໝາຍຂອງ AI ທີ່ຄົນສ້າງຄິດໄວ້. ແຕ່ Neural Network ໃນຄອມ... ມັນເຮັດແບບນັ້ນໄດ້ຍາກຫຼາຍ. ຈົນກວ່າຈະມີ **Transformer** ເກີດຂຶ້ນ — ແລ້ວ Attention Residuals ເກີດຂຶ້ນ.
+
+---
+
+## ຍຸກ 1: ກ່ອນ Transformer — ຍຸກ RNN ທົນທຸກ
+
+**RNN (Recurrent Neural Network)** ຄືໂຄງສ້າງ AI ທີ່ໃຊ້ກ່ອນປີ 2017. ການເຮັດວຽກຂອງ RNN ຄ້າຍຄືຄົນທີ່ຕ້ອງຈື່ sequence ທີ່ຍາວຫຼາຍ:
+
+> **RNN = ອ່ານ Word 1 → ຈື່ໄວ້ → ອ່ານ Word 2 → ຈື່ Word 1+2 → ອ່ານ Word 3 → ...**
+
+**ບັນຫາຫຼັກມີຢູ່ 3 ຢ່າງ:**
+
+| ບັນຫາ | ຄຳອະທິບາຍ |
+|---|---|
+| **Vanishing Gradient** | ຮຽນໜ້າ ລືມຫລັງ |
+| **Sequential** | Sequential computation ມີ data dependency ສູງ ເຮັດໃຫ້ GPU ເຮັດ parallel ໄດ້ຍາກ |
+| **Long-range dependency** | ຖ້າ word ທີ 1 ສຳຄັນກັບ word ທີ 500 → RNN ຫຼົງ! |
+
+---
+
+## ຍຸກ 2: ປີ 2017 — "Attention is All You Need"
+
+ທີມ Google Brain ຕີແຜ່ paper ປ່ຽນໂລກ. ແນວຄວາມຄິດຫຼັກແມ່ນ:
+
+> **"ແທນທີ່ຈະອ່ານ sequence ທີລະໂຕ, ໃຫ້ model ເບິ່ງທຸກ word ພ້ອມກັນ ແລ້ວ *ເລືອກ* ສິ່ງທີ່ກ່ຽວຂ້ອງ (ຍັດໃສ່ພ້ອມກັນ ອ້າປາກໃຫຍ່ໆ)"**
+
+**Self-Attention ເຮັດຫຍັງ?**
+
+```
+"ໝາ ກິນ ອາຫານ ຢູ່ ໃນ ສວນ ຂອງ ມັນ"
+  ↑                            ↑
+ ໝາ ─────── attention ─────► ມັນ  (ຮູ້ວ່າ "ມັນ" = ໝາ)
+```
+
+ທຸກ word "ຖາມ" ໄປຫາ word ອື່ນ: **"ຂ້ອຍຄວນສົນໃຈເຈົ້າຫຼາຍປານໃດ?"** ຈາກນັ້ນ score (0–1) ຖືກໃຊ້ເປັນ weighted sum.
+
+**ຜົນທີ່ໄດ້:**
+- ✅ ກະຄິດໄດ້ພ້ອມກັນ (parallel) → GPU ໃຊ້ໄດ້ເຕັມທີ!
+- ✅ Long-range dependency ແກ້ໄດ້ ຈື່ດົນໆ
+- ✅ Train model ໃຫຍ່ຂຶ້ນໄດ້ (ຂໍ້ເສຍຫລາຍກວ່າ - Scaling law) 
+
+---
+
+## ຍຸກ 3: Residual Connection ຄືຫຍັງ?
+
+ໃນ Transformer ທຸກ layer ມີ **Residual Connection** (ຫຼື Skip Connection) — ແນວຄວາມຄິດຈາກ ResNet (2015) ທີ່ຖືກໃຊ້ໃນ LLM ທຸກໂຕ.
+
+```
+Input x
+    │
+    ├──── Layer f(x) ────►  f(x)
+    │                          │
+    └────────────────────► x + f(x)  ← ນີ້ແລະ Residual!
+```
+
+**ເປັນຫຍັງຕ້ອງໃຊ້ ຫມໍນິ້?**
+
+Residual connections ເຮັດໜ້າທີ່ເປັນ "gradient highway" — ໃຫ້ gradient ໄຫຼກັບໄປ train layers ເລິກໆ ໄດ້ໂດຍ bypass nonlinear transformations. ຄິດວ່າ Residual = scratch pad ທີ່ທຸກ layer ຂຽນຕໍ່ໆກັນ, ແລ້ວ layer ໃໝ່ໄດ້ຮັບ *ທຸກຢ່າງ* ທີ່ layer ກ່ອນໃສ່ໄວ້ **ລວມກັນເທົ່າໆກັນ**.
+
+---
+
+##  ອະທິບາຍເພີ່ມ : ເປັນຫຍັງ LLM ຕ້ອງການ GPU ຫຼາຍຂຶ້ນ?
+
+| ສິ່ງທີ່ Scale ຂຶ້ນ | ຜົນ |
+|---|---|
+| Parameters ຫຼາຍຂຶ້ນ | ຕ້ອງການ VRAM GPU ຫຼາຍ |
+| Layers ເລິກຂຶ້ນ | Compute per token ຫຼາຍຂຶ້ນ|
+| Context window ຍາວຂຶ້ນ | Attention O(n²) explodes! |
+| Batch size ໃຫຍ່ | Memory bandwidth ຕ້ອງ fast |
+
+GPT-4 ໃຊ້ປະມານ ~1,700+ A100 GPUs ໃນການ train(ຂໍ້ມູນປ້າຂ້າງບ້ານ). ແຕ່ **ບັນຫາທີ່ເລິກກວ່ານັ້ນ** ຢູ່ໃນ architecture ເອງ — ໂດຍສະເພາະ Residual Connections!
+
+---
+
+##  ບັນຫາ "PreNorm Dilution" — ຈຸດອ່ອນທີ່ຫຼົງລືມ
+
+ດ້ວຍ Standard Residual, hidden-state magnitude ຂະຫຍາຍໃຫຍ່ຂຶ້ນ O(L) ຕາມ depth. Accumulated state vector ໃຫຍ່ຂຶ້ນເລື້ອຍໆ, ຂໍ້ມູນຈາກ early layers ຖືກ **bury ຢູ່ເລິກ** ແລ້ວ deeper layers ຕ້ອງ produce activation ທີ່ໃຫຍ່ຂຶ້ນໆ ເພື່ອ override ສິ່ງສ່ວນຫຼາຍທີ່ໃສ່ໄວ້ກ່ອນ.
+
+<Callout type="warning">
+**ຈິນຕະນາເບິ່ງ:** Transformer ເລິກ 96 Layers = ອາຄານ 96 ຊັ້ນ. Standard Residual = ພະນັກງານໃໝ່ທຸກຄົນ **ຕ້ອງຮັບ pile ເອກະສານທຸກຢ່າງ** ຈາກທຸກຊັ້ນ ລວມກັນເທົ່າໆກັນ. ຊັ້ນ 96 ໄດ້ຮັບ: ຊັ້ນ1 + ຊັ້ນ2 + ... + ຊັ້ນ95 **ໂດຍບໍ່ໄດ້ເລືອກ(ຖືກເອກະສານທັບຕາຍ)** — pile ໃຫຍ່ຂຶ້ນ, ຂໍ້ມູນ early layers ຈົ່ມໃນ pile ທີ່ໃຫຍ່ຫຼວງມະຫາສານ!
+</Callout>
+
+**ຜົນ:**
+- Gradient flow ບໍ່ stable
+- ຂໍ້ມູນ early layers ສູນເສຍໄປ(ຢູ່ກອງເອກະສານລຸ່ມສຸດ ຫາບໍເຫັນ)
+- ຕ້ອງໃຊ້ compute ຫຼາຍຂຶ້ນ ເພື່ອ compensate
+
+---
+
+##  Paper "Attention Residuals" — ການໂຄຈອນກັບມາ!
+
+**ຈາກທີມ Kimi (Moonshot AI) | ປີ 2026**
+
+ທີມວິໄຈຈາກ Moonshot AI propose **Attention Residuals (AttnRes)** ເປັນ drop-in replacement ສຳລັບ standard residual accumulation — ແທນທີ່ຈະ force ທຸກ layer ໃຫ້ consume residual stream ທີ່ mix ເທົ່າໆກັນ, AttnRes ໃຫ້ **ແຕ່ລະ layer ເລືອກ aggregate earlier representations** ດ້ວຍ softmax attention over depth.
+
+### Idea ຫຼັກ
+
+```
+ແບບແເກົ່າ (Standard Residual):
+h_layer6 = layer1 + layer2 + layer3 + layer4 + layer5
+                 ↑ ທຸກຢ່າງ weight = 1
+
+ແບບໃໝ່ (AttnRes):
+h_layer6 = 0.05×layer1 + 0.08×layer2 + 0.45×layer3 + 0.30×layer4 + 0.12×layer5
+                 ↑ model ຮຽນຮູ້ weights ເອງ — ສົນໃຈ layer ທີ່ relevant ທີ່ສຸດ!
+```
+
+ແທນທີ່ຈະ mix ທຸກຢ່າງ equally, model ຮຽນ **attention weights over earlier layers** — ຄ້າຍຄືກັບ Transformer ທີ່ apply attention over tokens, ແຕ່ AttnRes apply over **depth** ຂອງ network ແທນ.
+
+<Callout type="tip">
+ຄິດວ່ານີ້ຄື "Librarian": ແທນທີ່ layer ໃໝ່ຈະໄດ້ຮັບ pile ໃຫຍ່ຂອງ notes ທຸກຢ່າງ unorganized, librarian ຈະ **query archives ຢ່າງ active** ດຶງ representation ທີ່ crucial ຂຶ້ນມາໂດຍກົງ.
+</Callout>
+
+---
+
+### ສອງ Version: Full AttnRes ແລະ Block AttnRes
+
+**ບັນຫາ:** Full AttnRes ໃຊ້ memory O(L×d) — ສຳລັບ model 48B parameters ກາຍເປັນ nightmare!
+
+**Block AttnRes** ແກ້ໄຂໂດຍ partition layers ເປັນ N blocks. ພາຍໃນ block ດຽວ, outputs ຖືກ accumulate ເຂົ້າໃນ single block representation, ຈາກນັ້ນ attention ໃຊ້ສຳລັບ **block-level representations ເທົ່ານັ້ນ** — reduce memory ຈາກ O(Ld) ລົງມາ O(Nd):
+
+```
+ຕົວຢ່າງ Block AttnRes (8 blocks, 96 layers):
+
+Block1 = [L1–L12]   → 1 summary
+Block2 = [L13–L24]  → 1 summary
+Block3 = [L25–L36]  → 1 summary
+...
+Block8 = [L85–L96]  → 1 summary
+
+Layer ໃໝ່ attend ຕໍ່ 8 summaries ແທນ 95 layers!
+```
+
+---
+
+##  ຜົນດທີ່ໄດ້ !
+
+ທີມ integrate AttnRes ເຂົ້າໃນ **Kimi Linear** — MoE architecture 48B parameters ທັງໝົດ, 3B activated — pretrain ດ້ວຍ 1.4 trillion tokens.
+
+| Benchmark | Baseline | AttnRes | ດີຂຶ້ນ |
+|---|---|---|---|
+| MMLU | 73.5 | 74.6 | +1.1 |
+| **GPQA-Diamond** | 36.9 | **44.4** | **+7.5** 🔥 |
+| MATH | 53.5 | 57.1 | +3.6 |
+| HumanEval (Code) | 59.1 | 62.2 | +3.1 |
+| BBH | 76.3 | 78.0 | +1.7 |
+
+<Callout type="info">
+**ທີ່ BIG ທີ່ສຸດ:** ຈາກ Scaling law experiments — Block AttnRes ໄດ້ performance ດຽວກັນກັບ baseline ທີ່ train ດ້ວຍ compute ຫຼາຍກວ່າ **1.25x** — ໝາຍຄວາມວ່າ ປະຫຍັດ GPU **20%** ດ້ວຍ architecture ໃໝ່ນີ້ຢ່າງດຽວ!
+</Callout>
+
+---
+
+## ກັບຄືນຫາ RNN — Circular History ຂອງ AI
+
+ນີ້ຄືຈຸດທີ່ Poetic ຫຼາຍ:
+
+```
+1980s–2010s: RNN / LSTM
+→ Sequential, ຍາກ train, long-range fails
+
+2017: Transformer ແທນ Sequence Recurrence ດ້ວຍ Attention
+→ "Attention over TIME (tokens)"
+
+2026: AttnRes ແທນ Depth Recurrence ດ້ວຍ Attention
+→ "Attention over DEPTH (layers)"
+```
+
+ຄ້າຍຄືກັບ Transformer ທີ່ replace recurrence ດ້ວຍ attention over tokens, AttnRes suggest ວ່າ shift ຄ້າຍຄືກັນ **ກໍ່ສາມາດເກີດຂຶ້ນດ້ວຍ across network depth**.
+
+---
+
+##  Code ຈາກ Official Repo
+
+```python
+# Block AttnRes — official repo (MoonshotAI/Attention-Residuals)
+def block_attn_res(blocks, partial_block, proj, norm):
+    V = torch.stack(blocks + [partial_block])  # stack block summaries
+    K = norm(V)
+    # single pseudo-query per layer (ຮຽນ)
+    logits = torch.einsum('d, n b t d -> n b t', proj.weight.squeeze(), K)
+    # softmax over depth blocks
+    h = torch.einsum('n b t, n b t d -> b t d', logits.softmax(0), V)
+    return h
+```
+
+---
+
+## ສຸດທ້າຍ: ຄວາມໝາຍໂດຍລວມ
+
+| ຄຳຖາມ | ຄຳຕອບ |
+|---|---|
+| AttnRes ແກ້ຫຍັງ? | PreNorm dilution + ຂໍ້ມູນ early layers ສູນຫາຍ |
+| ໃຊ້ GPU ຫຼາຍຂຶ້ນ? | ໜ້ອຍກວ່າ 4% overhead ເທົ່ານັ້ນ! |
+| ກ່ຽວກັບ RNN ຈັ່ງໃດ? | Mirror: replace depth-recurrence ດ້ວຍ attention ຄືກັນ |
+| ນຳໃຊ້ໄດ້? | ໃຊ້ໃນ Kimi 48B MoE — validated! |
+| Open source? | ✅ GitHub: MoonshotAI/Attention-Residuals |
+
+-------
+Attention Residuals ສະແດງໃຫ້ເຫັນວ່າ **architectural change ນ້ອຍໆ ສາມາດ unlock improvements ທີ່ meaningful**. ດ້ວຍການ turn residual connections ໃຫ້ເປັນ learnable attention mechanism, model ໄດ້ better control over information flow — ແລ້ວ GitHub stars **1,810+ ⭐ ພາຍໃນ 4 ມື້** ຄືຫຼັກຖານວ່າ ML community ຍອມຮັບສິ່ງນີ້.
+
+
+
