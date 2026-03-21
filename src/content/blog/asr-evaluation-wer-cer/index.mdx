@@ -1,0 +1,260 @@
+---
+title: "ການປະເມີນລະບົບຮັບຮູ້ສຽງ (ASR): WER, CER, RTFx ແລະ Normalisation"
+description: "ເຂົ້າໃຈ Metrics ທີ່ຈຳເປັນໃນ ASR — Word Error Rate, Character Error Rate, Real-Time Factor ແລະ ວິທີ Normalize ກ່ອນ Evaluate ໃຫ້ຍຸຕິທຳ"
+date: 2026-03-21
+tags: ["ASR", "SpeechRecognition", "WER", "CER", "Whisper", "LaoNLP", "HuggingFace", "Python"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+**Automatic Speech Recognition (ASR)** ຄືລະບົບ AI ທີ່ຟັງສຽງເວົ້າແລ້ວປ່ຽນເປັນຂໍ້ຄວາມໂດຍອັດຕະໂນມັດ — ຕົວຢ່າງທີ່ຫຼາຍຄົນຮູ້ຈັກ ເຊັ່ນ Siri, Google Voice, ຫຼື Whisper. ໃນການພັດທະນາ ASR ສຳລັບ **ພາສາລາວ**, ພວກເຮົາຕ້ອງຮູ້ວ່າໂມເດວດີຂຶ້ນຫຼືຮ້າຍລົງ — ນີ້ຄືຈຸດປະສົງຂອງ **Evaluation Metrics**.
+
+> ອ້າງອີງ: [HuggingFace Audio Course — Chapter 5: Evaluation](https://huggingface.co/learn/audio-course/chapter5/evaluation)
+
+---
+
+## 01 — ຂໍ້ຜິດພາດ 3 ປະເພດຫຼັກ (S · I · D)
+
+ໃນ ASR, ຂໍ້ຜິດພາດທີ່ໂມເດວເຮັດແບ່ງອອກເປັນ 3 ປະເພດ:
+
+| ປະເພດ | ຊື່ | ຄຳອະທິບາຍ |
+|---|---|---|
+| **S** | Substitution | ຟັງໄດ້ຄຳໜຶ່ງ ແຕ່ຂຽນຜິດ — ເຊັ່ນ ໄດ້ຍິນ "ນ້ຳ" ແຕ່ຂຽນ "ນາ" |
+| **I** | Insertion | ຂຽນຄຳທີ່ **ບໍ່ມີ** ໃນຕົ້ນສະບັບ — ຄືກັບ hallucination ລະດັບ ASR |
+| **D** | Deletion | **ຂາດຄຳ** ທີ່ຄວນຢູ່ໃນ output — ຟັງບໍ່ຍິນ ຫຼື skip ໄປ |
+
+<Callout type="info">
+Metrics ທັງໝົດ (WER ແລະ CER) ໃຊ້ S, I, D ຄືກັນໝົດ — ສິ່ງທີ່ຕ່າງກັນຄືລະດັບທີ່ວັດ: **ລະດັບຄຳ (Word)** ຫຼື **ລະດັບຕົວອັກສອນ (Character)**.
+</Callout>
+
+---
+
+## 02 — Word Error Rate (WER)
+
+**WER** ແມ່ນ Metric ທີ່ໃຊ້ຫຼາຍທີ່ສຸດໃນໂລກ ASR. ມັນວັດຂໍ້ຜິດພາດ **ລະດັບຄຳ (Word-level)** — ຖ້າຄຳໃດຜິດ ຄຳນັ້ນຖືວ່າ "ຜິດທັງໝົດ" ຈະຜິດໂຕດຽວຫຼືສາມໂຕກໍ່ error ເທົ່າກັນ.
+
+### ຕົວຢ່າງ Step-by-Step
+
+```
+Reference  : "the cat sat on the mat"
+Prediction : "the cat sit on the"
+```
+
+| Token | the | cat | sat | on | the | mat |
+|---|---|---|---|---|---|---|
+| Reference | the | cat | sat | on | the | mat |
+| Prediction | the | cat | **sit** | on | the | — |
+| Label | ✅ | ✅ | S | ✅ | ✅ | D |
+
+ໄດ້ S=1 (sit→sat), I=0, D=1 (mat ຂາດ), N=6
+
+```
+WER = (S + I + D) / N = (1 + 0 + 1) / 6 = 0.333 = 33.3%
+```
+
+**ຈື່ໄວ້:**
+- ↓ ຕ່ຳ = ດີ (0% = ສົມບູນແບບ)
+- ບໍ່ມີ upper limit — ສາມາດ > 100% ໄດ້!
+
+<Callout type="warning">
+ຖ້າ prediction ຍາວກວ່າ reference ຫຼາຍ (Insertions ຫຼາຍ), WER ສາມາດເກີນ 100% ໄດ້ — ເຊັ່ນ predict 10 ຄຳ ແຕ່ reference ມີ 2 ຄຳ → WER = 500%! ຖ້າເຫັນແບບນີ້ໝາຍວ່າໂມເດວ "hallucinate" ຢ່າງຮ້າຍ.
+</Callout>
+
+---
+
+## 03 — Character Error Rate (CER)
+
+**CER** ວັດຄືກັນກັບ WER ແຕ່ **ລະດັບໂຕອັກສອນ**. ນີ້ "ໃຈດີ" ກວ່າ WER ຍ້ອນວ່າ ຖ້າຄຳໜຶ່ງມີ 5 ໂຕ ແຕ່ຜິດ 1 ໂຕ ກໍ່ຖືວ່ານາລາງ 4/5 ໂຕ.
+
+ຈາກຕົວຢ່າງດຽວກັນ: "sit" vs "sat" — "s" ຖືກ, "**i**→**a**" ຜິດ (S=1), "t" ຖືກ. ລວມ reference 22 characters:
+
+```
+CER = (1 + 0 + 4) / 22 = 0.227 = 22.7%
+```
+
+CER ຕ່ຳກວ່າ WER ສະເໝີ ຍ້ອນ "partial credit" ລະດັບໂຕ.
+
+| ໃຊ້ WER ເມື່ອ | ໃຊ້ CER ເມື່ອ |
+|---|---|
+| ພາສາທີ່ແຍກ "ຄຳ" ດ້ວຍ space ຊັດ (ອັງກິດ, ລາວ) | ພາສາທີ່ບໍ່ມີ word boundary ຊັດ (ຈີນ, ຍີ່ປຸ່ນ) |
+| ຕ້ອງການ context understanding | Lao OCR ທີ່ metric ຕ້ອງ fine-grained |
+
+<Callout type="info">
+ສຳລັບ **ພາສາລາວ**, CER ສຳຄັນຫຼາຍ ຍ້ອນ Lao script ມີ ligature ແລະ diacritics ທີ່ ASR ອາດຜິດສ່ວນດຽວໄດ້ງ່າຍ — ຄວນ report ທັງ WER ແລະ CER ຄູ່ກັນ.
+</Callout>
+
+---
+
+## 04 — Inverse Real-Time Factor (RTFx)
+
+WER ວັດ *ຄວາມຖືກຕ້ອງ* ແຕ່ **RTFx** ວັດ *ຄວາມໄວ* ຂອງລະບົບ — ສຳຄັນຫຼາຍໃນ production.
+
+```
+RTFx = Audio Duration / Processing Time
+```
+
+ຕົວຢ່າງ: ໃຊ້ **10 ວິ** process audio ຍາວ **100 ວິ** → RTFx = 10. **ຍິ່ງສູງ ຍິ່ງດີ!**
+
+| RTFx | ຄວາມໝາຍ | ເໝາະກັບ |
+|---|---|---|
+| **> 1.0** | ໄວກວ່າ Real-Time ✅ | Live transcription, streaming |
+| **= 1.0** | ໄວພໍດີ Real-Time | ໃຊ້ໄດ້ use case ສ່ວນໃຫຍ່ |
+| **< 1.0** | ຊ້າກວ່າ Real-Time | Batch processing offline |
+
+<Callout type="info">
+ໂມເດວດຽວກັນ ຮັນ GPU vs CPU ໃຫ້ RTFx ຕ່າງກັນຫຼາຍ — ຄວນ report RTFx ພ້ອມ hardware spec ສະເໝີ.
+</Callout>
+
+---
+
+## 05 — Normalisation — ລຶບ Punctuation ກ່ອນ Evaluate
+
+ໂມເດວເຊັ່ນ Whisper ຈະ predict ຂໍ້ຄວາມທີ່ **Orthographic** — ມີ uppercase, ຈຸດໝາຍ, comma ຄົບ. ແຕ່ຖ້າ reference ບໍ່ຕ່ງກັນ WER ຈະ "ເວີ່ຍ" ຜິດ.
+
+```
+Wav2Vec2 (ບໍ່ Normalize): HE TELLS US THAT AT THIS FESTIVE SEASON...
+Whisper (Orthographic):   He tells us that at this festive season, with Christmas...
+```
+
+Whisper output ອ່ານງ່າຍກວ່າໃນ production ແຕ່ WER ສູງກວ່າ ຖ້າ reference ເປັນ uppercase.
+
+**ທາງອອກ:** train orthographic, evaluate normalized — lowercase + ລຶບ punctuation ທັງ reference ແລະ prediction *ກ່ອນ* ຄິດ WER.
+
+---
+
+## 06 — ລອງ Evaluate ດ້ວຍ Python
+
+### ຕິດຕັ້ງ
+
+```bash
+pip install --upgrade evaluate jiwer
+```
+
+### ຄິດ WER
+
+```python
+from evaluate import load
+
+wer_metric = load("wer")
+
+reference  = "the cat sat on the mat"
+prediction = "the cat sit on the"
+
+wer = wer_metric.compute(
+    references=[reference],
+    predictions=[prediction]
+)
+print(f"WER = {wer:.4f} ({wer*100:.1f}%)")
+# WER = 0.3333 (33.3%)
+```
+
+### ຄິດ CER
+
+```python
+from evaluate import load
+
+cer_metric = load("cer")
+
+cer = cer_metric.compute(
+    references=[reference],
+    predictions=[prediction]
+)
+print(f"CER = {cer:.4f} ({cer*100:.1f}%)")
+# CER = 0.2273 (22.7%)
+```
+
+### Normalize ແລ້ວ Evaluate
+
+```python
+from transformers.models.whisper.english_normalizer import BasicTextNormalizer
+
+normalizer = BasicTextNormalizer()
+
+pred_text = " He tells us that at this festive season, with Christmas..."
+ref_text  = "HE TELLS US THAT AT THIS FESTIVE SEASON WITH CHRISTMAS..."
+
+norm_pred = normalizer(pred_text)
+norm_ref  = normalizer(ref_text)
+
+wer_norm = wer_metric.compute(
+    references=[norm_ref],
+    predictions=[norm_pred]
+)
+print(f"Normalized WER = {wer_norm*100:.2f}%")
+# Normalized WER = 6.25%
+```
+
+<Callout type="tip">
+WER ລຸດຈາກ ~33% ລົງ **6.25%** ຫຼັງ normalize — ຍ້ອນ case ແລະ punctuation ທີ່ "ບໍ່ຈຳເປັນ" ຖືກກຳຈັດ.
+</Callout>
+
+---
+
+## 07 — Evaluate Whisper ກັບ Common Voice (ພາສາລາວ)
+
+```python
+from transformers import pipeline
+from datasets import load_dataset
+from evaluate import load
+from tqdm import tqdm
+from transformers.pipelines.pt_utils import KeyDataset
+import torch
+
+# 1. Load Whisper
+pipe = pipeline(
+    "automatic-speech-recognition",
+    model="openai/whisper-small",
+    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+    device="cuda:0" if torch.cuda.is_available() else "cpu",
+)
+
+# 2. Load Common Voice Lao test set
+cv_test = load_dataset(
+    "mozilla-foundation/common_voice_13_0",
+    "lo",  # "lo" = ລາວ, "dv" = Dhivehi
+    split="test"
+)
+
+# 3. Batch inference
+all_preds = []
+for pred in tqdm(pipe(KeyDataset(cv_test, "audio"),
+                      max_new_tokens=128,
+                      generate_kwargs={"task": "transcribe"},
+                      batch_size=32), total=len(cv_test)):
+    all_preds.append(pred["text"])
+
+# 4. คิด WER
+wer_metric = load("wer")
+wer_ortho  = 100 * wer_metric.compute(
+    references=cv_test["sentence"],
+    predictions=all_preds
+)
+print(f"WER (Orthographic): {wer_ortho:.2f}%")
+```
+
+<Callout type="warning">
+ຜົນ Dhivehi pre-trained (whisper-small): WER Orthographic = **167%** → ຫຼັງ normalize = **126%** — ໝາຍຄວາມວ່າ pre-trained model ຄຳ Dhivehi ເກືອບບໍ່ໄດ້ ຕ້ອງ **fine-tune** ກ່ອນ. ສຳລັບລາວ ຄາດໄດ້ຜົນຄ້າຍຄືກັນຖ້າໃຊ້ base Whisper.
+</Callout>
+
+---
+
+## ສະຫຼຸບ — ເລືອກ Metric ຕ້ອງໃດ?
+
+| Metric | ລະດັບ | ດີຂຶ້ນ | ເໝາະກັບ |
+|---|---|---|---|
+| **WER** | Word | ↓ ຕ່ຳ | ASR ທົ່ວໄປ, ຮັບຮູ້ context |
+| **CER** | Character | ↓ ຕ່ຳ | ຈີນ, ຍີ່ປຸ່ນ, Lao OCR/ASR |
+| **WAcc** | Word | ↑ ສູງ | WER ໃນຮູບ accuracy (1 - WER) |
+| **RTFx** | ເວລາ | ↑ ສູງ | Production / Latency |
+
+<Callout type="tip">
+**ຄຳແນະນຳສຸດທ້າຍ:** Train ໂມເດວດ້ວຍ *orthographic text* (ຄົບ punctuation/case), ແຕ່ evaluate ດ້ວຍ *normalized text* ເພື່ອໃຫ້ WER ຍຸຕິທຳ ແລະ model ໃຊ້ໄດ້ໃນ production ທັງສອງ. ສຳລັບ **ພາສາລາວ** ໃນໂຄງການ Laligence ຕ້ອງ report ທັງ WER ແລະ CER ໃນ paper.
+</Callout>

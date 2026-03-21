@@ -1,0 +1,296 @@
+---
+title: "ການປະເມີນໂມເດວ Text-to-Speech (TTS): MOS, WER, UTMOS ແລະ Lao TTS"
+description: "ເຂົ້າໃຈວ່າ TTS evaluation ຍາກກວ່າ ASR ຍ້ອນຫຍັງ — ຈາກ MOS, Intelligibility WER, MCD ຮອດ UTMOS ແລະ ວິທີ evaluate Lao TTS ໂດຍສະເພາະ"
+date: 2026-03-21
+tags: ["TTS", "SpeechSynthesis", "MOS", "LaoNLP", "HuggingFace", "Python", "ASR", "Laligence"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+**Text-to-Speech (TTS)** ຄືລະບົບ AI ທີ່ຮັບ **ຂໍ້ຄວາມ (Text)** ແລ້ວສ້າງ **ສຽງເວົ້າ (Speech Audio)** ອອກມາ — ຕົວຢ່າງ: Google TTS, Amazon Polly, F5-TTS, SpeechT5, ຫຼື **ໂມເດວ Lao TTS ຂອງ Laligence** ທີ່ fine-tune ຈາກ 23,000+ audio samples.
+
+> ອ້າງອີງ: [HuggingFace Audio Course — Chapter 6: Evaluation](https://huggingface.co/learn/audio-course/chapter6/evaluation)
+
+---
+
+## 01 — ເປັນຫຍັງ Evaluate TTS ຍາກກວ່າ ASR?
+
+| ດ້ານ | ASR | TTS |
+|---|---|---|
+| **Output** | ຂໍ້ຄວາມ (Text) | ສຽງ (Audio waveform) |
+| **ວັດດ້ວຍ metric ງ່າຍ** | ✅ WER, CER | ❌ ຍາກກວ່າຫຼາຍ |
+| **Ground truth** | ຊັດເຈນ | ❌ ໜຶ່ງ text = ສຽງໄດ້ຫຼາຍແບບ |
+| **ຕ້ອງຄົນຟັງ** | ບໍ່ຈຳເປັນ | ✅ ມັກຈຳເປັນ |
+
+<Callout type="info">
+**ຫຼັກໃຈ:** ASR ມີ "ຄຳຕອບທີ່ຖືກ" ດຽວ (reference text). ແຕ່ TTS ບໍ່ມີ "ສຽງທີ່ຖືກ" ດຽວ — ຄຳດຽວກັນ ອ່ານໄດ້ໄວ, ຊ້າ, ດ້ວຍ intonation ຕ່າງໆ ທັງໝົດ "ຖືກ" ໄດ້.
+</Callout>
+
+---
+
+## 02 — ໂມເດວ TTS ຮຽນດ້ວຍ Loss Function ຫຍັງ?
+
+ໃນ training time, TTS models ໃຊ້ **MSE** ຫຼື **MAE** ລະຫວ່າງ predicted spectrogram ແລະ target spectrogram:
+
+```
+MSE Loss = mean( (predicted_spec - target_spec)² )
+MAE Loss = mean( |predicted_spec - target_spec| )
+```
+
+<Callout type="warning">
+**ບັນຫາ:** Training loss ຕ່ຳ ≠ ສຽງດີ. ສຽງທີ່ "average" ທາງ spectrogram ອາດຟັງດູ flat ຫຼື blurry ໄດ້.
+</Callout>
+
+---
+
+## 03 — ບັນຫາ One-to-Many Mapping
+
+ນີ້ຄືຈຸດທີ່ TTS evaluation ຍາກທີ່ສຸດ:
+
+```
+ຂໍ້ຄວາມ: "ສະບາຍດີ"
+              ↓
+ສຽງທີ່ຖືກຕ້ອງ:  🔊 ໄວ + ສຽງສູງ
+                  🔊 ຊ້າ + ສຽງຕ່ຳ
+                  🔊 ມີ emphasis ຕອນທຳອິດ
+                  🔊 ບໍ່ມີ emotion
+                  ... ທຸກອັນ "ຖືກ" ທັງໝົດ!
+```
+
+ຍ້ອນ one-to-many problem ນີ້, ພວກເຮົາ **ບໍ່ສາມາດ** ໃຊ້ metric ທີ່ "compare ກັບ reference ດຽວ" ໄດ້ (ຄືກັບ WER ໃນ ASR).
+
+---
+
+## 04 — Mean Opinion Score (MOS) — Metric ຫຼັກ
+
+**MOS** ຄື metric ທີ່ໃຊ້ **ຄົນຟັງ ແລະ ໃຫ້ຄະແນນ** ສຽງທີ່ TTS generate ອອກ.
+
+| ຄະແນນ | ຄຸນນະພາບ | ຄຳອະທິບາຍ |
+|---|---|---|
+| **5** | Excellent | ສຽງທຳມະຊາດຫຼາຍ, ໃຊ້ໄດ້ດີທຸກ use case |
+| **4** | Good | ດີ, ມີຂໍ້ຜິດເລັກໜ້ອຍ ບໍ່ລົບກວນ |
+| **3** | Fair | ໃຊ້ໄດ້ ແຕ່ຟັງດູ robotic ໃນບາງສ່ວນ |
+| **2** | Poor | ຍາກທີ່ຈະຟັງ, ຜິດຫຼາຍ |
+| **1** | Bad | ຟັງ/ເຂົ້າໃຈບໍ່ໄດ້ |
+
+### ວິທີເຮັດ MOS Listening Test
+
+```
+1. ເລືອກ text samples ຈາກ test set (ຕ່າງ domain/ຄວາມຍາວ)
+2. Generate ສຽງຈາກໂມເດວ
+3. ໃຫ້ evaluators ຟັງ (ຢ່າງໜ້ອຍ 10–20 ຄົນ)
+4. ແຕ່ລະຄົນໃຫ້ຄະແນນ 1–5
+5. ຄິດ average ທຸກ sample ທຸກຄົນ = MOS score
+```
+
+---
+
+## 05 — ຂໍ້ຈຳກັດຂອງ MOS
+
+| ຂໍ້ດ້ອຍ | ຂໍ້ດີ |
+|---|---|
+| ໃຊ້ເວລານານ ແລະ ລາຄາແພງ | ຕ່ຽງກັບ real user experience ຫຼາຍທີ່ສຸດ |
+| Subjective — ຄົນໃຫ້ຄະແນນຕ່າງກັນ | ໃຊ້ທົ່ວໄປໃນ paper → ປຽບທຽບ cross-paper ໄດ້ |
+| ບໍ່ scalable ທຸກ checkpoint | Human perception = gold standard ສຳລັບ audio |
+| ຄຳສັ່ງດຽວ ອາດ miss naturalness/expressiveness | — |
+
+---
+
+## 06 — Objective Metrics ອື່ນໆ ທີ່ຄວນຮູ້
+
+### 6.1 — WER ຈາກ ASR (Intelligibility)
+
+ໃຊ້ ASR model ຟັງ TTS output ແລ້ວ transcribe → ຄິດ WER. ຖ້າ WER ຕ່ຳ = ສຽງ TTS **ຊັດ ຄົນ/ໂມເດວຟັງໄດ້**.
+
+```python
+from transformers import pipeline
+from evaluate import load
+
+# Generate TTS audio
+tts_audio = tts_model("ສະບາຍດີ ຍິນດີຕ້ອນຮັບ")
+
+# ASR transcribe output
+asr = pipeline("automatic-speech-recognition", model="openai/whisper-small")
+transcription = asr(tts_audio)["text"]
+
+# ຄິດ WER
+wer_metric = load("wer")
+wer = wer_metric.compute(
+    references=["ສະບາຍດີ ຍິນດີຕ້ອນຮັບ"],
+    predictions=[transcription]
+)
+print(f"Intelligibility WER: {wer*100:.1f}%")
+```
+
+### 6.2 — MCD (Mel Cepstral Distortion)
+
+ວັດ **ຄວາມຕ່າງຂອງ Mel spectrogram** ລະຫວ່າງ generated audio ກັບ reference audio:
+
+```
+MCD = (10√2 / ln10) × mean( √( Σ (c_gen - c_ref)² ) )
+```
+
+ຕ່ຳ = ດີ — ແຕ່ miss naturalness ທາງ perception.
+
+### 6.3 — Pseudo-MOS ດ້ວຍ UTMOS / MOSNet
+
+ໂມເດວ ML ທີ່ predict MOS score ໂດຍ **ບໍ່ຕ້ອງຄົນຟັງ** — ໃຊ້ເປັນ proxy metric ໃນ training loop.
+
+```python
+from speechmos import utmos
+
+score = utmos.predict(audio_path="tts_output.wav", sr=16000)
+print(f"UTMOS (Pseudo-MOS): {score:.2f}")
+```
+
+<Callout type="tip">
+ໃຊ້ **UTMOS** ລະຫວ່າງ development (ໄວ, automatable) → ໃຊ້ **Human MOS** ໃນ final paper evaluation (gold standard).
+</Callout>
+
+### 6.4 — Speaker Similarity (ສຳລັບ Voice Cloning)
+
+ຖ້າ TTS ຕ້ອງ clone ສຽງຄົນ ຕ້ອງ evaluate ວ່າ generated voice ຄ້າຍ reference speaker ສໍ່າໃດ:
+
+```python
+from speechbrain.pretrained import SpeakerRecognition
+
+verifier = SpeakerRecognition.from_hparams(
+    source="speechbrain/spkrec-ecapa-voxceleb"
+)
+
+score, prediction = verifier.verify_files("reference.wav", "generated.wav")
+print(f"Speaker Similarity: {score:.3f}")
+```
+
+---
+
+## 07 — ວິທີ Evaluate TTS ໃນ Practice
+
+```
+Development Phase:
+──────────────────
+Training Loop     →  MSE/MAE loss (ອັດຕະໂນມັດ)
+Checkpoint eval   →  UTMOS pseudo-MOS (ໄວ)
+                  →  Intelligibility WER (ໄວ)
+
+Validation Phase:
+─────────────────
+ທຸກ epoch ໃຫຍ່   →  MCD + UTMOS
+Best checkpoint  →  Human MOS test (10+ evaluators)
+
+Publication Phase:
+──────────────────
+Final model      →  Official MOS (human)
+                 →  WER intelligibility
+                 →  Speaker similarity (ຖ້າ voice clone)
+                 →  A/B comparison ກັບ baseline
+```
+
+### ຕົວຢ່າງ Code: Evaluate TTS + Intelligibility ຄົບ
+
+```python
+import torch
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+from transformers import pipeline as hf_pipeline
+from datasets import load_dataset
+from evaluate import load
+import soundfile as sf
+
+# ── 1. ໂຫລດ TTS model ──────────────────────────────
+processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
+model     = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
+vocoder   = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
+
+# ── 2. Speaker embeddings ───────────────────────────
+embeddings_ds = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+speaker_emb   = torch.tensor(embeddings_ds[7306]["xvector"]).unsqueeze(0)
+
+# ── 3. Generate ສຽງ ─────────────────────────────────
+texts = [
+    "ສະບາຍດີ ຂ້ອຍຊື່ ລະບົບ TTS ພາສາລາວ",
+    "ຍິນດີຕ້ອນຮັບສູ່ Laligence AI",
+    "ການທົດສອບລະບົບ Text to Speech",
+]
+
+generated_audios = []
+for i, text in enumerate(texts):
+    inputs = processor(text=text, return_tensors="pt")
+    speech = model.generate_speech(inputs["input_ids"], speaker_emb, vocoder=vocoder)
+    generated_audios.append(speech.numpy())
+    sf.write(f"output_{i+1}.wav", speech.numpy(), samplerate=16000)
+
+print(f"✅ Generated {len(generated_audios)} audio samples")
+
+# ── 4. Intelligibility WER ──────────────────────────
+asr   = hf_pipeline("automatic-speech-recognition", model="openai/whisper-small")
+wer_m = load("wer")
+
+transcriptions = [asr(audio)["text"] for audio in generated_audios]
+wer = wer_m.compute(references=texts, predictions=transcriptions)
+print(f"📊 Intelligibility WER: {wer*100:.1f}%")
+```
+
+---
+
+## 08 — ສຳລັບ Lao TTS — ຄວນ Evaluate ຢ່າງໃດ?
+
+### ສິ່ງທ້າທາຍ Lao-Specific
+
+| ສິ່ງທ້າທາຍ | ລາຍລະອຽດ |
+|---|---|
+| **Tone accuracy** | ພາສາລາວ ມີ 6 tones — TTS ຕ້ອງ generate tone ຖືກ ຄົນລາວຈຶ່ງຮັບຮູ້ໄດ້ |
+| **Lao script rendering** | ໂຕ ligature, ວນນະຍຸດ — TTS ຕ້ອງ parse ຖືກກ່ອນ synthesize |
+| **No Lao MOS dataset** | ບໍ່ມີ public Lao TTS benchmark — ຕ້ອງ collect evaluators ເອງ |
+| **Low-resource speakers** | ຫາ Lao-native evaluators ຍາກກວ່າ English |
+
+### ຄຳແນະນຳ Evaluation Framework ສຳລັບ Lao TTS
+
+```
+1. Intelligibility WER
+   → ASR ຟັງ TTS output (ໃຊ້ Whisper-lao-finetuned)
+   → ຖ້າ WER < 15% = ສຽງ intelligible ດີ
+
+2. Tone Correctness (Manual)
+   → Native Lao speaker score tone accuracy
+   → ໃຫ້ຄະແນນ 1–5 ຄື MOS
+
+3. Naturalness MOS
+   → Lao-native evaluators ຢ່າງໜ້ອຍ 10 ຄົນ
+   → ຟັງ 30–50 samples ທີ່ generate
+
+4. Speaker Similarity (ຖ້າ voice clone)
+   → ປຽບທຽບ speaker embedding ກັບ reference speaker
+```
+
+<Callout type="info">
+ສຳລັບ **Laligence Lao TTS** ທີ່ fine-tune ຈາກ F5-TTS, ການ report ທັງ **Intelligibility WER + MOS** ຈາກ Lao native speakers ຈະໃຫ້ credibility ສຳລັບ paper ຫຼື demo ສູງສຸດ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+| Metric | ປະເພດ | ຄ່າ | ໃຊ້ເວລາ |
+|---|---|---|---|
+| **MOS** | Subjective Human | 1–5 ↑ ດີ | ຊ້າ / ລາຄາແພງ |
+| **WER (Intelligibility)** | Objective | % ↓ ດີ | ໄວ / Automatable |
+| **MCD** | Objective | dB ↓ ດີ | ໄວ |
+| **UTMOS / MOSNet** | Pseudo-Subjective | 1–5 ↑ ດີ | ໄວ |
+| **Speaker Similarity** | Objective | 0–1 ↑ ດີ | ໄວ |
+
+<Callout type="tip">
+**ຍຸດທະສາດສຸດທ້າຍ:**
+- ລະຫວ່າງ training → ໃຊ້ **UTMOS + WER intelligibility** (ໄວ, automatable)
+- ສຳລັບ publication/demo → ໃຊ້ **Human MOS** (gold standard)
+- ສຳລັບ Lao → ເພີ່ມ **Tone Correctness** score ໂດຍ native speakers
+
+TTS evaluation ຕ້ອງໃຊ້ **combination** ຂອງ objective metrics ແລະ subjective human tests ຈຶ່ງໄດ້ picture ທີ່ຄົບຖ້ວນຂອງ model quality.
+</Callout>
