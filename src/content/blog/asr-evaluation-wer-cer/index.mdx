@@ -60,21 +60,21 @@ Prediction : "the cat sit on the"
 WER = (S + I + D) / N = (1 + 0 + 1) / 6 = 0.333 = 33.3%
 ```
 
-**ຈື່ໄວ້:**
+**ສີ່ງທີ່ສຳຄັນແມ່ນ:**
 - ↓ ຕ່ຳ = ດີ (0% = ສົມບູນແບບ)
 - ບໍ່ມີ upper limit — ສາມາດ > 100% ໄດ້!
 
 <Callout type="warning">
-ຖ້າ prediction ຍາວກວ່າ reference ຫຼາຍ (Insertions ຫຼາຍ), WER ສາມາດເກີນ 100% ໄດ້ — ເຊັ່ນ predict 10 ຄຳ ແຕ່ reference ມີ 2 ຄຳ → WER = 500%! ຖ້າເຫັນແບບນີ້ໝາຍວ່າໂມເດວ "hallucinate" ຢ່າງຮ້າຍ.
+ຖ້າ prediction ຍາວກວ່າ reference ຫຼາຍ (Insertions ຫຼາຍ), WER ສາມາດເກີນ 100% ໄດ້ — ເຊັ່ນ predict 10 ຄຳ ແຕ່ reference ມີ 2 ຄຳ → WER = 500%! ຖ້າເຫັນແບບນີ້ໝາຍວ່າໂມເດວ "hallucinate".
 </Callout>
 
 ---
 
 ## 03 — Character Error Rate (CER)
 
-**CER** ວັດຄືກັນກັບ WER ແຕ່ **ລະດັບໂຕອັກສອນ**. ນີ້ "ໃຈດີ" ກວ່າ WER ຍ້ອນວ່າ ຖ້າຄຳໜຶ່ງມີ 5 ໂຕ ແຕ່ຜິດ 1 ໂຕ ກໍ່ຖືວ່ານາລາງ 4/5 ໂຕ.
+**CER** ວັດຄືກັນກັບ WER ແຕ່ **ລະດັບໂຕອັກສອນ**. ແບບນີ້ "ໃຈດີ" ກວ່າ WER ຍ້ອນວ່າ ຖ້າຄຳໜຶ່ງມີ 5 ໂຕ ແຕ່ຜິດ 1 ໂຕ ກໍ່ຖືວ່າໄລ່ເປັນ 4/5 ໂຕ.
 
-ຈາກຕົວຢ່າງດຽວກັນ: "sit" vs "sat" — "s" ຖືກ, "**i**→**a**" ຜິດ (S=1), "t" ຖືກ. ລວມ reference 22 characters:
+ຈາກຕົວຢ່າງດຽວກັນ: "sit" vs "sat" — "s" ຖືກ, "**i**→**a**" ຜິດ (S=1), "t" ຖືກ, D=4 (mat ຂາດ + i (1)). ລວມ reference 22 characters:
 
 ```
 CER = (1 + 0 + 4) / 22 = 0.227 = 22.7%
@@ -84,7 +84,7 @@ CER ຕ່ຳກວ່າ WER ສະເໝີ ຍ້ອນ "partial credit" ລ�
 
 | ໃຊ້ WER ເມື່ອ | ໃຊ້ CER ເມື່ອ |
 |---|---|
-| ພາສາທີ່ແຍກ "ຄຳ" ດ້ວຍ space ຊັດ (ອັງກິດ, ລາວ) | ພາສາທີ່ບໍ່ມີ word boundary ຊັດ (ຈີນ, ຍີ່ປຸ່ນ) |
+| ພາສາທີ່ແຍກ "ຄຳ" ດ້ວຍ space ຊັດເຈນ (ອັງກິດ) | ພາສາທີ່ບໍ່ມີ word boundary ຊັດ (ຈີນ, ຍີ່ປຸ່ນ, ລາວ) |
 | ຕ້ອງການ context understanding | Lao OCR ທີ່ metric ຕ້ອງ fine-grained |
 
 <Callout type="info">
@@ -110,14 +110,14 @@ RTFx = Audio Duration / Processing Time
 | **< 1.0** | ຊ້າກວ່າ Real-Time | Batch processing offline |
 
 <Callout type="info">
-ໂມເດວດຽວກັນ ຮັນ GPU vs CPU ໃຫ້ RTFx ຕ່າງກັນຫຼາຍ — ຄວນ report RTFx ພ້ອມ hardware spec ສະເໝີ.
+ໂມເດວດຽວກັນ ລັນໃນ GPU vs CPU ໃຫ້ RTFx ຕ່າງກັນຫຼາຍ — ຄວນ report RTFx ພ້ອມ hardware spec ສະເໝີ.
 </Callout>
 
 ---
 
 ## 05 — Normalisation — ລຶບ Punctuation ກ່ອນ Evaluate
 
-ໂມເດວເຊັ່ນ Whisper ຈະ predict ຂໍ້ຄວາມທີ່ **Orthographic** — ມີ uppercase, ຈຸດໝາຍ, comma ຄົບ. ແຕ່ຖ້າ reference ບໍ່ຕ່ງກັນ WER ຈະ "ເວີ່ຍ" ຜິດ.
+ໂມເດວເຊັ່ນ Whisper ຈະ predict ຂໍ້ຄວາມທີ່ **Orthographic** — ມີ uppercase, comma ຄົບ. ແຕ່ຖ້າ reference ບໍ່ຕ່ງກັນ WER ຈະ  **ຜິດ**.
 
 ```
 Wav2Vec2 (ບໍ່ Normalize): HE TELLS US THAT AT THIS FESTIVE SEASON...
@@ -126,7 +126,7 @@ Whisper (Orthographic):   He tells us that at this festive season, with Christma
 
 Whisper output ອ່ານງ່າຍກວ່າໃນ production ແຕ່ WER ສູງກວ່າ ຖ້າ reference ເປັນ uppercase.
 
-**ທາງອອກ:** train orthographic, evaluate normalized — lowercase + ລຶບ punctuation ທັງ reference ແລະ prediction *ກ່ອນ* ຄິດ WER.
+**ທາງແກ້:** train orthographic, evaluate normalized — lowercase + ລຶບ punctuation ທັງ reference ແລະ prediction *ກ່ອນ* ຄິດ WER.
 
 ---
 
@@ -231,7 +231,7 @@ for pred in tqdm(pipe(KeyDataset(cv_test, "audio"),
                       batch_size=32), total=len(cv_test)):
     all_preds.append(pred["text"])
 
-# 4. คิด WER
+# 4. ຄີດ WER
 wer_metric = load("wer")
 wer_ortho  = 100 * wer_metric.compute(
     references=cv_test["sentence"],
@@ -241,20 +241,187 @@ print(f"WER (Orthographic): {wer_ortho:.2f}%")
 ```
 
 <Callout type="warning">
-ຜົນ Dhivehi pre-trained (whisper-small): WER Orthographic = **167%** → ຫຼັງ normalize = **126%** — ໝາຍຄວາມວ່າ pre-trained model ຄຳ Dhivehi ເກືອບບໍ່ໄດ້ ຕ້ອງ **fine-tune** ກ່ອນ. ສຳລັບລາວ ຄາດໄດ້ຜົນຄ້າຍຄືກັນຖ້າໃຊ້ base Whisper.
+ຜົນ Dhivehi pre-trained (whisper-small): WER Orthographic = **167%** → ຫຼັງ normalize = **126%** — ໝາຍຄວາມວ່າ pre-trained model ຄຳ Dhivehi ເກືອບບໍ່ໄດ້ ຕ້ອງ **fine-tune** ກ່ອນ.
 </Callout>
 
 ---
 
-## ສະຫຼຸບ — ເລືອກ Metric ຕ້ອງໃດ?
+## ສຳລັບ Lao ASR — Evaluate ຢ່າງໃດ? (ສຳຄັນຫຼາຍ!)
+
+ພາສາລາວ **ບໍ່ມີ word boundary ທີ່ຊັດເຈນ** ດ້ວຍ space — ດັ່ງນັ້ນການໃຊ້ WER ໂດຍກົງກັບ raw Lao text ແມ່ນ **ຜິດວິທີ**. ຕ້ອງເຂົ້າໃຈ 3 ທາງເລືອກ:
+
+| Method | ດີ? | ບັນຫາ |
+|---|---|---|
+| **CER** | ✅ stable | ລະດັບ character — ດຸ/ຜ່ອນຄາຍເກີນ |
+| **WER (word_tokenize)** | ⚠️ unstable | ຂຶ້ນກັບ tokenizer — ບໍ່ reliable |
+| **SER (syllable_tokenize)** | ✅ ດີທີ່ສຸດ | stable, publishable metric |
+
+### ບັນຫາຂອງ WER ກັບ Lao
+
+ຖ້າໃຊ້ `jiwer.wer()` ໂດຍກົງກັບ raw Lao text — WER ຈະຜິດ ຍ້ອນ:
+
+```
+ຂ້ອຍກິນເຂົ້າ  →  ເປັນ 1 "word" ຫຼື 3 "words"?
+```
+
+ພາສາລາວຂຽນຕິດກັນ — `jiwer` ຈະ treat ທັງໝົດເປັນ 1 token. **WER ບໍ່ accurate**.
+
+### Option A: ໃຊ້ CER (ງ່າຍ, stable)
+
+```python
+from evaluate import load
+
+cer_metric = load("cer")
+
+ref = "ຂ້ອຍກິນເຂົ້າ"
+hyp = "ຂ້ອຍກິນເຂົາ"
+
+cer = cer_metric.compute(references=[ref], predictions=[hyp])
+print(f"CER = {cer*100:.1f}%")
+```
+
+### Option B: WER + Lao Word Tokenizer (laonlp)
+
+ຖ້າຕ້ອງການ WER — ຕ້ອງ tokenize ກ່ອນດ້ວຍ `laonlp`:
+
+```python
+from jiwer import wer
+from laonlp.tokenize import word_tokenize
+
+def tokenize_lao(text):
+    return " ".join(word_tokenize(text))
+
+ref = "ຂ້ອຍກິນເຂົ້າ"
+hyp = "ຂ້ອຍກິນເຂົາ"
+
+ref_tok = tokenize_lao(ref)
+hyp_tok = tokenize_lao(hyp)
+
+print(f"WER = {wer(ref_tok, hyp_tok)*100:.1f}%")
+```
+
+<Callout type="warning">
+`laonlp` word segmentation **ບໍ່ perfect** — WER ຈຶ່ງ **dependent on tokenizer quality**. ໃນ paper ຕ້ອງ mention ຊັດ: _"WER computed using laonlp tokenizer"_ ຖ້າບໍ່ດັ່ງນັ້ນ cross-paper comparison ຈະ invalid.
+</Callout>
+
+---
+
+## Syllable Error Rate (SER) — Best Metric ສຳລັບ Lao ASR 🔥
+
+ລະຫວ່າງ CER (ລະດັບ character) ແລະ WER (ລະດັບ word) — **SER (Syllable Error Rate)** ໃຊ້ **ພະຍາງ (syllable)** ເປັນ unit ທີ່ **stable ແລະ publishable ທີ່ສຸດ** ສຳລັບລາວ.
+
+### ເປັນຫຍັງ Syllable-level ດີທີ່ສຸດ?
+
+ພາສາລາວ:
+- ❌ ບໍ່ມີ word boundary ຊັດເຈນ → WER unstable
+- ❌ Character-level ລະອຽດເກີນ → CER ຕ່ຳ misleading
+- ✅ ພະຍາງ (syllable) = ໜ່ວຍທາງພາສາສາດທີ່ stable ກວ່າ
+
+```python
+from jiwer import wer as compute_wer
+from laonlp.tokenize import syllable_tokenize
+
+def syllable_join(text):
+    return " ".join(syllable_tokenize(text))
+
+ref = "ຂ້ອຍກິນເຂົ້າ"
+hyp = "ຂ້ອຍກິນເຂົາ"
+
+ref_syl = syllable_join(ref)  # "ຂ້ອຍ ກິນ ເຂົ້າ"
+hyp_syl = syllable_join(hyp)  # "ຂ້ອຍ ກິນ ເຂົາ"
+
+ser = compute_wer(ref_syl, hyp_syl)
+print(f"SER = {ser*100:.1f}%")
+# SER = 33.3%  (1 ໃນ 3 syllables ຜິດ)
+```
+
+<Callout type="tip">
+`syllable_tokenize` ຈາກ `laonlp` ຈະ split: `"ຂ້ອຍກິນເຂົ້າ"` → `['ຂ້ອຍ', 'ກິນ', 'ເຂົ້າ']` — ໜ່ວຍທີ່ stable ກວ່າ word segmentation ຫຼາຍ.
+</Callout>
+
+### Full Lao ASR Evaluation Pipeline
+
+```python
+from jiwer import wer as compute_wer
+from evaluate import load
+from laonlp.tokenize import word_tokenize, syllable_tokenize
+
+def lao_asr_evaluate(references: list[str], predictions: list[str]):
+    """
+    ຄິດ CER + SER + WER ສຳລັບ Lao ASR
+    ແນະນຳ: report CER + SER ໃນ paper
+    """
+    # ── 1. CER (main metric) ─────────────────────────
+    cer_metric = load("cer")
+    cer = cer_metric.compute(references=references, predictions=predictions)
+
+    # ── 2. SER (syllable-level) ──────────────────────
+    def syl(text):
+        return " ".join(syllable_tokenize(text))
+
+    ser = compute_wer(
+        [syl(r) for r in references],
+        [syl(h) for h in predictions]
+    )
+
+    # ── 3. WER (word-level, optional) ────────────────
+    def tok(text):
+        return " ".join(word_tokenize(text))
+
+    wer = compute_wer(
+        [tok(r) for r in references],
+        [tok(h) for h in predictions]
+    )
+
+    print(f"📊 CER : {cer*100:.2f}%  ← main metric")
+    print(f"📊 SER : {ser*100:.2f}%  ← syllable-level (recommended)")
+    print(f"📊 WER : {wer*100:.2f}%  ← word-level (laonlp tokenizer)")
+
+    return {"cer": cer, "ser": ser, "wer": wer}
+
+# ── ທົດລອງ ────────────────────────────────────────────
+refs = ["ຂ້ອຍກິນເຂົ້າ", "ລາວໄປຕະຫຼາດ"]
+hyps = ["ຂ້ອຍກິນເຂົາ",  "ລາວໄປຕະຫຼາດ"]
+
+results = lao_asr_evaluate(refs, hyps)
+```
+
+### ຄຳແນະນຳ ຖ້າຂຽນ Paper / Benchmark
+
+```
+✅ ລາຍງານສະເໝີ:
+   CER  →  main metric (stable, comparable)
+   SER  →  secondary metric (linguistically meaningful)
+
+✅ Optional:
+   WER  →  "WER computed using laonlp word tokenizer"
+
+✅ Advanced:
+   ອອກແບບ tokenizer ຂອງຕົນເອງ → research contribution 💡
+```
+
+<Callout type="info">
+**ຄຳສຳລັບ paper:** _"We report Character Error Rate (CER) as the primary metric, and Syllable Error Rate (SER) computed using laonlp syllable tokenizer as a secondary metric for Lao ASR evaluation."_
+
+ນີ້ເປັນ **publishable evaluation design** ທີ່ credible ສຳລັບ Lao low-resource ASR research.
+</Callout>
+
+---
+
+## ສະຫຼຸບ — ເລືອກ Metric ໃດ?
 
 | Metric | ລະດັບ | ດີຂຶ້ນ | ເໝາະກັບ |
 |---|---|---|---|
-| **WER** | Word | ↓ ຕ່ຳ | ASR ທົ່ວໄປ, ຮັບຮູ້ context |
-| **CER** | Character | ↓ ຕ່ຳ | ຈີນ, ຍີ່ປຸ່ນ, Lao OCR/ASR |
+| **CER** | Character | ↓ ຕ່ຳ | **Lao ASR — main metric** ✅ |
+| **SER** | Syllable | ↓ ຕ່ຳ | **Lao ASR — secondary metric** ✅ |
+| **WER** | Word (laonlp) | ↓ ຕ່ຳ | Lao ASR — optional, mention tokenizer |
 | **WAcc** | Word | ↑ ສູງ | WER ໃນຮູບ accuracy (1 - WER) |
 | **RTFx** | ເວລາ | ↑ ສູງ | Production / Latency |
 
 <Callout type="tip">
-**ຄຳແນະນຳສຸດທ້າຍ:** Train ໂມເດວດ້ວຍ *orthographic text* (ຄົບ punctuation/case), ແຕ່ evaluate ດ້ວຍ *normalized text* ເພື່ອໃຫ້ WER ຍຸຕິທຳ ແລະ model ໃຊ້ໄດ້ໃນ production ທັງສອງ. ສຳລັບ **ພາສາລາວ** ໃນໂຄງການ Laligence ຕ້ອງ report ທັງ WER ແລະ CER ໃນ paper.
+**ຍຸດທະສາດ Lao ASR:**
+- **ລະຫວ່າງ dev:** ໃຊ້ CER (ໄວ, stable)
+- **ສຳລັບ paper:** report **CER + SER** (laonlp syllable)
+- **ຢ່າ** ໃຊ້ raw WER ກັບ Lao text ໂດຍບໍ່ tokenize ກ່ອນ ❌
+- **ດີທີ່ສຸດ:** ສ້າງ Lao tokenizer ເອງ = research contribution 💡
 </Callout>
