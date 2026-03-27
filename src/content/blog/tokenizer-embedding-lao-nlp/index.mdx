@@ -1,0 +1,271 @@
+---
+title: "Tokenizer ແລະ Embedding: ສອງສິ່ງທີ່ເບິ່ງຄືກັນ ແຕ່ຕ່າງກັນຢ່າງສິ້ນເຊີງ"
+description: "ຄູ່ມືສຳລັບຜູ້ເລີ່ມຕົ້ນ NLP ໂດຍສະເພາະພາສາລາວ — ຮຽນຮູ້ຄວາມຕ່າງລະຫວ່າງ Tokenizer ແລະ Embedding ດ້ວຍຕົວຢ່າງຕົວຈິງ ແລະ code ທີ່ໃຊ້ໄດ້ທັນທີ"
+date: 2026-03-28
+tags: ["NLP", "LaoNLP", "Tokenizer", "Embedding", "LowResourceNLP", "DeepLearning", "Laligence", "Python"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+> "ຄົນຮຽນ NLP ທຸກຄົນເວົ້າເຖິງ Tokenizer ແລະ Embedding ພ້ອມກັນ... ແຕ່ມັນຄືອັນດຽວກັນບໍ?"
+
+ຖ້າເຈົ້າເຄີຍອ່ານ tutorial NLP ຫຼື Machine Learning ດ້ານພາສາ, ເຈົ້າຈະໄດ້ຍິນສອງຄຳນີ້ສະເໝີ: **Tokenizer** ແລະ **Embedding**. ຫຼາຍຄົນຄິດວ່າມັນຄືສິ່ງດຽວກັນ — ແຕ່ _ບົດບາດ, ໂຄງສ້າງ, ແລະຈຸດປະສົງຂອງພວກມັນຕ່າງກັນໂດຍສິ້ນເຊີງ_. ໃນບົດຄວາມນີ້ ເຮົາຈະໄຂຄວາມລຶກລັບດ້ວຍພາສາງ່າຍ ພ້ອມຕົວຢ່າງຈາກ **ພາສາລາວ** ທີ່ທ່ານສາມາດໃຊ້ໄດ້ທັນທີ.
+
+---
+
+## 01 — Tokenizer ຄືຫຍັງ?
+
+ຈົງນຶກຖຶງ Tokenizer ວ່າເປັນ **"ມີດຕັດ"** ທີ່ຕັດຂໍ້ຄວາມດິບໆໃຫ້ກາຍເປັນ _ຊິ້ນສ່ວນນ້ອຍໆ_ ທີ່ຄອມພິວເຕີສາມາດຈັດການໄດ້. ຊິ້ນສ່ວນເຫຼົ່ານີ້ເອີ້ນວ່າ **Token**.
+
+> **ການປຽບທຽບ:** ຈົງຈິນຕະນາການວ່າ ປິ້ງ (Pizza) ໜຶ່ງໝ້ຽນ ຄືປະໂຫຍກໜຶ່ງ. **Tokenizer ຄືຜູ້ຕັດປິ້ງ** — ມັນຕັດປິ້ງໃຫຍ່ ອອກເປັນຊິ້ນນ້ອຍໆ ທີ່ທຸກຄົນເອົາໄດ້. ມັນ **ບໍ່ "ຮູ້ຈຸກ" ຄວາມໝາຍ** — ມັນພຽງຕັດ ແລະ ໃຫ້ ID ເທົ່ານັ້ນ.
+
+### ຮູບແບບ Token ທີ່ພົບເລື້ອຍ
+
+- **Word-level:** ຕັດລະດັບ "ຄຳ" — `"ຂ້ອຍ"`, `"ກິນ"`, `"ເຂົ້າ"`
+- **Character-level:** ຕັດທຸກໂຕໜັງສື — `"ຂ"`, `"້"`, `"ອ"`, `"ຍ"`
+- **Subword-level (BPE / SentencePiece):** ຕັດລະຫວ່າງ "ຄຳ" ກັບ "ໂຕໜັງສື" ຕາມຄວາມຖີ່ຂອງຂໍ້ມູນ — ວິທີທີ່ Modern Models ສ່ວນໃຫຍ່ໃຊ້
+
+### ພາສາລາວ vs ພາສາອັງກິດ
+
+```python
+# ► ພາສາອັງກິດ — ງ່າຍ ເພາະມີ space ລະຫວ່າງຄຳ
+Input:   "I eat rice every day"
+Tokens:  ["I", "eat", "rice", "every", "day"]
+         # ຕັດຕາມ space — ງ່າຍຫຼາຍ
+
+# ► ພາສາລາວ — ຍາກກວ່າ ເພາະຄຳຕິດກັນໝົດ!
+Input:   "ຂ້ອຍກິນເຂົ້າທຸກໆວັນ"
+Tokens:  ["ຂ້ອຍ", "ກິນ", "ເຂົ້າ", "ທຸກໆ", "ວັນ"]
+         # ຕ້ອງ "ເດົາ" ວ່າຄຳຢູ່ທີ່ໃດ!
+```
+
+<Callout type="warning">
+ພາສາລາວ ເຊັ່ນດຽວກັນກັບ ພາສາໄທ ແລະ ພາສາຈີນ — **ຂຽນຄຳຕິດກັນໂດຍບໍ່ມີ space**. Tokenizer ຈຳເປັນຕ້ອງ "ຮຽນ" ວ່າຄຳໃດຄືຄຳ. ຖ້າ Tokenizer ຕັດຜິດ — ທຸກຢ່າງທີ່ຕາມຫຼັງ ລ້ວນຜິດໝົດ.
+</Callout>
+
+### ຜົນລັດຂອງ Tokenizer
+
+Tokenizer ບໍ່ພຽງຕັດ — ມັນຍັງ **ແປງ token ແຕ່ລະອັນໃຫ້ກາຍເປັນ ID ຕົວເລກ** ທີ່ correspond ກັບ vocabulary:
+
+```python
+# vocabulary ຂອງ tokenizer (ຕົວຢ່າງ)
+vocab = {
+    "ຂ້ອຍ": 1042,
+    "ກິນ":  387,
+    "ເຂົ້າ": 2190,
+    "ທຸກໆ": 901,
+    "ວັນ":  220,
+}
+
+# ຜົນລັດຂອງ tokenizer
+token_ids = [1042, 387, 2190, 901, 220]
+# ✦ ລຳດັບຕົວເລກ ໄຮ້ຄວາມໝາຍໃດໆ — ພຽງ "ທີ່ຢູ່" ໃນ dictionary
+```
+
+<Callout type="info">
+Tokenizer **ບໍ່ຮູ້ວ່າ "ກິນ" ໝາຍຄວາມວ່າຫຍັງ** — ມັນຮູ້ພຽງວ່າ "ກິນ" ຢູ່ໃນ vocabulary ຕຳແໜ່ງ 387. ນີ້ຄືຂໍ້ຈຳກັດທີ່ສຳຄັນ — ແລ້ວ **Embedding** ຈະຊ່ວຍໃສ່ "ຄວາມໝາຍ" ລົງໄປ.
+</Callout>
+
+---
+
+## 02 — Embedding ຄືຫຍັງ?
+
+ຖ້າ Tokenizer ຄືຜູ້ "ຕັດ" ຂໍ້ຄວາມ — Embedding ຄືຜູ້ **"ໃຫ້ຄວາມໝາຍ"**. ມັນ _ແປງ token ID ໃຫ້ກາຍເປັນ vector ຕົວເລກທີ່ rich ດ້ວຍຄວາມໝາຍ_ ທີ່ Model ສາມາດ "ຮຽນຮູ້" ໄດ້.
+
+> **ການປຽບທຽບ:** ຈົງນຶກຖຶງ **ແຜນທີ່ຄວາມໝາຍ** (Semantic Map) ທີ່ຄຳທີ່ _"ໃກ້ຄຽງກັນ"_ ໃນຄວາມໝາຍ ຈະ _"ໃກ້ຄຽງກັນ"_ ໃນແຜນທີ່. ຄຳວ່າ "ລົດ" ແລະ "ລົດໄຟ" ຢູ່ໃກ້ກັນ. ຄຳວ່າ "ກິນ" ແລະ "ລົດ" ຢູ່ໄກກັນ.
+
+### ເປັນຫຍັງຕ້ອງໃຊ້ Vector?
+
+ຄອມພິວເຕີ ແລະ Neural Network **ເຮັດວຽກໄດ້ດ້ວຍຕົວເລກ** ເທົ່ານັ້ນ. ຖ້າ Model ຮັບ ID ໂດຍກົງ (1042, 387...) — ຕົວເລກເຫຼົ່ານີ້ _ໄຮ້ຄວາມໝາຍທາງຄະນິດສາດ_ — Model ຈະ "ຄິດ" ວ່າ ຄຳ ID 1000 "ໃຫຍ່ກວ່າ" ຄຳ ID 500 ໂດຍ default. ນັ້ນຜິດ.
+
+```python
+# Embedding ຕົວຢ່າງ (dimension = 4, ແທ້ຈິງໃຊ້ 768 ຫຼື 1024)
+# Token ID  →  Embedding Vector
+"ກິນ" [387]  →  [0.83, -0.21, 0.66, 0.12, ...]
+"ດື່ມ" [524]  →  [0.79, -0.18, 0.61, 0.09, ...]
+# ↑ "ກິນ" ແລະ "ດື່ມ" ມີ vector ຄ້າຍໆກັນ → ຄວາມໝາຍໃກ້ຄຽງ ✓
+
+"ລົດ" [201]  →  [-0.45, 0.72, -0.38, 0.91, ...]
+# ↑ "ລົດ" ຢູ່ໄກຈາກ "ກິນ" ໃນ vector space → ຄວາມໝາຍຕ່າງກັນ ✓
+```
+
+Vector ນີ້ **ບໍ່ໄດ້ design ດ້ວຍມື** — ມັນ _ຖືກຮຽນໂດຍ Model ຈາກຂໍ້ມູນ text ຈຳນວນຫຼວງຫຼາຍ_. ຍິ່ງຂໍ້ມູນຫຼາຍ, embedding ຍິ່ງ rich ດ້ວຍຄວາມໝາຍ — ນີ້ຄືຈຸດທີ່ **ພາສາລາວ** ຢູ່ໃນສະຖານະທ້າທາຍ ເພາະຂໍ້ມູນ text ລາວ digital ຍັງ _ໜ້ອຍຫຼາຍ_.
+
+---
+
+## 03 — ຄວາມຕ່າງຫຼັກ: Tokenizer vs Embedding
+
+| ຈຸດປຽບທຽບ | Tokenizer | Embedding |
+|---|---|---|
+| **ໜ້າທີ່ຫຼັກ** | ຕັດ text → Token, ແລ້ວ → ID | ແປງ ID → Vector ຕົວເລກ rich |
+| **Input** | ຂໍ້ຄວາມດິບ (string) | Token ID (integer) |
+| **Output** | ລາຍການ Token IDs | Matrix ຂອງ vector (float) |
+| **ເຂົ້າໃຈຄວາມໝາຍ?** | ❌ ບໍ່ — ພຽງ "ຕັດ" ແລະ "ໃຫ້ ID" | ✅ ແມ່ນ — vector ສະແດງຄວາມໝາຍ |
+| **ຮຽນຈາກຂໍ້ມູນ?** | ຮຽນ vocabulary ຈາກ corpus | ຮຽນ vector weights ຜ່ານ training |
+| **ກ່ຽວຂ້ອງ Math?** | ໜ້ອຍ (string matching, lookup) | ຫຼາຍ (matrix multiplication) |
+| **ຂຶ້ນກັບ Language?** | ✅ ຫຼາຍ — ລາວຕ້ອງ tokenizer ພິເສດ | ✅ ຫຼາຍ — ຕ້ອງ corpus ລາວ |
+| **ລຳດັບໃນ Pipeline** | ກ່ອນ | ຫຼັງ |
+| **ຜ່ານ Neural Network?** | ❌ ບໍ່ (rule-based ຫຼື statistical) | ✅ ຜ່ານ Embedding Layer |
+
+---
+
+## 04 — ທັງສອງ ເຮັດວຽກຮ່ວມກັນໃນ Pipeline ແນວໃດ?
+
+```
+📝 Raw Text            → ຂ້ອຍກິນເຂົ້າ
+      ↓
+🔪 Tokenizer           → ["ຂ້ອຍ", "ກິນ", "ເຂົ້າ"]
+      ↓
+🔢 Token IDs           → [1042, 387, 2190]
+      ↓
+🌌 Embedding Layer     → [[0.83, -0.21, ...], [0.42, 0.17, ...], ...]
+      ↓
+🧠 Transformer / Model → Sentiment / Translation / Generation
+```
+
+ທຳຄວາມເຂົ້າໃຈຈຸດນີ້ດີ: **Tokenizer ແລະ Embedding ໂດດດ່ຽວ ບໍ່ອາດເຮັດໄດ້ຫຍັງ**. Tokenizer ສ້າງ "ຄຳຂອງຄອມພິວເຕີ" → Embedding ໃຫ້ "ຄວາມໝາຍ" → Model ຈຶ່ງ "ຄິດ" ໄດ້.
+
+---
+
+## 05 — ເປັນຫຍັງສອງສິ່ງນີ້ສຳຄັນຍິ່ງກວ່າ ສຳລັບພາສາລາວ?
+
+### ບັນຫາ Word Segmentation ສຳລັບ Tokenizer
+
+ພາສາລາວ **ຂຽນຄຳຕິດກັນໂດຍບໍ່ມີ space** — ຄຳດຽວກັນ ຕັດໄດ້ຫຼາຍທາງ ຄວາມໝາຍຕ່າງ:
+
+```python
+# "ຕາດີ" — ຕັດໄດ້ 2 ທາງ ຄວາມໝາຍຕ່າງ!
+ທາງທີ 1: "ຕາ" + "ດີ"  →  ຕາ (eye) + ດີ (good)
+ທາງທີ 2: "ຕາດີ"       →  ຊື່ຄົນ (proper noun)
+
+# "ລາວໄປ" — ໃຜ ຫຼື ໄປໃສ?
+"ລາວ" + "ໄປ"  →  ລາວ (he/she) ໄປ (go)
+"ລາວ" + "ໄປ"  →  ລາວ (Laos) + ... (grammar different)
+```
+
+### ບັນຫາ Low-Resource ສຳລັບ Embedding
+
+Embedding ຮຽນຈາກຂໍ້ມູນ. ຂໍ້ມູນຫຼາຍ = embedding ດີ. ດ້ວຍຄວາມຈິງທີ່ວ່າ:
+- Text ດິຈິຕັລລາວຢູ່ Internet ຍັງໜ້ອຍ ທຽບກັບ Wikipedia EN ໃນຊົ່ວໂມງດຽວ
+- ຂໍ້ມູນ annotated corpus ສຳລັບ NLP ລາວ ຍັງຂາດຫຼວງຫຼາຍ
+- ການຂຽນ Lao Unicode ທີ່ຫຼາກຫຼາຍ ເຮັດໃຫ້ normalization ຍາກ
+
+### ວິທີແກ້: Subword Tokenizer (BPE / SentencePiece)
+
+ສຳລັບພາສາ low-resource ຄື ລາວ — **Subword Tokenization** ຄືທາງອອກທີ່ດີ:
+
+```python
+# BPE / SentencePiece ຕົວຢ່າງ — ຕັດລະດັບ subword
+Input:  "ການສຶກສາ"
+Output: ["▁ການ", "ສຶກ", "ສາ"]
+# ▁ = ຈຸດເລີ່ມຂອງຄຳໃໝ່
+
+# ຄຳທີ່ Model ບໍ່ເຄີຍເຫັນ (OOV) ກໍຍັງຕັດໄດ້!
+Input:  "ໂທລະໄດລາວ"
+Output: ["▁ໂທ", "ລະ", "ໄດ", "ລາວ"]
+# ດີກວ່າ word-level ທີ່ return [UNK] ສຳລັບຄຳໃໝ່!
+```
+
+<Callout type="tip">
+**ຄຳແນະນຳ Practical ສຳລັບ Lao NLP:**
+- ໃຊ້ **SentencePiece ດ້ວຍ BPE** ຝຶກດ້ວຍ Lao corpus ທີ່ clean ທີ່ສຸດທີ່ຫາໄດ້
+- `vocab_size` ລະຫວ່າງ **8,000 – 32,000** ສຳລັບພາສາລາວ
+- `character_coverage = 0.9995` ເພື່ອ capture ໂຕໜັງສືລາວທຸກ unicode
+- Multilingual embeddings (mBERT, XLM-R) ຊ່ວຍໄດ້ ເມື່ອ Lao corpus ໜ້ອຍ
+</Callout>
+
+---
+
+## 06 — ຄວາມເຂົ້າໃຈຜິດທີ່ພົບເລື້ອຍ
+
+### ❌ "Tokenizer ເຂົ້າໃຈຄວາມໝາຍຂອງຄຳ"
+
+ຜິດ! Tokenizer ພຽງ "ຕັດ" ແລະ "ໃຫ້ ID" ເທົ່ານັ້ນ. ມັນບໍ່ "ຮູ້" ວ່າ "ກິນ" ໝາຍຄວາມວ່າ "to eat".
+
+### ❌ "Embedding ຕັດຄຳ ອອກເປັນ Token"
+
+ຜິດໂດຍສິ້ນເຊີງ! Embedding ບໍ່ "ເຫັນ" ຂໍ້ຄວາມດິບເລີຍ. ມັນຮັບ Token ID ຈາກ Tokenizer ແລ້ວຈຶ່ງຄຳນວນ Vector. ຖ້າ Tokenizer ຜິດ — Embedding ກໍ ບໍ່ຊ່ວຍໄດ້ຫຍັງ.
+
+### ❌ "Embedding ຄື Tokenizer — ສອງຊື່ຂອງສິ່ງດຽວກັນ"
+
+ຜິດ! ທັງສອງເປັນ ອົງປະກອບທີ່ຕ່າງກັນໂດຍສິ້ນເຊີງ — ມີ input/output ຕ່າງກັນ, ໜ້າທີ່ຕ່າງກັນ, ແລະ ທຳວຽກໃນລຳດັບຕ່າງກັນໃນ pipeline.
+
+### ❌ "ຖ້າໃຊ້ Pretrained Model ກໍ ບໍ່ຈຳເປັນຕ້ອງສົນໃຈ Tokenizer"
+
+ຜິດຫຼວງຫຼາຍ! ຕອນ Fine-tune ພວກ mBERT ຫຼື XLM-R ສຳລັບລາວ — Tokenizer ທີ່ຕິດມາ ອາດຕັດຄຳລາວຜິດຫຼາຍ ຫຼື split ຄຳອອກເປັນໂຕໜັງສືທຸກໂຕ ເຮັດໃຫ້ input ຍາວເກີນໄປ.
+
+---
+
+## 07 — ຕົວຢ່າງຕົວຈິງ: ທຸກຂັ້ນຕອນ ດ້ວຍ Python
+
+ປະໂຫຍກ: **"ລະບົບ AI ຊ່ວຍໃຫ້ການສຶກສາລາວດີຂຶ້ນ"**
+
+```python
+from transformers import AutoTokenizer
+import torch
+
+# ── ຂັ້ນທີ 1: ໂຫລດ tokenizer ──────────────────────────────────
+# ໃຊ້ multilingual model ທີ່ support ລາວ
+tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
+
+# ── ຂັ້ນທີ 2: Tokenize ──────────────────────────────────────────
+text = "ລະບົບ AI ຊ່ວຍໃຫ້ການສຶກສາລາວດີຂຶ້ນ"
+tokens = tokenizer.tokenize(text)
+print("Tokens:", tokens)
+# ['▁ລ', 'ະ', 'ບ', 'ົ', 'ບ', '▁AI', '▁ຊ', '່', 'ວ', 'ຍ', ...]
+
+# ── ຂັ້ນທີ 3: Token IDs ─────────────────────────────────────────
+token_ids = tokenizer(text, return_tensors="pt")["input_ids"]
+print("Token IDs:", token_ids)
+# tensor([[0, 2974, 4, 387, ..., 2]])
+# ↑ 0 = [CLS],  2 = [EOS]
+
+# ── ຂັ້ນທີ 4: Embedding ─────────────────────────────────────────
+from transformers import AutoModel
+
+model = AutoModel.from_pretrained("xlm-roberta-base")
+
+with torch.no_grad():
+    outputs = model(**tokenizer(text, return_tensors="pt"))
+
+embeddings = outputs.last_hidden_state
+print("Embedding shape:", embeddings.shape)
+# torch.Size([1, N_tokens, 768])
+# ↑ [batch=1, ຈຳນວນ tokens, vector dimension=768]
+
+# ── ສະຫຼຸບ ─────────────────────────────────────────────────────
+print(f"\nRaw text:     {text}")
+print(f"N tokens:     {len(tokens)}")
+print(f"Embedding:    {embeddings.shape}  ← matrix ທີ່ rich ດ້ວຍຄວາມໝາຍ")
+```
+
+<Callout type="info">
+XLM-RoBERTa ໃຊ້ SentencePiece tokenizer ທີ່ຮຽນຈາກ 100 ພາສາ ລວມລາວ — ດັ່ງນັ້ນ ການ tokenize ຕໍ່ Lao text ຈະ split ລະດັບ character ຫຼາຍ (ດ້ວຍ `▁` prefix ລະບຸ word boundary). ສຳລັບ production: ຄວນ fine-tune tokenizer ດ້ວຍ corpus ລາວ ໂດຍສະເພາະ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ — ຈຳໄວ້ດ້ວຍ 1 ວລີ
+
+| ອົງປະກອບ | ໜ້າທີ່ | ລຳດັບ |
+|---|---|---|
+| **Tokenizer** | ຕັດ text → Token → ID | 1st |
+| **Embedding** | ແປງ ID → Vector ທີ່ rich ດ້ວຍຄວາມໝາຍ | 2nd |
+| **Model** | ຮັບ Vector matrix ແລ້ວ predict / generate | 3rd |
+
+<Callout type="tip">
+**ຍຸດທະສາດ Lao NLP:**
+- ບໍ່ມີ Tokenizer ທີ່ດີ → Embedding ທີ່ດີຊ່ວຍໄດ້ໜ້ອຍ
+- ບໍ່ມີ Lao corpus ພຽງພໍ → Embedding ຈະ weak
+- **ທາງອອກ:** ໃຊ້ multilingual model (XLM-R) + fine-tune ດ້ວຍ Lao data ຂອງທ່ານ
+
+ສຳລັບ Laligence ທີ່ສ້າງ NLP ສຳລັບລາວ — ການລົງທຶນໃສ່ **Lao tokenizer + corpus** ຄືການລົງທຶນທີ່ high-leverage ທີ່ສຸດ.
+</Callout>
