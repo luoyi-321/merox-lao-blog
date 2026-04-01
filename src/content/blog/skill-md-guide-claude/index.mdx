@@ -1,0 +1,329 @@
+---
+title: 'SKILL.md ຄືຫຍັງ? ວິທີສ້າງ Skill ສຳລັບ Claude AI Agent'
+description: 'ຮຽນຮູ້ວ່າ SKILL.md ແມ່ນຫຍັງ, ວິທີສ້າງ Skill file ທີ່ດີ, ໂຄງສ້າງໂຟນເດີ, ຕົວຢ່າງຈິງ Lao OCR Skill ແລະ ຄວາມຜິດພາດທີ່ຄວນຫຼີກລ້ຽງ'
+date: 2026-04-02
+tags: ['claude', 'ai-agent', 'skill-md', 'lao-ai', 'prompt-engineering']
+authors: ['laligence']
+---
+
+import { Callout } from '@/components/Callout'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## SKILL.md ຄືຫຍັງ?
+
+ໃນລະບົບ Claude Agent SDK, **SKILL.md** ແມ່ນໄຟລ໌ Markdown ພິເສດທີ່ເຮັດໜ້າທີ່ຄືກັບ **SOP (Standard Operating Procedure)** ສຳລັບ AI — ມັນບອກ Agent ວ່າ:
+
+- ທັກສະໃດທີ່ຕ້ອງໃຊ້ (ແລະເມື່ອໃດ)
+- ວິທີດຳເນີນງານ step-by-step
+- ກຳໜົດຂອບເຂດ (ທຳຫຍັງໄດ້, ທຳຫຍັງບໍ່ໄດ້)
+- ເຊື່ອມຕໍ່ resources ພາຍນອກ
+
+ຄິດວ່າ SKILL.md ຄືກັບ **ໃບສັ່ງວຽກທີ່ຂຽນຢ່າງລະອຽດ** ໃຫ້ AI ປະຕິບັດໜ້າທີ່ໃດໜຶ່ງໄດ້ຢ່າງຖືກຕ້ອງ ແລະ ສອດຄ່ອງທຸກຄັ້ງ.
+
+<Callout type="info">
+SKILL.md ໃຊ້ຮ່ວມກັບ Claude Agent SDK ເທົ່ານັ້ນ — ບໍ່ແມ່ນ prompt ທຳມະດາ ຫຼື system prompt ທົ່ວໄປ. ມັນຖືກ load ເຂົ້າ context ເມື່ອ Agent ຕ້ອງການໃຊ້ທັກສະນັ້ນ.
+</Callout>
+
+---
+
+## ວິທີການເຮັດວຽກຂອງ SKILL.md
+
+SKILL.md ໃຊ້ຫຼັກການ **3-Layer Progressive Disclosure**:
+
+### Layer 1 — YAML Frontmatter (ຫົວໄຟລ໌)
+Agent ອ່ານສ່ວນນີ້ກ່ອນ ເພື່ອຕັດສິນໃຈວ່າຈະໃຊ້ skill ນີ້ຫຼືບໍ່:
+
+```yaml
+---
+name: lao-ocr
+description: >
+  ໃຊ້ເມື່ອຜູ້ໃຊ້ຕ້ອງການ OCR ຮູບພາບທີ່ມີຂໍ້ຄວາມລາວ.
+  ຮອງຮັບ: ຮູບ handwritten, ເອກະສານ printed, screenshot
+triggers:
+  - "OCR ຮູບ"
+  - "ອ່ານຂໍ້ຄວາມຈາກຮູບ"
+  - "ແປງຮູບເປັນຂໍ້ຄວາມ"
+version: "1.0"
+author: laligence
+---
+```
+
+### Layer 2 — Body (ຂັ້ນຕອນ)
+ນີ້ຄື SOP ທີ່ Agent ປະຕິບັດຕາມ:
+
+```markdown
+## ຂັ້ນຕອນດຳເນີນການ
+
+1. ຮັບ input (URL, base64, ຫຼື file path)
+2. ເລືອກ model: ຖ້າ printed → PaddleOCR, ຖ້າ handwritten → TrOCR
+3. ດຳເນີນການ OCR
+4. Post-process: ລຶບ noise, ຈັດຮູບແບບ
+5. Return structured output (JSON ຫຼື plain text)
+
+## ຂໍ້ຈຳກັດ
+- ບໍ່ຮອງຮັບ PDF ຫຼາຍໜ້າ (ໃຊ້ pdf-to-image ກ່ອນ)
+- accuracy ຂຶ້ນກັບຄຸນນະພາບຮູບ
+```
+
+### Layer 3 — Resources (ໂຕຊ່ວຍ)
+ໄຟລ໌ scripts, models, ຫຼື references ທີ່ link ຈາກ body:
+
+```
+lao-ocr/
+  SKILL.md          ← ໄຟລ໌ຫຼັກ
+  scripts/
+    run_ocr.py      ← ໂຕ run จริง
+    postprocess.py  ← ທຳຄວາມສະອາດ output
+  references/
+    model_card.md   ← ຂໍ້ມູນ model
+  assets/
+    sample.jpg      ← ຕົວຢ່າງທົດສອບ
+```
+
+---
+
+## ໂຄງສ້າງໄຟລ໌ທີ່ແນະນຳ
+
+```
+my-skill/
+├── SKILL.md          ← ຕ້ອງມີ (ຊື່ຕ້ອງ SKILL.md)
+├── scripts/          ← optional: Python/bash scripts
+├── references/       ← optional: docs, papers
+└── assets/           ← optional: sample data, images
+```
+
+<Callout type="warning">
+ຊື່ໄຟລ໌ **ຕ້ອງ** ເປັນ `SKILL.md` (ຕົວໃຫຍ່ທັງໝົດ). ຖ້າຕັ້ງ `skill.md` ຫຼື `Skill.md` Agent ຈະບໍ່ຮັບຮູ້.
+</Callout>
+
+---
+
+## ວິທີສ້າງ SKILL.md ທີ່ດີ (5 ຂັ້ນຕອນ)
+
+### ຂັ້ນຕອນທີ 1: ກຳໜົດ Intent ໃຫ້ຊັດເຈນ
+
+ຕ້ອງຕອບ 3 ຄຳຖາມ:
+- Skill ນີ້ **ທຳຫຍັງ**?
+- **ເມື່ອໃດ** Agent ຄວນໃຊ້ມັນ?
+- Input/Output ແມ່ນຫຍັງ?
+
+### ຂັ້ນຕອນທີ 2: ຂຽນ SKILL.md
+
+ໂຄງສ້າງ YAML frontmatter ເຕັມ:
+
+```yaml
+---
+name: your-skill-name          # lowercase-hyphen
+description: >
+  [ອະທິບາຍ 2-3 ປະໂຫຍກ ວ່າ skill ນີ້ທຳຫຍັງ
+  ແລະ ຄວນໃຊ້ເມື່ອໃດ]
+triggers:
+  - "phrase 1"
+  - "phrase 2"
+input_format: "text | image | file"
+output_format: "text | json | file"
+version: "1.0"
+author: your-name
+dependencies:           # optional
+  - package1
+  - package2
+---
+
+## Overview
+[ອະທິບາຍ skill ສັ້ນໆ]
+
+## ຂັ້ນຕອນ
+1. ...
+2. ...
+3. ...
+
+## ຂໍ້ຈຳກັດ
+- ...
+
+## ຕົວຢ່າງ
+Input: ...
+Output: ...
+```
+
+### ຂັ້ນຕອນທີ 3: ຂຽນ Description ທີ່ດີ
+
+Description ແມ່ນສ່ວນສຳຄັນທີ່ສຸດ — Agent ໃຊ້ມັນໃນການ **ຕັດສິນໃຈ** ວ່າຈະ load skill ນີ້ຫຼືບໍ່.
+
+```yaml
+# ❌ ບໍ່ດີ — ບອກວ່າທຳຫຍັງ ແຕ່ບໍ່ບອກເມື່ອໃດ
+description: "OCR tool for images"
+
+# ✅ ດີ — ບອກທັງ ທຳຫຍັງ + ເມື່ອໃດ + ຮູບແບບ input
+description: >
+  ໃຊ້ເມື່ອຜູ້ໃຊ້ສົ່ງຮູບພາບທີ່ມີຂໍ້ຄວາມລາວ ແລະຕ້ອງການ
+  ແປງເປັນ text. ຮອງຮັບທັງ handwritten ແລະ printed.
+  Input: URL ຫຼື base64 image. Output: ຂໍ້ຄວາມລາວ plain text.
+```
+
+### ຂັ້ນຕອນທີ 4: ທົດສອບ
+
+```bash
+# ທົດສອບ manual
+claude --skill ./lao-ocr "ຊ່ວຍ OCR ຮູບນີ້ໃຫ້ແດ່: image.jpg"
+
+# ກວດ trigger ວ່າ activate ຖືກໄຫມ
+claude --skill ./lao-ocr "ອ່ານຂໍ້ຄວາມຈາກຮູບ screenshot.png"
+
+# ທົດສອບ edge case
+claude --skill ./lao-ocr "ຮູບນີ້ຂຽນຫຍັງ?"  # trigger ທີ່ຂ້ຽງໆ
+```
+
+### ຂັ້ນຕອນທີ 5: Optimize
+
+ຫຼັງທົດສອບ, ປັບ:
+- ເພີ່ມ/ລຶບ triggers ຕາມ pattern ທີ່ Agent ເຂົ້າໃຈ/ບໍ່ເຂົ້າໃຈ
+- ເພີ່ມຕົວຢ່າງໃນ body ຖ້າ output ຜິດ
+- ຈຳກັດຂອບເຂດ (`ຂໍ້ຈຳກັດ`) ຖ້າ Agent ໃຊ້ຜິດ context
+
+---
+
+## ຕົວຢ່າງຈິງ: Lao OCR Skill
+
+### ໂຄງສ້າງໂຟນເດີ
+
+```
+lao-ocr-skill/
+├── SKILL.md
+├── scripts/
+│   ├── run_ocr.py
+│   └── postprocess.py
+├── references/
+│   └── paddleocr_lao.md
+└── assets/
+    └── test_sample.jpg
+```
+
+### `SKILL.md` ເຕັມ
+
+```yaml
+---
+name: lao-ocr
+description: >
+  ໃຊ້ເມື່ອຜູ້ໃຊ້ສົ່ງຮູບພາບທີ່ມີຂໍ້ຄວາມລາວ (handwritten, printed,
+  ຫຼື screenshot) ແລ້ວຕ້ອງການ extract ຂໍ້ຄວາມ.
+  Input: image URL ຫຼື base64 string.
+  Output: plain text ລາວ ຫຼື JSON structured.
+triggers:
+  - "OCR ຮູບ"
+  - "ອ່ານຂໍ້ຄວາມຈາກຮູບ"
+  - "ແປງຮູບເປັນຂໍ້ຄວາມ"
+  - "extract text from image"
+  - "ຮູບນີ້ຂຽນຫຍັງ"
+input_format: "image (URL or base64)"
+output_format: "text or JSON"
+version: "1.2"
+author: laligence
+dependencies:
+  - paddleocr
+  - pillow
+---
+
+## Overview
+
+Skill ນີ້ໃຊ້ PaddleOCR (fine-tuned ສຳລັບລາວ) ສຳລັບ printed text
+ແລະ TrOCR ສຳລັບ handwritten. ມີ post-processing ລຶບ noise ອັດຕະໂນມັດ.
+
+## ຂັ້ນຕອນ
+
+1. **Validate input**: ກວດ URL ຫຼື base64 valid ໄຫມ
+2. **Classify**: ວິເຄາະວ່າ handwritten ຫຼື printed (ໃຊ້ heuristic)
+3. **Run OCR**:
+   - Printed → `scripts/run_ocr.py --model paddleocr`
+   - Handwritten → `scripts/run_ocr.py --model trocr`
+4. **Post-process**: `scripts/postprocess.py` (ລຶບ noise, normalize)
+5. **Return**: plain text ຖ້າ simple, JSON ຖ້າ structured request
+
+## ຂໍ້ຈຳກັດ
+
+- ບໍ່ຮອງຮັບ PDF (ໃຊ້ pdf2image ກ່ອນ)
+- accuracy ລົດລົງຖ້າຮູບ resolution ຕ່ຳກວ່າ 150 DPI
+- ຮອງຮັບພາສາລາວ + ພາສາອັງກິດ ເທົ່ານັ້ນ
+
+## ຕົວຢ່າງ
+
+**Input:**
+```
+ຊ່ວຍ OCR ຮູບນີ້: https://example.com/doc.jpg
+```
+
+**Output:**
+```
+ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ
+ກະຊວງສຶກສາທິການ ແລະ ກິລາ
+```
+```
+
+---
+
+## ຕາຕະລາງ: ຄວາມຜິດພາດທີ່ຄວນຫຼີກລ້ຽງ
+
+| ຄວາມຜິດພາດ | ບັນຫາ | ວິທີແກ້ |
+|---|---|---|
+| Description ສັ້ນເກີນ | Agent ໃຊ້ skill ຜິດ context | ເພີ່ມ "ໃຊ້ເມື່ອ..." ແລະ input/output format |
+| ຊື່ `skill.md` (lowercase) | Agent ບໍ່ຮັບຮູ້ | ຕ້ອງ `SKILL.md` |
+| ບໍ່ມີ `triggers` | Activation ຊ້າ / miss | ໃສ່ 3–5 phrases ທີ່ user ອາດໃຊ້ |
+| SKILL.md ຍາວກວ່າ 500 ບັນທັດ | Context window ໃຊ້ຫຼາຍ | ຍ້າຍລາຍລະອຽດໄປ `references/` |
+| ບໍ່ທົດສອບ edge case | Skill ເຮັດວຽກຜິດ | ທົດສອບ trigger ທີ່ຂ້ຽງໆ ທຸກຄັ້ງ |
+
+---
+
+## Packaging ແລະ ການ Deploy
+
+### ໂຄງສ້າງ registry (ຫຼາຍ skills)
+
+```
+skills-registry/
+├── lao-ocr/
+│   └── SKILL.md
+├── lao-tts/
+│   └── SKILL.md
+├── lao-asr/
+│   └── SKILL.md
+└── README.md
+```
+
+### ວິທີ load ໃນ Claude Agent SDK
+
+```python
+from anthropic import Anthropic
+from claude_agent_sdk import AgentConfig, load_skills
+
+client = Anthropic()
+
+# Load skill ດຽວ
+config = AgentConfig(
+    skills=["./skills-registry/lao-ocr"]
+)
+
+# Load ທຸກ skills ໃນ registry
+config = AgentConfig(
+    skills=load_skills("./skills-registry/")
+)
+```
+
+<Callout type="tip">
+ຖ້າ deploy ໄປ production, ໃຊ້ `version` field ໃນ frontmatter ຕິດຕາມການປ່ຽນແປງ. ຕົວຢ່າງ: `version: "1.2"` ໝາຍຄວາມວ່າ major version 1, patch 2.
+</Callout>
+
+---
+
+## ສະຫຼຸບ 5 ຂໍ້
+
+1. **SKILL.md = SOP ສຳລັບ AI** — ບໍ່ແມ່ນ system prompt ທຳມະດາ
+2. **Description ຄືຫົວໃຈ** — Agent ໃຊ້ຕັດສິນໃຈ ຈະ load skill ຫຼືບໍ່
+3. **3-Layer Structure**: Frontmatter → Body → Resources
+4. **ຊື່ຕ້ອງ `SKILL.md`** ຕົວໃຫຍ່ ແລະ **ໄຟລ໌ ≤ 500 ບັນທັດ**
+5. **ທົດສອບ triggers ທຸກຄັ້ງ** ກ່ອນ deploy — ທົດສອບທັງ exact match ແລະ paraphrase
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
