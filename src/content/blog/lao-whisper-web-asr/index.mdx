@@ -1,0 +1,585 @@
+---
+title: 'ສ້າງເວັບໄຊຖອດຄວາມສຽງພາສາລາວດ້ວຍ Whisper AI'
+description: 'ອະທິບາຍວິທີສ້າງລະບົບ ASR ສຳລັບພາສາລາວ ໂດຍໃຊ້ Whisper (OpenAI), FastAPI Backend, Next.js Frontend ພ້ອມ Real-time transcription ຜ່ານ WebSocket ແລະ pipeline Fine-tune ໂມເດລ'
+date: 2026-04-02
+tags: ['asr', 'whisper', 'lao-ai', 'fastapi', 'nextjs', 'speech-to-text', 'fine-tuning']
+authors: ['laligence']
+---
+
+import { Callout } from '@/components/Callout'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## ໂຄງການນີ້ຄືຫຍັງ?
+
+**Lao Whisper Web** ເປັນເວັບແອັບທີ່ຊ່ວຍຖອດຄວາມສຽງພາສາລາວໃຫ້ເປັນຂໍ້ຄວາມ (Automatic Speech Recognition — ASR) ໂດຍອັດຕະໂນມັດ. ຜູ້ໃຊ້ງານສາມາດ:
+
+- **ອັບໂຫຼດໄຟລ໌ສຽງ** (MP3, WAV, MP4, FLAC ແລະ ຮູບແບບອື່ນໆ) ເພື່ອຖອດຄວາມ
+- **ຖອດຄວາມແບບ Real-time** ຜ່ານໄມຄ໌ໂຟນໂດຍກົງ
+- **ແກ້ໄຂຜົນລັບ** ແລະ ສົ່ງອອກເປັນ TXT, SRT, ຫຼື JSON
+- **ເກັບຂໍ້ມູນ** ເພື່ອໃຊ້ Fine-tune ໂມເດລໃຫ້ຮັບຮູ້ພາສາລາວໄດ້ດີຂຶ້ນ
+
+---
+
+## ໂຄງສ້າງລະບົບ (Architecture)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    ຜູ້ໃຊ້ງານ (Browser)                   │
+│              Next.js 14 + TypeScript + Tailwind          │
+│                       Port: 3000                         │
+└──────────────────────────┬──────────────────────────────┘
+                           │  REST API / WebSocket
+┌──────────────────────────▼──────────────────────────────┐
+│                   FastAPI Backend                        │
+│                   Python 3.10+                           │
+│                       Port: 8000                         │
+│                                                          │
+│   ┌─────────────────────────────────────────────────┐   │
+│   │              Engine Abstraction Layer            │   │
+│   │  ┌──────────┐ ┌──────────┐ ┌────────────────┐  │   │
+│   │  │  Local   │ │    HF    │ │   Finetuned    │  │   │
+│   │  │ Whisper  │ │ Whisper  │ │    Engine      │  │   │
+│   │  └──────────┘ └──────────┘ └────────────────┘  │   │
+│   └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+| ສ່ວນ | ເທັກໂນໂລຈີ | ໜ້າທີ່ |
+|------|-----------|--------|
+| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind CSS | ສ່ວນຕິດຕໍ່ຜູ້ໃຊ້ |
+| **Backend** | FastAPI, Python, PyTorch, HuggingFace Transformers | API ແລະ AI engine |
+
+---
+
+## ເທັກໂນໂລຈີທີ່ໃຊ້
+
+### Backend
+- **FastAPI** — Python web framework ທີ່ໄວ, ຮອງຮັບ async ໂດຍທຳມະຊາດ
+- **Whisper (OpenAI)** — ໂມເດລ AI ສຳລັບຖອດຄວາມສຽງ
+- **HuggingFace Transformers** — ໂຫຼດ Whisper ແລະ Fine-tuned checkpoints
+- **PyTorch** — Deep learning framework
+- **librosa + soundfile** — ປະມວນຜົນສຽງ
+- **FFmpeg** — ແປງຮູບແບບໄຟລ໌ສຽງ/ວີດີໂອ
+
+### Frontend
+- **Next.js 14** — React framework ທີ່ສົມບູນ
+- **Tailwind CSS** — Utility-first CSS
+- **shadcn/ui** — UI Components ທີ່ສວຍງາມ
+- **Framer Motion** — Animation
+- **Noto Sans Lao** — Font ສຳລັບຕົວໜັງສືລາວ
+
+---
+
+## ວິທີສ້າງ Backend ດ້ວຍ FastAPI
+
+### ໂຄງສ້າງໄຟລ໌ Backend
+
+```
+backend/
+├── run.py
+├── requirements.txt
+└── app/
+    ├── main.py
+    ├── config.py
+    ├── api/
+    │   ├── routes_transcribe.py
+    │   └── websocket_transcribe.py
+    ├── core/
+    │   ├── model_manager.py
+    │   └── audio_utils.py
+    ├── engines/
+    │   ├── base_engine.py
+    │   ├── whisper_local_engine.py
+    │   ├── whisper_hf_engine.py
+    │   └── finetuned_engine.py
+    └── utils/
+        └── lao_text.py
+```
+
+### Engine Abstraction Pattern
+
+ແນວຄິດຫຼັກຄື ໃຊ້ **Abstract Base Class** ເພື່ອໃຫ້ສ່ຽນ AI Engine ໄດ້ງ່າຍ ໂດຍບໍ່ຕ້ອງປ່ຽນ code ຫຼາຍ:
+
+```python
+# base_engine.py
+from abc import ABC, abstractmethod
+
+class BaseASREngine(ABC):
+    @abstractmethod
+    def load_model(self, model_name: str): ...
+
+    @abstractmethod
+    def transcribe_file(self, audio_path: str, language: str) -> dict: ...
+
+    @abstractmethod
+    def transcribe_chunk(self, audio_bytes: bytes) -> dict: ...
+
+    @abstractmethod
+    def get_model_info(self) -> dict: ...
+```
+
+ຈາກນັ້ນ implement Engine ສຳລັບ Whisper Local:
+
+```python
+# whisper_local_engine.py
+import whisper
+from .base_engine import BaseASREngine
+
+class WhisperLocalEngine(BaseASREngine):
+    def __init__(self):
+        self.model = None
+
+    def load_model(self, model_name: str = "medium"):
+        self.model = whisper.load_model(model_name)
+
+    def transcribe_file(self, audio_path: str, language: str = "lo") -> dict:
+        result = self.model.transcribe(
+            audio_path,
+            language=language,
+            task="transcribe",
+            word_timestamps=True
+        )
+        return result
+```
+
+<Callout type="info">
+ການໃຊ້ `language="lo"` ຢ່າງຈະແຈ້ງສຳຄັນຫຼາຍ — ຖ້າບໍ່ force Whisper ຈະ output ພາສາໄທ ເພາະ pre-train ດ້ວຍຂໍ້ມູນໄທຫຼາຍກວ່າລາວ.
+</Callout>
+
+### REST API Endpoints
+
+```python
+# routes_transcribe.py
+from fastapi import APIRouter, UploadFile, File
+
+router = APIRouter()
+
+@router.post("/api/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    language: str = "lo"
+):
+    tmp_path = save_temp_file(file)
+    engine = model_manager.get_engine()
+    result = engine.transcribe_file(tmp_path, language=language)
+
+    return {
+        "text": result["text"],
+        "segments": result["segments"],
+        "language": result.get("language", language)
+    }
+
+@router.post("/api/switch-model")
+async def switch_model(model_id: str):
+    # ສ່ຽນໂມເດລໂດຍບໍ່ຕ້ອງ restart server
+    await model_manager.load_engine_async(model_id)
+    return {"status": "loading"}
+```
+
+### Real-time Transcription ດ້ວຍ WebSocket
+
+```python
+# websocket_transcribe.py
+from fastapi import WebSocket
+
+@router.websocket("/ws/transcribe")
+async def websocket_transcribe(websocket: WebSocket):
+    await websocket.accept()
+
+    try:
+        while True:
+            # ຮັບ audio chunk (2 ວິນາທີ) ຈາກ browser
+            data = await websocket.receive_bytes()
+
+            # ຂ້າມຖ້າງຽບ (VAD)
+            if is_silence(data):
+                continue
+
+            engine = model_manager.get_engine()
+            result = engine.transcribe_chunk(data)
+
+            # ສົ່ງຜົນລັບກັບທັນທີ
+            await websocket.send_json({
+                "text": result["text"],
+                "is_final": True,
+                "confidence": result.get("avg_logprob", 0)
+            })
+    except Exception:
+        await websocket.close()
+```
+
+---
+
+## ວິທີສ້າງ Frontend ດ້ວຍ Next.js
+
+### ໂຄງສ້າງໄຟລ໌ Frontend
+
+```
+frontend/src/
+├── app/
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── upload/UploadTab.tsx
+│   ├── realtime/
+│   │   ├── RealtimeTab.tsx
+│   │   └── RealtimeTranscript.tsx
+│   ├── transcript/TranscriptViewer.tsx
+│   ├── model/
+│   │   ├── ModelSwitcher.tsx
+│   │   └── ModelInfoCard.tsx
+│   └── research/ResearchPanel.tsx
+└── lib/
+    ├── api.ts
+    └── websocket.ts
+```
+
+### Upload Tab
+
+```tsx
+// UploadTab.tsx
+"use client";
+import { useState } from "react";
+
+export function UploadTab() {
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState<TranscriptResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleTranscribe = async () => {
+    if (!file) return;
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("language", "lo");
+
+    try {
+      const res = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      setResult(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <input
+        type="file"
+        accept="audio/*,video/*"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+      />
+      <button onClick={handleTranscribe} disabled={loading}>
+        {loading ? "ກຳລັງຖອດຄວາມ..." : "ຖອດຄວາມ"}
+      </button>
+      {result && (
+        <p className="font-lao text-lg leading-8">{result.text}</p>
+      )}
+    </div>
+  );
+}
+```
+
+### Real-time Tab (WebSocket)
+
+```tsx
+// RealtimeTab.tsx
+"use client";
+import { useRef, useState } from "react";
+
+const CHUNK_DURATION_MS = 2000; // ຕັດ audio ທຸກ 2 ວິນາທີ
+
+export function RealtimeTab() {
+  const wsRef = useRef<WebSocket | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [transcript, setTranscript] = useState("");
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    const ws = new WebSocket("ws://localhost:8000/ws/transcribe");
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setTranscript((prev) => prev + " " + data.text);
+    };
+
+    const recorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+        ws.send(e.data);
+      }
+    };
+
+    recorder.start(CHUNK_DURATION_MS);
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    wsRef.current?.close();
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2">
+        <button onClick={startRecording}>ເລີ່ມຟັງ</button>
+        <button onClick={stopRecording}>ຢຸດ</button>
+      </div>
+      <div className="font-lao text-lg leading-8 min-h-32 p-4 border rounded">
+        {transcript || "ລໍຖ້າການເວົ້າ..."}
+      </div>
+    </div>
+  );
+}
+```
+
+### Lao Font Rendering
+
+```css
+/* globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;700&display=swap');
+
+.font-lao {
+  font-family: "Noto Sans Lao", "Phetsarath OT", sans-serif;
+  line-height: 1.8; /* ສຳຄັນ! ໃຫ້ພື້ນທີ່ສຳລັບວັນນະຍຸດ */
+}
+```
+
+<Callout type="warning">
+`line-height: 1.8` ຢ່າງໜ້ອຍ — ຖ້ານ້ອຍໄປ ວັນນະຍຸດລາວຈະຊ້ອນກັນ ສະແດງຜິດ.
+</Callout>
+
+---
+
+## ການ Normalize ຂໍ້ຄວາມລາວ
+
+Whisper ອາດ output ຕົວໜັງສືໄທ ຫຼື artifacts ຕ່າງໆ — ຕ້ອງ normalize:
+
+```python
+# lao_text.py
+import unicodedata
+import re
+
+def normalize_lao_text(text: str) -> str:
+    # NFC normalization
+    text = unicodedata.normalize("NFC", text)
+
+    # ລຶບ Zero-width space ແລະ BOM
+    text = text.replace("\u200b", "").replace("\ufeff", "")
+
+    # ລຶບ Whisper artifacts
+    artifacts = [
+        r"\[BLANK_AUDIO\]",
+        r"\[silence\]",
+        r"\(inaudible\)",
+        r"\[Music\]",
+    ]
+    for pattern in artifacts:
+        text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+```
+
+---
+
+## Fine-tuning ໂມເດລສຳລັບພາສາລາວ
+
+### ຂໍ້ມູນທີ່ຕ້ອງກຽມ
+
+```
+data/
+├── raw/
+│   ├── metadata.csv
+│   └── audio/
+└── processed/
+```
+
+ຮູບແບບ `metadata.csv`:
+
+```csv
+audio_path,transcript,split,duration
+audio/001.wav,ສະບາຍດີ ນີ້ຄືການທົດສອບ,train,3.2
+audio/002.wav,ຂ້ອຍຮັກພາສາລາວ,train,2.1
+audio/003.wav,ສາທາລະນະລັດ ປະຊາທິປະໄຕ ປະຊາຊົນລາວ,valid,4.5
+```
+
+### Script ກຽມຂໍ້ມູນ
+
+```python
+# prepare_dataset.py
+import subprocess
+import pandas as pd
+from pathlib import Path
+
+def prepare_audio(input_path: str, output_path: str):
+    """ແປງ audio ໃຫ້ເປັນ 16kHz mono WAV"""
+    subprocess.run([
+        "ffmpeg", "-i", input_path,
+        "-ar", "16000",
+        "-ac", "1",
+        "-y", output_path
+    ], check=True)
+
+def prepare_dataset(metadata_csv: str, audio_dir: str, output_dir: str):
+    df = pd.read_csv(metadata_csv)
+    output_path = Path(output_dir)
+
+    for _, row in df.iterrows():
+        audio_in = Path(audio_dir) / row["audio_path"]
+        audio_out = output_path / "processed" / row["audio_path"]
+        audio_out.parent.mkdir(parents=True, exist_ok=True)
+        prepare_audio(str(audio_in), str(audio_out))
+
+    train_df = df[df["split"] == "train"]
+    valid_df = df[df["split"] == "valid"]
+    train_df.to_csv(output_path / "metadata_train.csv", index=False)
+    valid_df.to_csv(output_path / "metadata_valid.csv", index=False)
+    print(f"ກຽມຂໍ້ມູນ: {len(train_df)} train, {len(valid_df)} valid")
+```
+
+### Script Fine-tune
+
+```python
+# run_finetune.py
+from transformers import (
+    WhisperForConditionalGeneration,
+    WhisperProcessor,
+    Seq2SeqTrainer,
+    Seq2SeqTrainingArguments,
+)
+import torch
+
+def run_finetune(
+    base_model: str = "openai/whisper-medium",
+    output_dir: str = "backend/models/lao-whisper-finetuned",
+    num_epochs: int = 10,
+):
+    processor = WhisperProcessor.from_pretrained(base_model, language="lo")
+    model = WhisperForConditionalGeneration.from_pretrained(base_model)
+
+    # Force output ພາສາລາວ
+    model.config.forced_decoder_ids = processor.get_decoder_prompt_ids(
+        language="lo", task="transcribe"
+    )
+
+    training_args = Seq2SeqTrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=num_epochs,
+        per_device_train_batch_size=8,
+        learning_rate=1e-5,
+        fp16=torch.cuda.is_available(),
+        predict_with_generate=True,
+        save_steps=500,
+        eval_steps=500,
+    )
+
+    trainer = Seq2SeqTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=valid_dataset,
+    )
+
+    trainer.train()
+    trainer.save_model(output_dir)
+    print(f"ບັນທຶກໂມເດລໃສ່: {output_dir}")
+```
+
+---
+
+## API Endpoints ທັງໝົດ
+
+| Method | Endpoint | ໜ້າທີ່ |
+|--------|----------|--------|
+| `GET` | `/api/health` | ກວດສະຖານະ server ແລະ model |
+| `GET` | `/api/model-info` | ຂໍ້ມູນໂມເດລທີ່ໃຊ້ຢູ່ |
+| `GET` | `/api/model-presets` | ລາຍຊື່ໂມເດລທີ່ສາມາດສ່ຽນໄດ້ |
+| `POST` | `/api/transcribe` | ອັບໂຫຼດໄຟລ໌ ແລະ ຖອດຄວາມ |
+| `POST` | `/api/switch-model` | ສ່ຽນໂມເດລ (ໂດຍບໍ່ restart) |
+| `POST` | `/api/save-correction` | ບັນທຶກ transcript ທີ່ແກ້ໄຂແລ້ວ |
+| `WS` | `/ws/transcribe` | Real-time transcription |
+
+---
+
+## ວິທີ Run ລະບົບ
+
+### ຕິດຕັ້ງ Dependencies
+
+```bash
+# Backend
+cd backend
+pip install -r requirements.txt
+
+# Frontend
+cd frontend
+npm install
+```
+
+### ຕັ້ງຄ່າ Environment
+
+```bash
+# backend/.env
+MODEL_TYPE=whisper_local
+MODEL_NAME=medium
+DEVICE=cpu        # ຫຼື cuda ຖ້າມີ GPU
+LANGUAGE=lo
+```
+
+### Start Server
+
+```bash
+# Terminal 1 — Backend
+cd backend
+python run.py
+# → http://localhost:8000
+
+# Terminal 2 — Frontend
+cd frontend
+npm run dev
+# → http://localhost:3000
+```
+
+---
+
+## ສິ່ງທີ່ຮຽນຮູ້ຈາກໂຄງການນີ້
+
+### 1. Whisper + ພາສາລາວ
+Whisper pre-train ດ້ວຍຂໍ້ມູນໄທຫຼາຍກວ່າລາວ → ອາດ output ໄທ ຖ້າບໍ່ force `language="lo"`
+
+### 2. Chunk-based Real-time
+Whisper ບໍ່ຮອງຮັບ true streaming — ໃຊ້ chunk 2 ວິນາທີ + VAD ຂ້າມ chunks ທີ່ງຽບ ເພື່ອປະຢັດ compute
+
+### 3. Engine Abstraction
+Abstract Base Class ຊ່ວຍ: test ກັບ `whisper_local` ກ່ອນ → deploy ດ້ວຍ `faster_whisper` ສຳລັບ production ໂດຍ code ສ່ວນໃຫຍ່ບໍ່ປ່ຽນ
+
+### 4. Font ສຳລັບລາວ
+ຕ້ອງ `line-height: 1.8` ຢ່າງໜ້ອຍ — ຖ້ານ້ອຍໄປ ວັນນະຍຸດຊ້ອນກັນ
+
+---
+
+## ສະຫຼຸບ
+
+ໂຄງການ **Lao Whisper Web** ສາທິດວ່າ ການສ້າງ ASR ລາວດ້ວຍ open-source tools ນັ້ນ **ເຮັດໄດ້ຈິງ** ໂດຍ:
+
+1. ໃຊ້ **Whisper** ເປັນ AI engine ຫຼັກ
+2. ສ້າງ **Engine abstraction** ເພື່ອຄວາມຍືດຫຍຸ່ນ
+3. ສ້າງ **pipeline ເກັບຂໍ້ມູນ** ເພື່ອ Fine-tune
+4. ໃຊ້ **WebSocket** ສຳລັບ real-time transcription
+
+ສາມາດ extend ຕໍ່ໄດ້: speaker diarization, subtitle export, cloud deployment.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
