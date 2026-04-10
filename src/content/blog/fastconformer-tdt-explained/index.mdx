@@ -1,0 +1,193 @@
+---
+title: 'FastConformer-TDT ແມ່ນຫຍັງ? ຄຳອະທິບາຍງ່າຍໆ ສຳລັບໂຕແບບ ASR'
+description: 'ອະທິບາຍໂຄງສ້າງ FastConformer-TDT ຂອງ NVIDIA NeMo ແບບລະອຽດ — ຄວາມແຕກຕ່າງຂອງ FastConformer ກັບ Conformer ທຳມະດາ, ວິທີ TDT Decoder ເຮັດວຽກ, ແລະ ເປັນຫຍັງໂຕແບບນີ້ຈຶ່ງໄວ ແລະ ຖືກຕ້ອງ'
+date: 2026-04-10
+tags: ['asr', 'speech', 'deep-learning', 'transformer', 'neural-networks', 'lao-ai', 'evaluation']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+import archImg from './arch.svg'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## FastConformer-TDT ແມ່ນຫຍັງ?
+
+**FastConformer-TDT** ແມ່ນໂຕແບບ AI ທີ່ໃຊ້ **ຟັງ ແລະ ຖອດຂໍ້ຄວາມຈາກສຽງ** (Automatic Speech Recognition — ASR).
+ພັດທະນາໂດຍ **NVIDIA** ໃນ framework ທີ່ຊື່ວ່າ **NeMo** ແລະ ໃຫ້ performance ທີ່ດີທີ່ສຸດໃນ leaderboard ສາກົນ.
+
+ໂຕແບບປະກອບດ້ວຍ **2 ສ່ວນຫຼັກ**:
+
+- **FastConformer** — ສ່ວນ "ຟັງສຽງ" ແລະ ເຂົ້າໃຈ context
+- **TDT** (Token-and-Duration Transducer) — ສ່ວນ "ຂຽນຂໍ້ຄວາມ" ອອກມາໄດ້ໄວ
+
+<Callout type="info">
+FastConformer-TDT ໄດ້ຕິດ Top ໃນ HuggingFace Open ASR Leaderboard (Parakeet-TDT-0.6B V2 — May 2025) ໂດຍ NVIDIA ສ້າງຂຶ້ນໃນ NeMo framework.
+</Callout>
+
+---
+
+## ໂຄງສ້າງ Architecture
+
+ຮູບດ້ານລຸ່ມສະແດງ pipeline ຄົບຈາກ audio input ໄປຫາ transcript output:
+
+<img src={archImg} alt="FastConformer-TDT Architecture Diagram" style="width: 100%; border-radius: 10px; margin: 16px 0;" />
+
+Pipeline ຫຼັກ:
+
+```
+🎤 Audio → Feature Extraction → FastConformer Encoder → TDT Decoder → 📝 Transcript
+```
+
+---
+
+## ສ່ວນທີ 1: FastConformer Encoder
+
+### Conformer ເດີມ
+
+ກ່ອນຈະເຂົ້າໃຈ FastConformer ຕ້ອງຮູ້ຈັກ **Conformer** ກ່ອນ.
+Conformer ປະສົມ 2 ເທັກໂນໂລຈີເຂົ້າກັນ:
+
+| ເທັກໂນໂລຈີ | ໜ້າທີ່ |
+|---|---|
+| **Transformer (Attention)** | ເບິ່ງຄວາມສຳພັນລະຫວ່າງສຽງທີ່ຫ່າງໄກ |
+| **CNN (Convolution)** | ເບິ່ງລາຍລະອຽດສຽງທີ່ຢູ່ໃກ້ໆ ກັນ |
+
+ການປະສົມ 2 ອັນນີ້ ເຮັດໃຫ້ Conformer ເຂົ້າໃຈສຽງໄດ້ດີຫຼາຍ — ທັງ **local pattern** ແລະ **global context**.
+
+### FastConformer ດີກວ່ານຳແນວໃດ?
+
+FastConformer ແມ່ນ **Conformer ທີ່ຖືກ optimize ໃຫ້ໄວຂຶ້ນ** ໂດຍ:
+
+1. **8× Depthwise Subsampling** — ຮີດ (compress) time frames ລົງ 8 ເທົ່າ ກ່ອນໜ້ານີ້ Conformer compress ລົງ 4 ເທົ່າ
+2. **Depthwise Separable Convolution ດ້ວຍ kernel size = 9** — ຄຳນວນໜ້ອຍລົງ ແຕ່ capture pattern ຄືເດີມ
+3. **256 channels** — ຮອງຮັບ audio ຍາວຫຼາຍກວ່າ 1 ຊົ່ວໂມງ ໂດຍໃຊ້ local attention
+
+ຜົນ: **ໄວຂຶ້ນ ~2.4× ເທທທຍບກັບ Conformer ທຳມະດາ** ໂດຍ model quality ຫຼຸດລົງໜ້ອຍຫຼາຍ.
+
+<Callout type="tip">
+ສຳລັບ audio stream ແບບ real-time ໃຊ້ **cache-aware streaming variant** ຂອງ FastConformer — ສາມາດ configure latency ແລະ accuracy tradeoff ໄດ້ຕາມຕ້ອງການ.
+</Callout>
+
+---
+
+## ສ່ວນທີ 2: TDT Decoder
+
+### Transducer ແບບດັ້ງເດີມ (RNN-T)
+
+ASR transducer ທຳມະດາ ຄື **RNN-T** ເຮັດວຽກ:
+- ອ່ານສຽງຊ້ອຍໆ frame ຕໍ່ frame
+- ທຸກ frame ຕັດສິນໃຈ: "ດໍາເນີນຕໍ່" ຫຼື "emit token"
+
+ບັນຫາ: **decoding ຊ້າ** ເພາະຕ້ອງ process ທຸກ frame ທີລະຄັ້ງ.
+
+### TDT ແກ້ປັນຫາຢ່າງໃດ?
+
+TDT ສ້າງ **2 head ພ້ອມກັນ** ຈາກ encoder output ດຽວກັນ:
+
+```
+Encoder output
+      ↓
+ ┌────────────────┐     ┌─────────────────┐
+ │  Token Head    │     │  Duration Head  │
+ │  ທາຍ token     │     │  ທາຍ #frames    │
+ └────────────────┘     └─────────────────┘
+       ↓                        ↓
+  "ສ", "ວັ", "ດີ"           3,  5,  2
+```
+
+| Head | ໜ້າທີ່ | ຕົວຢ່າງ Output |
+|---|---|---|
+| **Token Head** | ທາຍຕົວໜັງສື / token | `"ສ"`, `"ວັ"`, `"ດີ"` |
+| **Duration Head** | ທາຍວ່າ token ນັ້ນໃຊ້ຈັກ frame | `3`, `5`, `2` |
+
+ການຮູ້ duration ລ່ວງໜ້າ ເຮັດໃຫ້ **ຂ້າມ frames ທີ່ຫວ່າງໄດ້ທັນທີ** — ໄວຂຶ້ນຫຼາຍ ໂດຍ accuracy ບໍ່ຫຼຸດ.
+
+<Callout type="info">
+TDT ຮ່ວມ output ຈາກ Token Head ແລະ Duration Head ໃນ step ດຽວ ບໍ່ຈຳເປັນຕ້ອງ iterate ທຸກ frame ຄື RNN-T.
+</Callout>
+
+---
+
+## ວິທີທີ່ FastConformer-TDT ເຮັດວຽກ (ພາບລວມ)
+
+```
+🎤 ສຽງ (audio waveform)
+        ↓
+[ Feature Extraction ]  ← Log Mel-Spectrogram (80 bins)
+        ↓
+[ FastConformer Encoder ]
+  • 8× depthwise subsampling
+  • N × Conformer blocks (Conv kernel=9 + Multi-Head Attention)
+  • Global context (XL: ຮອງຮັບ audio > 1 ຊົ່ວໂມງ)
+        ↓
+[ TDT Decoder ]
+  • Token Head   → ຕົວໜັງສື
+  • Duration Head → ໄລຍະເວລາ
+        ↓
+📝 ຂໍ້ຄວາມ (transcript)
+```
+
+---
+
+## ປຽບທຽບກັບໂຕແບບອື່ນ
+
+| ໂຕແບບ | ຄວາມໄວ Decoding | ຄວາມຖືກຕ້ອງ | ໝາຍເຫດ |
+|---|---|---|---|
+| Conformer + CTC | ໄວ | ດີ | streaming ຍາກ |
+| Conformer + RNN-T | ກາງ | ດີ | real-time ໄດ້ |
+| **FastConformer + TDT** | **ໄວຫຼາຍ (~2.4×)** | **ດີຫຼາຍ** | ດີທີ່ສຸດໃນ NeMo |
+
+**ໄວຂຶ້ນ = ໃຊ້ GPU ໜ້ອຍລົງ = ປະຢັດຄ່າໃຊ້ຈ່າຍ inference** ໂດຍສະເພາະ production workload ຂະໜາດໃຫຍ່.
+
+<Callout type="warning">
+FastConformer-TDT ໃຫ້ຜົນດີ ສຳລັບ English ແລະ ພາສາທີ່ມີ training data ຫຼາຍ. ສຳລັບ**ພາສາລາວ** ຈຳເປັນຕ້ອງ **fine-tune** ໂດຍໃຊ້ Lao speech dataset ກ່ອນ ຈຶ່ງໃຫ້ WER ທີ່ດີ.
+</Callout>
+
+---
+
+## ຂະໜາດໂຕແບບ (Model Sizes)
+
+NVIDIA ປ່ອຍ FastConformer-TDT ຫຼາຍຂະໜາດ:
+
+| ຊື່ | ຈຳນວນ Parameters | ລາຍລະອຽດ |
+|---|---|---|
+| `Small` | ~14M | ໄວ, ໃຊ້ GPU ໜ້ອຍ |
+| `Medium` | ~32M | ສົມດຸນ speed / accuracy |
+| `Large` | ~120M | ຖືກຕ້ອງສູງ |
+| `XL` | ~600M | ຖືກຕ້ອງສູງສຸດ, global attention |
+| `Parakeet-TDT-0.6B V2` | ~600M | top leaderboard (HuggingFace OpenASR) |
+
+---
+
+## Use Cases
+
+- **Real-time transcription** — ຖ່າຍທອດສຽງເປັນຂໍ້ຄວາມ latency ຕ່ຳ
+- **Call center** — ຖອດບົດສົນທະນາລູກຄ້າ ອັດຕະໂນມັດ
+- **Subtitle generation** — ສ້າງ subtitle ວິດີໂອ ໄດ້ໄວ
+- **Medical dictation** — ບັນທຶກຄຳເວົ້າໝໍ ໃນ EMR system
+- **Voice assistant** — ຟັງ ແລະ ຕອບຄຳສັ່ງສຽງ
+
+---
+
+## ສະຫຼຸບ
+
+> **FastConformer** = "ຫູ" ທີ່ຟັງສຽງໄດ້ໄວ ແລະ ເຂົ້າໃຈ context ໄດ້ດີ
+>
+> **TDT** = "ມື" ທີ່ຂຽນ token + ໄລຍະເວລາ ອອກມາໄດ້ໄວ ໂດຍບໍ່ຕ້ອງ process ທຸກ frame
+>
+> **FastConformer-TDT** = ລວມ 2 ອັນ → ໂຕແບບ ASR ທີ່ **ໄວ ແລະ ຖືກຕ້ອງ** ລະດັບ state-of-the-art
+
+---
+
+## ແຫຼ່ງຂໍ້ມູນ
+
+- [NVIDIA NeMo Framework](https://github.com/NVIDIA/NeMo) — source code ແລະ pretrained models
+- [NeMo ASR Models Docs](https://docs.nvidia.com/nemo-framework/user-guide/latest/nemotoolkit/asr/models.html) — ລາຍລະອຽດ FastConformer, TDT ແລະ variant ອື່ນໆ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
