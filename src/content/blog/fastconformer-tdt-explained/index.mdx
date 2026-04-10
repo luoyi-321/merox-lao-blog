@@ -3,11 +3,10 @@ title: 'FastConformer-TDT ແມ່ນຫຍັງ? ຄຳອະທິບາຍ�
 description: 'ອະທິບາຍໂຄງສ້າງ FastConformer-TDT ຂອງ NVIDIA NeMo ແບບລະອຽດ — ຄວາມແຕກຕ່າງຂອງ FastConformer ກັບ Conformer ທຳມະດາ, ວິທີ TDT Decoder ເຮັດວຽກ, ແລະ ເປັນຫຍັງໂຕແບບນີ້ຈຶ່ງໄວ ແລະ ຖືກຕ້ອງ'
 date: 2026-04-10
 tags: ['asr', 'speech', 'deep-learning', 'transformer', 'neural-networks', 'lao-ai', 'evaluation']
-authors: ['laligence']
+authors: ['sulixay']
 ---
 
 import Callout from '@/components/Callout.astro'
-import archImg from './arch.svg'
 
 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
   <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
@@ -34,7 +33,7 @@ FastConformer-TDT ໄດ້ຕິດ Top ໃນ HuggingFace Open ASR Leaderboard
 
 ຮູບດ້ານລຸ່ມສະແດງ pipeline ຄົບຈາກ audio input ໄປຫາ transcript output:
 
-<img src={archImg} alt="FastConformer-TDT Architecture Diagram" style="width: 100%; border-radius: 10px; margin: 16px 0;" />
+<img src="/static/fastconformer-tdt-arch.svg" alt="FastConformer-TDT Architecture Diagram" style="width: 100%; border-radius: 10px; margin: 16px 0;" />
 
 Pipeline ຫຼັກ:
 
@@ -58,7 +57,7 @@ Conformer ປະສົມ 2 ເທັກໂນໂລຈີເຂົ້າກັ�
 
 ການປະສົມ 2 ອັນນີ້ ເຮັດໃຫ້ Conformer ເຂົ້າໃຈສຽງໄດ້ດີຫຼາຍ — ທັງ **local pattern** ແລະ **global context**.
 
-### FastConformer ດີກວ່ານຳແນວໃດ?
+### FastConformer ດີກວ່າແນວໃດ?
 
 FastConformer ແມ່ນ **Conformer ທີ່ຖືກ optimize ໃຫ້ໄວຂຶ້ນ** ໂດຍ:
 
@@ -66,7 +65,7 @@ FastConformer ແມ່ນ **Conformer ທີ່ຖືກ optimize ໃຫ້ໄ�
 2. **Depthwise Separable Convolution ດ້ວຍ kernel size = 9** — ຄຳນວນໜ້ອຍລົງ ແຕ່ capture pattern ຄືເດີມ
 3. **256 channels** — ຮອງຮັບ audio ຍາວຫຼາຍກວ່າ 1 ຊົ່ວໂມງ ໂດຍໃຊ້ local attention
 
-ຜົນ: **ໄວຂຶ້ນ ~2.4× ເທທທຍບກັບ Conformer ທຳມະດາ** ໂດຍ model quality ຫຼຸດລົງໜ້ອຍຫຼາຍ.
+ຜົນ: **ໄວຂຶ້ນ ~2.4× ທຽບກັບ Conformer ທຳມະດາ** ໂດຍ model quality ຫຼຸດລົງໜ້ອຍຫຼາຍ.
 
 <Callout type="tip">
 ສຳລັບ audio stream ແບບ real-time ໃຊ້ **cache-aware streaming variant** ຂອງ FastConformer — ສາມາດ configure latency ແລະ accuracy tradeoff ໄດ້ຕາມຕ້ອງການ.
@@ -79,10 +78,10 @@ FastConformer ແມ່ນ **Conformer ທີ່ຖືກ optimize ໃຫ້ໄ�
 ### Transducer ແບບດັ້ງເດີມ (RNN-T)
 
 ASR transducer ທຳມະດາ ຄື **RNN-T** ເຮັດວຽກ:
-- ອ່ານສຽງຊ້ອຍໆ frame ຕໍ່ frame
+- ອ່ານສຽງframe ຕໍ່ frame
 - ທຸກ frame ຕັດສິນໃຈ: "ດໍາເນີນຕໍ່" ຫຼື "emit token"
 
-ບັນຫາ: **decoding ຊ້າ** ເພາະຕ້ອງ process ທຸກ frame ທີລະຄັ້ງ.
+ບັນຫາ: **decoding ຊ້າ** ເພາະຕ້ອງ process ທຸກ frame ເທື່ອລະຄັ້ງ.
 
 ### TDT ແກ້ປັນຫາຢ່າງໃດ?
 
@@ -101,7 +100,7 @@ Encoder output
 
 | Head | ໜ້າທີ່ | ຕົວຢ່າງ Output |
 |---|---|---|
-| **Token Head** | ທາຍຕົວໜັງສື / token | `"ສ"`, `"ວັ"`, `"ດີ"` |
+| **Token Head** | ທາຍຕົວໜັງສື / token | `"ສະ"`, `"ບາຍ"`, `"ດີ"` |
 | **Duration Head** | ທາຍວ່າ token ນັ້ນໃຊ້ຈັກ frame | `3`, `5`, `2` |
 
 ການຮູ້ duration ລ່ວງໜ້າ ເຮັດໃຫ້ **ຂ້າມ frames ທີ່ຫວ່າງໄດ້ທັນທີ** — ໄວຂຶ້ນຫຼາຍ ໂດຍ accuracy ບໍ່ຫຼຸດ.
