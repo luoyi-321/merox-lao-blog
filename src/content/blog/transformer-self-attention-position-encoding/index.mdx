@@ -1,0 +1,450 @@
+---
+title: 'Transformer Deep Dive: Self-Attention ແລະ Position Encoding — ອະທິບາຍ Math ລະອຽດ'
+description: 'ອະທິບາຍ Self-Attention (Q, K, V), ການຄຳນວນ Attention ທີລະຂັ້ນຕອນດ້ວຍຕົວເລກຈິງ, ເຫດຜົນ Scale √dₖ, Multi-Head Attention, Sinusoidal PE ແລະ Modern PE (RoPE, ALiBi) — ລວມ Code NumPy ແລະ PyTorch'
+date: 2026-04-15
+tags: ['deep-learning', 'transformer', 'attention', 'neural-networks', 'python', 'pytorch', 'lao-ai']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+<Callout type="info">
+**ລະດັບ**: Intermediate → Advanced · **ເໝາະສຳລັບ**: ຜູ້ທີ່ຮູ້ Neural Network ພື້ນຖານ ແລ້ວ ຕ້ອງການເຂົ້າໃຈ Transformer ໃນລະດັບ Math
+</Callout>
+
+## Self-Attention: ເປັນຫຍັງຕ້ອງ Q, K, V ສາມ Vector?
+
+### Intuition: ຫ້ອງສະໝຸດ Database
+
+ຈິນຕະນາການ Attention ເໝືອນ **Database Query**:
+
+```
+Database (ຫ້ອງສະໝຸດ):
+  ├── Key₁ = "ປະຫວັດສາດ"    → Value₁ = [ເນື້ອຫາໜັງສືປ.ສ.]
+  ├── Key₂ = "ວິທະຍາສາດ"   → Value₂ = [ເນື້ອຫາໜັງສືວ.ສ.]
+  └── Key₃ = "ຄະນິດສາດ"    → Value₃ = [ເນື້ອຫາໜັງສືຄ.ສ.]
+
+Query = "ຂ້ອຍຢາກຮູ້ກ່ຽວກັບ Gravity"
+  → Match ກັບ Key₂ ("ວິທະຍາສາດ") ສູງສຸດ
+  → ດຶງ Value₂ ຂຶ້ນມາ
+```
+
+ໃນ Self-Attention, **ທຸກ Token ເປັນທັງ Query, Key ແລະ Value** ພ້ອມກັນ:
+
+| Vector | ຄຳຖາມ | ຕົວຢ່າງ (Token = "ໝາ") |
+|--------|--------|----------------------|
+| **Q** (Query) | "ຂ້ອຍຕ້ອງການຂໍ້ມູນຫຍັງ?" | "ໝາ" ຊອກຫາ context ໃດ? |
+| **K** (Key) | "ຂ້ອຍສາມາດຕອບຫຍັງ?" | "ໝາ" ມີ label ຫຍັງ? |
+| **V** (Value) | "ຂ້ອຍມີເນື້ອຫາຫຍັງ?" | "ໝາ" ໃຫ້ຂໍ້ມູນຫຍັງ? |
+
+### ສູດການສ້າງ Q, K, V
+
+ໃຫ້ $\mathbf{X} \in \mathbb{R}^{n \times d}$ ເປັນ matrix ຂອງ token embeddings (n tokens, d dimensions):
+
+$$\mathbf{Q} = \mathbf{X} \mathbf{W}^Q \quad \in \mathbb{R}^{n \times d_k}$$
+
+$$\mathbf{K} = \mathbf{X} \mathbf{W}^K \quad \in \mathbb{R}^{n \times d_k}$$
+
+$$\mathbf{V} = \mathbf{X} \mathbf{W}^V \quad \in \mathbb{R}^{n \times d_v}$$
+
+ໂດຍ $W^Q, W^K \in \mathbb{R}^{d \times d_k}$ ແລະ $W^V \in \mathbb{R}^{d \times d_v}$ ເປັນ weight matrices ທີ່ learn ໄດ້.
+
+<Callout type="tip">
+**ເປັນຫຍັງຕ້ອງ Project ຜ່ານ W?** ຖ້າໃຊ້ X ໂດຍກົງ Q=K=V → ທຸກ token attend ຕົວເອງ 100% ສະເໝີ. W ຊ່ວຍໃຫ້ model **ຮຽນ** ວ່າ query, key, value ຄວນ "ເບິ່ງ" ຫຍັງຕ່າງກັນ.
+</Callout>
+
+---
+
+## ຄຳນວນ Attention ເທື່ອລະຂັ້ນຕອນ
+
+### ຕົວຢ່າງ: ປະໂຫຍກ "ໝາ ກິນ ເຂົ້າ"
+
+ສົມມຸດ `d_model = 4`, `dₖ = 4`ໂຕຈີງໃຊ້ 512 ຫຼື 768,1024, ໃຊ້ $W^Q = W^K = W^V = I$ (Identity) ແບບງ່າຍ:
+
+```
+x_ໝາ   = [1.0,  0.5,  0.2, -0.3]
+x_ກິນ   = [0.2,  1.0, -0.1,  0.8]
+x_ເຂົ້າ  = [0.5, -0.2,  1.0,  0.4]
+∴ Q = K = V = X
+```
+
+### ຂັ້ນຕອນທີ 1–2: ຄຳນວນ Raw Score Matrix
+
+$$\text{Score}(q_i, k_j) = q_i \cdot k_j$$
+
+```
+S = QKᵀ:
+          ໝາ      ກິນ     ເຂົ້າ
+ໝາ   →  [1.38,   0.44,   0.48]
+ກິນ   →  [0.44,   1.65,  -0.17]
+ເຂົ້າ →  [0.48,  -0.17,   1.41]
+```
+
+### ຂັ້ນຕອນທີ 3: Scale ດ້ວຍ √dₖ = 2
+
+$$\hat{S} = \frac{S}{\sqrt{4}} = \frac{S}{2} \quad \Rightarrow \quad \begin{bmatrix} 0.690 & 0.220 & 0.240 \\ 0.220 & 0.825 & -0.085 \\ 0.240 & -0.085 & 0.705 \end{bmatrix}$$
+
+### ຂັ້ນຕອນທີ 4: Softmax → Attention Weights
+
+$$\alpha_{ij} = \frac{e^{\hat{s}_{ij}}}{\sum_{k} e^{\hat{s}_{ik}}}$$
+
+```
+A = softmax(Ŝ):
+           ໝາ      ກິນ     ເຂົ້າ
+ໝາ   →  [0.442,  0.276,  0.282]   ← ໝາ attend ຕົວເອງ 44.2%
+ກິນ   →  [0.261,  0.516,  0.223]   ← ກິນ attend ຕົວເອງ 51.6%
+ເຂົ້າ →  [0.287,  0.199,  0.514]   ← ເຂົ້າ attend ຕົວເອງ 51.4%
+```
+
+### ຂັ້ນຕອນທີ 5: Weighted Sum → Context-Aware Output
+
+$$\text{Output}_i = \sum_{j} \alpha_{ij} \cdot v_j$$
+
+```
+Output_ໝາ = 0.442 × [1.0, 0.5, 0.2, -0.3]
+           + 0.276 × [0.2, 1.0,-0.1,  0.8]
+           + 0.282 × [0.5,-0.2, 1.0,  0.4]
+           = [0.638, 0.441, 0.342, 0.201]
+```
+
+<Callout type="info">
+Output ຂອງ "ໝາ" ດຽວນີ້ **ລວມ context** ຂອງ "ກິນ" ແລະ "ເຂົ້າ" ຢູ່ໃນ vector ດຽວ — ນີ້ຄືຄວາມ ສາມາດຫຼັກຂອງ Self-Attention.
+</Callout>
+
+---
+
+## ເປັນຫຍັງຕ້ອງ Scale ດ້ວຍ √dₖ?
+
+### Proof: Dot Product ໃຫຍ່ຂຶ້ນຕາມ Dimension
+
+ຖ້າ $q, k \sim \mathcal{N}(0,1)$ ແລ້ວ:
+
+$$\text{Var}(q \cdot k) = \sum_i \text{Var}(q_i k_i) = d_k \cdot 1 = d_k \quad \Rightarrow \quad \text{Std}(q \cdot k) = \sqrt{d_k}$$
+
+ດັ່ງນັ້ນ ຄ່າ dot product ຈຶ່ງໃຫຍ່ຂຶ້ນຕາມ $\sqrt{d_k}$ ໂດຍທຳມະຊາດ — ຖ້າບໍ່ scale, softmax ຈະ saturate:
+
+```python
+import numpy as np
+
+scores_unscaled = np.array([8.0, 2.0, 3.0, 1.0])   # dₖ=64, ບໍ່ Scale
+scores_scaled   = scores_unscaled / 8                # Scale ດ້ວຍ √64
+
+softmax = lambda x: np.exp(x - x.max()) / np.exp(x - x.max()).sum()
+
+print("ບໍ່ Scale:", softmax(scores_unscaled))
+# → [0.9993, 0.0002, 0.0005, 0.0001]  ← ເກືອບ One-Hot!
+
+print("Scale ແລ້ວ:", softmax(scores_scaled))
+# → [0.5010, 0.1217, 0.2412, 0.1360]  ← Smooth Distribution
+```
+
+<Callout type="warning">
+ຖ້າ softmax saturate → gradient ≈ 0 → **Gradient Vanishing** ໃນ backprop → model ຮຽນຮູ້ບໍ່ໄດ້. Scale ດ້ວຍ $\sqrt{d_k}$ ແກ້ບັນຫານີ້.
+</Callout>
+
+ສູດ **Scaled Dot-Product Attention** ສົມບູນ:
+
+$$\boxed{\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\right)\mathbf{V}}$$
+
+---
+
+## Multi-Head Attention ເຮັດຫຍັງ?
+
+### ແນວຄິດ: ເບິ່ງຫຼາຍ "ມຸມ" ພ້ອມກັນ
+
+```
+ປະໂຫຍກ: "ໝາ ທີ ຂ້ອຍ ຊື້ ມານ ໃໝ່ ແລ່ນ ໄວ"
+
+Head 1 (Syntactic): ໝາ ← [ທີ, ຊື້, ມານ, ໃໝ່]   (Relative Clause)
+Head 2 (Subject):   ໝາ ↔ ແລ່ນ                  (Subject-Verb)
+Head 3 (Modifier):  ໝາ ← ໃໝ່                    (Adjective)
+Head 4 (Semantic):  ໝາ ↔ ຂ້ອຍ                   (Owner-Pet)
+```
+
+ແຕ່ລະ head ຮຽນ **pattern ທີ່ແຕກຕ່າງ** ພາຍໃນ data ດຽວກັນ.
+
+### ສູດ Multi-Head
+
+$$\text{head}_i = \text{Attention}(\mathbf{X}\mathbf{W}^Q_i,\ \mathbf{X}\mathbf{W}^K_i,\ \mathbf{X}\mathbf{W}^V_i)$$
+
+$$\text{MultiHead}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) \cdot \mathbf{W}^O$$
+
+**Dimensions (BERT Base: h=12, d=768):**
+
+```
+d_model = 768
+h       = 12
+dₖ = dᵥ = d_model / h = 64
+
+ແຕ່ລະ head: Q,K,V ∈ ℝⁿˣ⁶⁴
+Concat:     ∈ ℝⁿˣ⁷⁶⁸
+Output:     × W^O ∈ ℝ⁷⁶⁸ˣ⁷⁶⁸  → ℝⁿˣ⁷⁶⁸
+```
+
+<Callout type="tip">
+Multi-Head ບໍ່ເພີ່ມ computation ຫຼາຍ ເພາະ $d_k$ ຫຼຸດລົງ proportionally ກັບຈຳນວນ heads.
+</Callout>
+
+---
+
+## Position Encoding: ເປັນຫຍັງ Transformer ເບິ່ງບໍ່ເຫັນ Order?
+
+### Permutation Invariance Problem
+
+Self-Attention ໃຊ້ dot product $q_i \cdot k_j$ — ຄ່ານີ້ **ບໍ່ຂຶ້ນກັບ position** ຂອງ token:
+
+```python
+# ລຳດັບຕ່າງກັນ ແຕ່ Score Matrix ຄືກັນ!
+sentence_1 = ["ໝາ", "ກິນ", "ເຂົ້າ"]   # ຖືກ
+sentence_2 = ["ເຂົ້າ", "ໝາ", "ກິນ"]   # ລຳດັບຜິດ
+sentence_3 = ["ກິນ", "ເຂົ້າ", "ໝາ"]   # ລຳດັບຜິດ
+# → Score Matrix ຂອງທັງ 3 ຄືກັນ 100% ຖ້າ embedding ຄືກັນ!
+```
+
+### ວິທີແກ້: Inject Position Information
+
+$$\mathbf{X'} = \mathbf{X}_{\text{embed}} + \mathbf{PE}$$
+
+ໂດຍ PE ເປັນ matrix shape ດຽວກັນກັບ X ($n \times d_{\text{model}}$) ທີ່ມີຂໍ້ມູນ position.
+
+---
+
+## Sinusoidal PE: Math ລະອຽດ + ຄຸນສົມບັດ
+
+### ສູດ (Vaswani et al., 2017)
+
+$$\text{PE}(pos, 2i) = \sin\!\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)$$
+
+$$\text{PE}(pos, 2i+1) = \cos\!\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)$$
+
+ໂດຍ `pos` = ຕຳແໜ່ງ token, `i` = dimension index, `d_model` = embedding dimension.
+
+### ຄວາມຖີ່ (Frequency Analysis)
+
+```
+i=0:    ω₀  = 1.000000  → ປ່ຽນທຸກ token  (short-range)
+i=64:   ω₆₄ = 0.017783  → ປ່ຽນທຸກ ~56 tokens
+i=128:  ω₁₂₈= 0.001000  → ປ່ຽນທຸກ ~1000 tokens
+i=192:  ω₁₉₂= 0.000056  → ປ່ຽນທຸກ ~18000 tokens (long-range)
+```
+
+ຄ້າຍ **Binary Encoding** — dimension ຕ່ຳ capture short-range, dimension ສູງ capture long-range.
+
+### ຄຸນສົມບັດ: Relative Position = Rotation
+
+$$\mathbf{PE}(pos + k) = \mathbf{R}_k \cdot \mathbf{PE}(pos)$$
+
+**Proof (ສຳລັບ dimension 2i, 2i+1 ດ້ວຍ angle addition formula):**
+
+```
+PE(pos+k, 2i) = sin((pos+k)·ωᵢ)
+              = sin(pos·ωᵢ)cos(k·ωᵢ) + cos(pos·ωᵢ)sin(k·ωᵢ)
+              = PE(pos,2i)·cos(k·ωᵢ) + PE(pos,2i+1)·sin(k·ωᵢ)
+
+Matrix form:
+[PE(pos+k, 2i)  ]   [ cos(kωᵢ)  sin(kωᵢ)] [PE(pos, 2i)  ]
+[PE(pos+k, 2i+1)] = [-sin(kωᵢ)  cos(kωᵢ)] [PE(pos, 2i+1)]
+                              Rₖ (Rotation Matrix)
+```
+
+<Callout type="info">
+ຄຸນສົມບັດ rotation ນີ້ ໝາຍຄວາມວ່າ transformer ສາມາດ **ຮຽນ relative distance** `k` ໄດ້ ໂດຍ linear attention weights — ແລະ extrapolate ໄປ sequence ຍາວກວ່າ training ໄດ້.
+</Callout>
+
+### ຕາຕະລາງ PE ຕົວຢ່າງ (d=8, pos 0–4)
+
+| pos | d=0 | d=1 | d=2 | d=3 | d=4 | d=5 |
+|-----|-----|-----|-----|-----|-----|-----|
+| 0 | 0.000 | 1.000 | 0.000 | 1.000 | 0.000 | 1.000 |
+| 1 | 0.841 | 0.540 | 0.100 | 0.995 | 0.010 | 1.000 |
+| 2 | 0.909 | -0.416 | 0.199 | 0.980 | 0.020 | 1.000 |
+| 3 | 0.141 | -0.990 | 0.296 | 0.955 | 0.030 | 1.000 |
+| 4 | -0.757 | -0.654 | 0.389 | 0.921 | 0.040 | 0.999 |
+
+---
+
+## Sinusoidal vs Learned PE
+
+| ຄຸນສົມບັດ | Sinusoidal | Learned |
+|-----------|-----------|---------|
+| **Parameters** | ບໍ່ມີ extra | Learnable embeddings |
+| **Extrapolation** | ໄດ້ (rotation property) | ບໍ່ໄດ້ (max_len fixed) |
+| **Performance** | ≈ ເທົ່າກັນ | ≈ ເທົ່າກັນ |
+| **Interpretable** | ສູດຊັດເຈນ | Black box |
+| **ໃຊ້ໃນ** | Original Transformer | BERT, GPT-2, T5 |
+
+---
+
+## Modern Position Encodings
+
+### RoPE (Rotary Position Embedding) — LLaMA, Mistral, Gemma
+
+ແທນທີ່ຈະ **ບວກ** PE ກ່ອນ attention, RoPE **rotate** Q ແລະ K ດ້ວຍ position:
+
+$$q'_m = R_m q_m, \quad k'_n = R_n k_n$$
+
+$$q'_m \cdot k'_n = q_m^\top R_m^\top R_n k_n = q_m^\top R_{n-m} k_n$$
+
+ຜົນ: dot product ຂຶ້ນກັບ **relative distance** $(n-m)$ ໂດຍກົງ — ດີກວ່າ absolute PE ສຳລັບ long context.
+
+### ALiBi (Attention with Linear Biases) — MPT, BLOOM
+
+ລົບ linear penalty ຈາກ score ໂດຍກົງ ໂດຍບໍ່ຕ້ອງ position vectors:
+
+$$\text{Score}_{ij} = q_i \cdot k_j - m \cdot |i - j|$$
+
+```
+✅ ງ່າຍ, ບໍ່ຕ້ອງ position vectors
+✅ Extrapolate ໄດ້ດີ (train 2K → inference 4K+)
+❌ ບໍ່ capture absolute position
+```
+
+---
+
+## Code
+
+### NumPy: Scaled Dot-Product Attention
+
+```python
+import numpy as np
+
+def scaled_dot_product_attention(Q, K, V, mask=None):
+    """
+    Q: [batch, seq_q, d_k]
+    K: [batch, seq_k, d_k]
+    V: [batch, seq_k, d_v]
+    """
+    d_k = Q.shape[-1]
+
+    # Score = Q × Kᵀ / √dₖ
+    scores = np.matmul(Q, K.transpose(0, 2, 1)) / np.sqrt(d_k)
+
+    if mask is not None:
+        scores = np.where(mask == 0, -1e9, scores)
+
+    # Softmax (numerically stable)
+    scores -= scores.max(axis=-1, keepdims=True)
+    exp_scores = np.exp(scores)
+    weights = exp_scores / exp_scores.sum(axis=-1, keepdims=True)
+
+    output = np.matmul(weights, V)
+    return output, weights
+
+# ທົດສອບ
+np.random.seed(42)
+Q = np.random.randn(1, 3, 4)
+K = np.random.randn(1, 3, 4)
+V = np.random.randn(1, 3, 4)
+
+output, weights = scaled_dot_product_attention(Q, K, V)
+print("Output shape:", output.shape)           # (1, 3, 4)
+print("Row sum:", weights[0].sum(axis=-1))     # [1.0, 1.0, 1.0]
+```
+
+### PyTorch: Multi-Head Attention + Sinusoidal PE
+
+```python
+import torch
+import torch.nn as nn
+import math
+
+class SinusoidalPositionEncoding(nn.Module):
+    def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
+        super().__init__()
+        self.dropout = nn.Dropout(dropout)
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
+        )
+        pe[:, 0::2] = torch.sin(position * div_term)  # sin ສຳລັບ dimension ຄູ່
+        pe[:, 1::2] = torch.cos(position * div_term)  # cos ສຳລັບ dimension ຄີ່
+        self.register_buffer('pe', pe.unsqueeze(0))   # [1, max_len, d_model]
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x * math.sqrt(x.size(-1))                # Scale embedding
+        x = x + self.pe[:, :x.size(1), :]
+        return self.dropout(x)
+
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.1):
+        super().__init__()
+        assert d_model % num_heads == 0
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+        self.scale = math.sqrt(self.d_k)
+
+        self.W_Q = nn.Linear(d_model, d_model, bias=False)
+        self.W_K = nn.Linear(d_model, d_model, bias=False)
+        self.W_V = nn.Linear(d_model, d_model, bias=False)
+        self.W_O = nn.Linear(d_model, d_model, bias=False)
+        self.dropout = nn.Dropout(dropout)
+
+    def split_heads(self, x):
+        B, S, D = x.shape
+        return x.view(B, S, self.num_heads, self.d_k).transpose(1, 2)
+
+    def forward(self, x, mask=None):
+        B, S, D = x.shape
+        Q = self.split_heads(self.W_Q(x))   # [B, h, S, dₖ]
+        K = self.split_heads(self.W_K(x))
+        V = self.split_heads(self.W_V(x))
+
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, -1e9)
+
+        weights = self.dropout(torch.softmax(scores, dim=-1))
+        context = torch.matmul(weights, V)
+        context = context.transpose(1, 2).contiguous().view(B, S, D)
+        return self.W_O(context), weights
+
+
+# ທົດສອບ
+d_model, num_heads, seq_len, batch = 128, 8, 10, 2
+x = torch.randn(batch, seq_len, d_model)
+
+pe   = SinusoidalPositionEncoding(d_model)
+attn = MultiHeadSelfAttention(d_model, num_heads)
+
+x_pe         = pe(x)
+output, wts  = attn(x_pe)
+
+print(f"Input:   {x.shape}")        # [2, 10, 128]
+print(f"Output:  {output.shape}")   # [2, 10, 128]
+print(f"Weights: {wts.shape}")      # [2, 8, 10, 10]
+```
+
+---
+
+## ສະຫຼຸບ
+
+| ຫົວຂໍ້ | ຈຸດສຳຄັນ |
+|--------|---------|
+| **Q, K, V** | Trainable projections ຊ່ວຍ model ຮຽນ — ຖ້າໃຊ້ X ໂດຍກົງ Q=K=V, ທຸກ token attend ຕົວເອງ |
+| **Scale √dₖ** | ປ້ອງກັນ softmax saturation → gradient vanishing |
+| **Multi-Head** | ຮຽນ pattern ຫຼາຍລະດັບ (syntax, semantics) ພ້ອມກັນ |
+| **Sinusoidal PE** | sin/cos ຄວາມຖີ່ຕ່າງ → extrapolate ໄດ້, ບໍ່ມີ parameters |
+| **Learned PE** | ຮຽນ pattern ຕາມ data, ແຕ່ fixed max_len |
+| **RoPE** | Rotate Q, K ດ້ວຍ position → relative encoding ໂດຍກົງ |
+| **ALiBi** | Linear penalty ໃນ score → extrapolate ໄດ້ດີ, ງ່າຍ |
+
+---
+
+## ແຫຼ່ງຂໍ້ມູນ
+
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762) — Vaswani et al. (2017), ກຳເນີດ Transformer
+- [RoFormer: Rotary Position Embedding](https://arxiv.org/abs/2104.09864) — Su et al. (2021)
+- [Train Short, Test Long: ALiBi](https://arxiv.org/abs/2108.12409) — Press et al. (2021)
+- [BERT](https://arxiv.org/abs/1810.04805) — Devlin et al. (2019), Learned PE ທີ່ດັງທີ່ສຸດ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
