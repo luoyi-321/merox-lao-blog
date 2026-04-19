@@ -1,0 +1,182 @@
+---
+title: 'ການສ້າງລະບົບແກ້ໄຂການສະກົດຄຳລາວດ້ວຍ AI: ປະສົບການຈາກ ByT5 ແລະ mT5'
+description: 'ແບ່ງປັນປະສົບການຈາກໂຄງການ Lao Spell Correction ດ້ວຍ seq2seq fine-tuning — ສ້າງ noise dataset ເອງ, ທຽບ ByT5 vs mT5, ແລະ ຜົນທີ່ໄດ້ຮັບ: Exact Match 77.97%, CER 0.75%'
+date: 2026-04-19
+tags: ['lao-nlp', 'lao-ai', 'deep-learning', 'python', 'pytorch', 'fine-tuning', 'evaluation']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+<Callout type="info">
+ບົດຄວາມນີ້ແບ່ງປັນ**ປະສົບການຈິງ**ຈາກໂຄງການ NLP — dataset ທີ່ສ້າງເອງ, noise functions ທີ່ຂຽນເອງ, ແລະ ຜົນທີ່ໄດ້ຮັບທີ່ບໍ່ຄາດຄິດ.
+</Callout>
+
+## ເປັນຫຍັງຕ້ອງ Spell Correction ສຳລັບພາສາລາວ?
+
+ພາສາລາວມີຄວາມສັບສົນສະເພາະ ທີ່ເຮັດໃຫ້ການສະກົດຜິດເກີດຂຶ້ນງ່າຍ:
+
+- **ໄມ້ວັນນະຍຸດທີ່ຄ້າຍຄືກັນ** — ໄມ້ໂທ ້ ແລະ ໄມ້ເອກ ່ ມັກ confuse ກັນ
+- **ສະຫຼະດ້ານໜ້າ-ດ້ານຫຼັງ** — ຮູບແບບ encoding ທີ່ visual order ≠ logical order
+- **ຊ່ອງຫວ່າງລະຫວ່າງຄຳ** — ລາວບໍ່ໃຊ້ space ຄັ່ນທຸກຄຳ ເຮັດໃຫ້ merge/split errors ພົບເລື້ອຍ
+
+ເມື່ອ dataset ສຽງ ASR ທີ່ຂຽນໂດຍຄົນຫຼາຍຄົນໃນຫຼາຍຊ່ວງເວລາ ມີ orthographic errors, ລະບົບ Spell Correction ກາຍເປັນ **ສ່ວນສຳຄັນ** ໃນ pipeline.
+
+---
+
+## ວິທີການ: seq2seq Fine-tuning
+
+ເຮົາເລືອກວິທີ **sequence-to-sequence fine-tuning** — ໃຫ້ model ຮຽນ mapping ຈາກ "ຂໍ້ຄວາມທີ່ສະກົດຜິດ" ໄປຫາ "ຂໍ້ຄວາມທີ່ຖືກຕ້ອງ" ໂດຍກົງ. ທຽບ 2 model:
+
+| Model | Tokenization | ຈຸດເດັ່ນ |
+|-------|-------------|---------|
+| **mT5-small** | SentencePiece subword | Multilingual, ໄວ |
+| **ByT5-small** | UTF-8 bytes ໂດຍກົງ | ເຫັນທຸກ character ແຍກກັນ |
+
+<Callout type="tip">
+ການເລືອກ ByT5 ບໍ່ແມ່ນການເດົາສຸ່ມ — 1 ຕົວໜັງສືລາວ = **3 byte tokens**, ໝາຍຄວາມວ່າ ByT5 ເຫັນທຸກຕົວໜັງສືແຍກກັນ ເຊິ່ງສຳຄັນຫຼາຍເມື່ອຄວາມຜິດສ່ວນໃຫຍ່ເກີດໃນລະດັບ character.
+</Callout>
+
+---
+
+## ການສ້າງ Dataset: Noise Functions ທີ່ຂຽນເອງ
+
+ສ່ວນທີ່ໜ້າສົນໃຈທີ່ສຸດຂອງໂຄງການນີ້ຄືການສ້າງ **synthetic dataset** — ເອົາປະໂຫຍກທີ່ຖືກຕ້ອງ ແລ້ວ "ທຳລາຍ" ດ້ວຍ noise functions ເພື່ອໃຫ້ໄດ້ຄູ່ (noisy, correct).
+
+### Version 1 — 6 Noise Functions (11,912 ຄູ່)
+
+```python
+noise_functions_v1 = [
+    substitute_char,   # ປ່ຽນຕົວໜັງສືດ້ວຍຕົວທີ່ຄ້າຍຄືກັນ
+    delete_char,       # ລຶບຕົວໜັງສືລາວສຸ່ມ 1 ຕົວ
+    insert_char,       # ໃສ່ຕົວໜັງສືລາວສຸ່ມ 1 ຕົວ
+    swap_adjacent,     # ສັບ 2 ຕົວທີ່ຢູ່ຕິດກັນ
+    drop_tone_mark,    # ລຶບໄມ້ວັນນະຍຸດ
+    wrong_tone_mark,   # ປ່ຽນໄມ້ວັນນະຍຸດດ້ວຍໄມ້ທີ່ຜິດ
+]
+```
+
+### Version 2 — 13 Noise Functions (61,150 ຄູ່)
+
+ເພີ່ມ 7 ຟັງຊັນໃໝ່ທີ່ simulate ຄວາມຜິດທີ່ເປັນຈິງຫຼາຍຂຶ້ນ:
+
+```python
+noise_functions_v2_new = [
+    duplicate_char,    # ຊ້ຳຕົວໜັງສື
+    wrong_vowel,       # ສະຫຼະຜິດ
+    missing_vowel,     # ຂາດສະຫຼະ
+    add_spurious_tone, # ໃສ່ໄມ້ວັນນະຍຸດທີ່ບໍ່ຄວນມີ
+    repeat_word,       # ຊ້ຳຄຳ
+    merge_words,       # ລວມ 2 ຄຳ (ລຶບ space)
+    split_word,        # ຕັດຄຳ (ໃສ່ space ກາງຄຳ)
+]
+```
+
+ຜົນ: **61,150 ຄູ່** — ຂະຫຍາຍ **5 ເທົ່າ** ຈາກ v1.
+
+---
+
+## ຮູ້ຈັກຂໍ້ມູນກ່ອນຝຶກ
+
+ກ່ອນຝຶກ model ທຸກຄັ້ງ, ຕ້ອງ **visualize ຂໍ້ມູນ** ໃຫ້ດີກ່ອນ. Dataset ຖືກແບ່ງ **80/10/10**:
+
+| Split | ຈຳນວນຄູ່ |
+|-------|----------|
+| Train | 9,529 |
+| Validation | 1,191 |
+| Test | 1,192 |
+
+ຈາກການ visualize ກາຟ, ພົບວ່າ:
+
+- ທຸກ split ມີ distribution shape ຄ້າຍຄືກັນ (right-skewed)
+- Median ຄວາມຍາວ ~36–39 ຕົວໜັງສື ສຳລັບທຸກ split
+- Edit distance ສະເລ່ຍ ~1.69 — ໃກ້ຄຽງກັນທຸກ split
+- ~53% ຂອງຄູ່ຂໍ້ມູນ ຜິດພຽງ **1 ຕົວໜັງສື**
+
+<Callout type="tip">
+Dataset ສົມດຸນດີ — model ຈະໄດ້ຮຽນຮູ້ຈາກຂໍ້ມູນທີ່ບໍ່ມີ distribution shift ລະຫວ່າງ split.
+</Callout>
+
+---
+
+## ຜົນການຝຶກ: ByT5 ຊະນະຊັດເຈນ
+
+ຫຼັງຈາກຝຶກທັງ 2 model ດ້ວຍ early stopping:
+
+| ຕົວຊີ້ວັດ | mT5-small | ByT5-small | ຜູ້ຊະນະ |
+|----------|-----------|-----------|--------|
+| **Exact Match** | 50.34% | **77.97%** | ByT5 +27.63% |
+| **CER** | 2.54% | **0.75%** | ByT5 ດີກວ່າ 3.4× |
+| **Test Loss** | 0.387 | **0.010** | ByT5 |
+| **ຄວາມໄວ** | **8.0 sent/s** | 2.2 sent/s | mT5 |
+
+**ByT5 ດີກວ່າຢ່າງຊັດເຈນ** ທາງ accuracy — Exact Match +27% ແລະ CER ຫຼຸດ 3.4 ເທົ່າ.
+
+<Callout type="warning">
+ຂໍ້ເສຍດຽວຂອງ ByT5 ຄືຄວາມໄວ inference ຊ້າກວ່າ mT5 ~3.6 ເທົ່າ (2.2 vs 8.0 sent/s). ສຳລັບ batch processing ຍັງຍອມຮັບໄດ້, ແຕ່ຖ້າຕ້ອງການ real-time ຕ້ອງ consider tradeoff.
+</Callout>
+
+---
+
+## Demo Inference: ທົດສອບຈິງ 5 ປະໂຫຍກ
+
+ByT5 ແກ້ໄຂຖືກ **5/5** ໃນ inference demo:
+
+```
+Input (noisy)              →  Output (corrected)              ✓/✗
+─────────────────────────────────────────────────────────────────
+ທ່ານ໋ສະຖາບັນດິດ           →  ທ່ານສະຖາບັນດິດ                  ✓
+...ກ່ຽວກັບ ກ ນ ຄ້າ...     →  ...ກ່ຽວກັບການຄ້າ...              ✓
+ທ່ານຄໍາພູສຸກຈ າເລີນ       →  ທ່ານຄໍາພູສຸກຈະເລີນ               ✓
+...ກ້ອງວົ ນຈອນ...         →  ...ກ້ອງວົນຈອນ...                 ✓
+...ຈິຍວ່າ...              →  ...ຈິງວ່າ...                     ✓
+```
+
+<Callout type="info">
+ຈຸດໜ້າສົນໃຈ: ຄວາມຜິດປະເພດ "ຊ່ອງຫວ່າງກາງຄຳ" (`ກ ນ ຄ້າ` → `ການຄ້າ`) model ຈັດການໄດ້ຢ່າງສວຍງາມ — ເພາະ noise function `merge_words`/`split_word` ໃນ v2 ຝຶກໃຫ້ model ຮຽນ pattern ນີ້ໂດຍສະເພາະ.
+</Callout>
+
+---
+
+## ສິ່ງທີ່ Model ຍັງຕ້ອງ​ປັບປຸງ
+
+ຈາກການຕິດຕາມ fixed test set ທຸກ epoch, case ທີ່ຍາກທີ່ສຸດສຳລັບ ByT5:
+
+- **ປະໂຫຍກຍາວ** (> 100 ຕົວໜັງສື) ທີ່ context ໄກ
+- **ໄມ້ວັນນະຍຸດຄ້າຍຄືກັນ** — ເຊັ່ນ ້ vs ່ ໃນ `ຮີບດ້ວນ` → `ຮີບດ່ວນ`
+- **Compound errors** — ມີຫຼາຍ error ໃນ 1 ຄຳ
+
+ນີ້ເປັນ direction ສຳລັບ v3: dataset ທີ່ມີ long-context examples ຫຼາຍຂຶ້ນ ແລະ tone-specific noise ທີ່ dense ຂຶ້ນ.
+
+---
+
+## ສິ່ງທີ່ຮຽນຮູ້ຈາກໂຄງການ
+
+**1. Tokenization ທີ່ເໝາະສົມ > Model size**
+ByT5-small (ນ້ອຍ) ຊະນະ mT5-small ດ້ານ accuracy — ພິສູດວ່າ byte-level tokenization ເໝາະກັບ character-level errors ຂອງລາວ.
+
+**2. Visualize ກ່ອນ, ຝຶກຫຼັງ**
+ການ visualize distribution ກ່ອນຝຶກ ຊ່ວຍໃຫ້ໝັ້ນໃຈວ່າ dataset ສົມດຸນ ແລະ ບໍ່ມີ bias.
+
+**3. Early stopping ຊ່ວຍໄດ້**
+ByT5 ຢຸດທີ່ epoch 10, mT5 ຢຸດທີ່ 13 — ທັງ 2 ຢຸດໃນເວລາທີ່ເໝາະ ບໍ່ overfitting.
+
+**4. ໃຊ້ `model_final` ສຳລັບ inference**
+Checkpoint ກ່ອນໆ ໃຫ້ output ທີ່ຜິດຫຼາຍ — ສຳລັບ production ໃຊ້ best checkpoint ທີ່ validation loss ຕ່ຳສຸດ.
+
+---
+
+## ສະຫຼຸບ
+
+ByT5 byte-level approach **ເໝາະສົມກັບພາສາລາວ** ຫຼາຍກວ່າ mT5 subword approach ໂດຍພື້ນຖານ — ດ້ວຍ Exact Match **77.97%** ແລະ CER **0.75%** ຈາກ model ຂະໜາດນ້ອຍ.
+
+ສຳລັບໃຜທີ່ຕ້ອງການສ້າງ NLP pipeline ສຳລັບພາສາລາວ: **byte-level model ຄວນເປັນ starting point ທຳອິດ** ໂດຍສະເພາະສຳລັບ character-level tasks.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
