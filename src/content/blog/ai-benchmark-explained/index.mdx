@@ -1,0 +1,157 @@
+---
+title: 'AI Benchmark ຄືຫຍັງ? ຄູ່ມືຄົບຈົບ 6 ໝວດ ທີ່ໃຊ້ວັດ AI ໃນປັດຈຸບັນ'
+description: 'ອະທິບາຍ AI Benchmark ທັງ 6 ໝວດ — General Knowledge, Math & Coding, Reading, Multimodal, Safety, ແລະ Human Preference — ລວມຂໍ້ຄວນລະວັງໃນການອ່ານຄ່າ Benchmark'
+date: 2026-04-22
+tags: ['deep-learning', 'evaluation', 'lao-ai', 'neural-networks', 'benchmark']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## AI Benchmark ຄືຫຍັງ?
+
+**Benchmark** ແມ່ນຊຸດທົດສອບມາດຕະຖານທີ່ໃຊ້ **ວັດຄວາມສາມາດ ແລະ ປຽບທຽບ AI model** ຕ່າງໆຢ່າງເປັນລະບົບ. ຄ້າຍກັບ "ຂໍ້ສອບ" ທີ່ AI ຕ້ອງ "ສອບ" — ໂດຍ benchmark ທີ່ດີຕ້ອງ:
+
+- ວັດໄດ້ **ຄວາມສາມາດຈິງ** ບໍ່ໃຊ້ການຈຳ
+- ທົດສອບໄດ້ **ຫຼາຍດ້ານ** ຄົບຖ້ວນ
+- **ທົດທຽບໄດ້** ລະຫວ່າງ model ຕ່າງໆ
+
+ໂດຍທົ່ວໄປ benchmark AI ແບ່ງເປັນ **6 ໝວດໃຫຍ່**:
+
+| ໝວດ | ທົດສອບຫຍັງ |
+|-----|-----------|
+| General Knowledge & Reasoning | ຄວາມຮູ້ຮອບຕົວ + ການໃຊ້ເຫດຜົນ |
+| Math & Coding | ຄະນິດສາດ + ການຂຽນໂປຣແກຣມ |
+| Reading Comprehension | ການອ່ານ + ຄວາມເຂົ້າໃຈພາສາ |
+| Multimodal | ຮູບພາບ + ພາສາ ຮ່ວມກັນ |
+| Safety & Ethics | ຄວາມປອດໄພ + ຈະລິຍະທຳ |
+| Human Preference | ຄຸນນະພາບ Chat ຕາມຄວາມຕ້ອງການຂອງຄົນ |
+
+---
+
+## ໝວດ 1: ຄວາມຮູ້ທົ່ວໄປ ແລະ ການໃຊ້ເຫດຜົນ
+
+ກຸ່ມນີ້ທົດສອບວ່າ AI ມີຄວາມຮູ້ຮອບຕົວ ແລະ ສາມາດຄິດວິເຄາະໄດ້ດີສໍ່າໃດ.
+
+| Benchmark | ລາຍລະອຽດ | Metric |
+|-----------|----------|--------|
+| **MMLU** | ຄຳຖາມ 57 ວິຊາ (ຄະນິດ, ປ.ສ, ກົດໝາຍ, ການແພດ...) | Accuracy % |
+| **MMLU-Pro** | MMLU ສະບັບຍາກ — 10 ທາງເລືອກ + multi-step reasoning | Accuracy % |
+| **GPQA** | ຄຳຖາມລະດັບ PhD (Chemistry, Biology, Physics) — ຜູ້ຊ່ຽວຊານມະນຸດກໍຍາກ | Accuracy % |
+| **ARC** | ວິທະຍາສາດ ປ.ຖົມ–ມ.ທ — ຕ້ອງຄິດ, ບໍ່ໃຊ້ຈຳ | Accuracy % |
+| **HellaSwag** | Common sense — ຄາດເດົາເຫດການໃນຊີວິດປ.ຈຳວັນ | Accuracy % |
+| **WinoGrande** | Commonsense reasoning — ແກ້ pronoun ທີ່ກຳກວມ | Accuracy % |
+
+<Callout type="info">
+**MMLU** ເປັນ benchmark ທີ່ໂດ່ງດັງທີ່ສຸດ ແລະ ຍັງໃຊ້ຢ່າງກວ້າງຂວາງ. **GPQA** ກາຍເປັນ standard ໃໝ່ສຳລັບ frontier models ເພາະ MMLU ຖືກ "saturate" ໄປແລ້ວ.
+</Callout>
+
+---
+
+## ໝວດ 2: ຄະນິດສາດ ແລະ ການຂຽນໂປຣແກຣມ
+
+ກຸ່ມນີ້ທົດສອບຄວາມສາມາດໃນການຄິດ logic ແລະ ຄວາມຖືກຕ້ອງ.
+
+| Benchmark | ລາຍລະອຽດ |
+|-----------|----------|
+| **GSM8K** | ໂຈດຄະນິດ ປ.ຖົມ — multi-step reasoning |
+| **MATH** | ຄະນິດລະດັບ ມ.ທ–ມ.ວ (Algebra, Calculus, Number Theory) |
+| **AIME / AMC** | ໂຈດ Olympiad — ຍາກທີ່ສຸດ, ໃຊ້ທົດສອບ frontier models |
+| **HumanEval / MBPP** | ຂຽນ function ຕາມ spec → run test cases ຈິງ |
+| **LiveCodeBench** | ໂຈດ Coding ໃໝ່ຈາກ LeetCode/CodeForces (anti-leakage) |
+| **SWE-Bench** | ແກ້ bug ຈາກ GitHub Issues ຈິງ — real-world level |
+
+<Callout type="tip">
+**LiveCodeBench** ແກ້ບັນຫາ data leakage ໂດຍໃຊ້ໂຈດໃໝ່ຢ່າງຕໍ່ເນື່ອງ — AI ທີ່ "ຈຳ" ໂຈດ HumanEval ເກົ່າໄດ້ ຈຶ່ງ cheat ບໍ່ໄດ້ໃນ LiveCodeBench.
+</Callout>
+
+---
+
+## ໝວດ 3: ການອ່ານ ແລະ ຄວາມເຂົ້າໃຈພາສາ
+
+| Benchmark | ລາຍລະອຽດ |
+|-----------|----------|
+| **SQuAD** | ອ່ານ passage → ຕອບຄຳຖາມ (extract answer from text) |
+| **DROP** | ອ່ານ + ຄິດໄລ່ຕົວເລກໃນ document ຮ່ວມກັນ |
+| **BIG-Bench Hard (BBH)** | 23 ໝວດໂຈດທີ່ AI ລຸ້ນເກົ່າ "ລົ້ມເຫຼວ" — logic, puzzle, ordering |
+
+---
+
+## ໝວດ 4: ຄວາມສາມາດ Multimodal
+
+ໝວດໃໝ່ທີ່ສຳຄັນ ເພາະ AI ລຸ້ນໃໝ່ (GPT-4o, Gemini, Claude) ສາມາດ **ເຫັນຮູບພາບ** ໄດ້ດ້ວຍ.
+
+| Benchmark | ລາຍລະອຽດ |
+|-----------|----------|
+| **MMMU** | MMLU ສະບັບ multimodal — ຮູບພາບ + ຂໍ້ຄວາມ (Chart, Diagram) |
+| **MathVista** | ຄະນິດ + ຮູບພາບ — ຕ້ອງອ່ານ graph ຫຼື geometry ຈາກຮູບ |
+| **DocVQA** | ອ່ານ document ຈາກຮູບ (ໃບແຈ້ງໜີ້, ຟອມ) → ຕອບຄຳຖາມ |
+
+<Callout type="info">
+**DocVQA** ໃກ້ຄຽງທີ່ສຸດກັບ real-world use case — ທົດສອບ OCR + NLP ຮ່ວມກັນ ເຊິ່ງກ່ຽວຂ້ອງຫຼາຍກັບ Lao document processing.
+</Callout>
+
+---
+
+## ໝວດ 5: ຄວາມປອດໄພ ແລະ ຈະລິຍະທຳ
+
+| Benchmark | ລາຍລະອຽດ |
+|-----------|----------|
+| **TruthfulQA** | ທົດສອບວ່າ AI ຕອບຕາມ misconception ທົ່ວໄປ ຫຼື ຕາມຄວາມຈິງ |
+| **ToxicChat** | ວັດວ່າ model ຕອບດ້ວຍເນື້ອຫາ toxic/harmful ຫຼືບໍ່ |
+| **BBQ** | ທົດສອບ bias ທາງ ເພດ, ເຊື້ອຊາດ, ສາສະໜາ ໃນຄຳຕອບ |
+
+---
+
+## ໝວດ 6: ຄຸນນະພາບ Chat ຕາມຄວາມຕ້ອງການຂອງຄົນ
+
+| Benchmark | ລາຍລະອຽດ |
+|-----------|----------|
+| **LMSYS Chatbot Arena** | **ຄົນຈິງ** ຕັດສິນ — ໃຫ້ AI 2 ຕົວຕອບ ແລ້ວຄົນເລືອກ. ໜ້າເຊື່ອຖືທີ່ສຸດ |
+| **MT-Bench** | Multi-turn conversation — GPT-4 ເປັນ judge ຕັດສິນຄຸນນະພາບ |
+| **AlpacaEval** | Instruction-following quality — LLM-as-Judge ວັດ vs baseline |
+
+<Callout type="tip">
+**LMSYS Chatbot Arena** ຖືກຍອມຮັບເປັນ "ground truth" ຫຼາຍທີ່ສຸດ ເພາະໃຊ້ human judgment ຈິງ ບໍ່ແມ່ນ automatic scoring ທີ່ biased ໄດ້.
+</Callout>
+
+---
+
+## ຂໍ້ຄວນລະວັງໃນການອ່ານຄ່າ Benchmark
+
+ເຖິງວ່າ benchmark ຈະເປັນເຄື່ອງມືສຳຄັນ ແຕ່ກໍ່ມີ **ຂໍ້ຈຳກັດ** ທີ່ຄວນຮູ້:
+
+| ບັນຫາ | ຄຳອະທິບາຍ |
+|-------|----------|
+| **Data Contamination** | AI ບາງຕົວ "ຈຳ" ໂຈດໄດ້ ເພາະໂຈດເຫຼົ່ານັ້ນເຄີຍຢູ່ໃນ training data |
+| **Benchmark Saturation** | AI ໄດ້ > 90% ໃນ benchmark ເກົ່າ → ແຍກຄວາມແຕກຕ່າງລະຫວ່າງ model ໄດ້ຍາກ |
+| **Narrow Scope** | ຄ່າ benchmark ສູງ ≠ ໃຊ້ງານໄດ້ດີໃນຊີວິດຈິງ |
+| **Benchmark Gaming** | ຜູ້ພັດທະນາ AI ບາງຄົນ fine-tune target benchmark ໂດຍຕົງ ເຮັດໃຫ້ຄ່າ "ໃສ" ແຕ່ capability ຈິງບໍ່ດີຂຶ້ນ |
+
+<Callout type="warning">
+ຢ່າເບິ່ງ benchmark ຕົວດຽວ — ເບິ່ງ **ຫຼາຍ benchmark** ຮ່ວມກັນ ແລະ ລອງໃຊ້ງານຈິງ. ໂດຍສະເພາະ **LMSYS Arena** ທີ່ human judge ຕ້ານ gaming ໄດ້ດີກວ່າ automatic benchmarks.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+| ໝວດ | Benchmark ທີ່ຄວນຮູ້ |
+|-----|-------------------|
+| General Knowledge | MMLU, GPQA, ARC |
+| Math & Coding | MATH, AIME, SWE-Bench, LiveCodeBench |
+| Reading | SQuAD, BIG-Bench Hard |
+| Multimodal | MMMU, DocVQA |
+| Safety | TruthfulQA, BBQ |
+| Human Preference | LMSYS Arena, MT-Bench |
+
+ການອ່ານ benchmark ທີ່ດີ ຕ້ອງ **ເຂົ້າໃຈວ່າ benchmark ນັ້ນທົດສອບຫຍັງ** ແລະ **ບໍ່ໄດ້ທົດສອບຫຍັງ** — ເພາະ model ທີ່ "ຊະນະ leaderboard" ບໍ່ໄດ້ໝາຍຄວາມວ່າ ດີທີ່ສຸດສຳລັບ use case ຂອງທ່ານສະເໝີ.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
