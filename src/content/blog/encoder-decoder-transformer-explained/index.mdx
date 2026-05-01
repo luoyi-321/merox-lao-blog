@@ -1,0 +1,177 @@
+---
+title: 'Encoder, Decoder ແລະ Encoder-Decoder Model ຄືຫຍັງ? ຄູ່ມືໂຄງສ້າງ Transformer ສາມຮູບແບບ'
+description: 'ອະທິບາຍໂຄງສ້າງ Transformer ສາມຮູບແບບຫຼັກ — Encoder-only (BERT), Decoder-only (GPT, LLaMA), ແລະ Encoder-Decoder (T5, Whisper) — ພ້ອມ use cases ແລະ ຕົວຢ່າງ model ທີ່ໃຊ້ງານຈິງ'
+date: 2026-04-22
+tags: ['deep-learning', 'transformer', 'attention', 'neural-networks', 'lao-ai', 'asr', 'lao-nlp']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## ພາບລວມ: ສາມໂຄງສ້າງຫຼັກ
+
+Transformer model ໃນປັດຈຸບັນທຸກຕົວ ລ້ວນຖືກສ້າງຈາກ **3 ໂຄງສ້າງຫຼັກ**:
+
+| ໂຄງສ້າງ | ທິດທາງ Attention | ໜ້າທີ່ຫຼັກ |
+|---------|-----------------|-----------|
+| **Encoder-only** | ສອງທິດທາງ (Bidirectional) | ເຂົ້າໃຈ / ວິເຄາະ |
+| **Decoder-only** | ຊ້າຍ→ຂວາ (Causal) | ສ້າງ / Generate |
+| **Encoder-Decoder** | ທັງສອງ + Cross-Attention | ແປ / ສ້າງຈາກ Source |
+
+<Callout type="info">
+ການເລືອກໂຄງສ້າງ ຂຶ້ນກັບ **ໜ້າທີ່** ທີ່ຕ້ອງການ — ບໍ່ມີໂຄງສ້າງໃດ "ດີທີ່ສຸດ" ທຸກ case. ເຂົ້າໃຈ tradeoff ຂອງແຕ່ລະຮູບແບບ ຈຶ່ງຈະເລືອກໄດ້ຖືກ.
+</Callout>
+
+---
+
+## Encoder-only Model
+
+```
+Input tokens
+     ↓
+[ Encoder × N layers ]   ← Bidirectional Self-Attention
+     ↓
+Contextual Representations   ← ໃຊ້ downstream tasks
+```
+
+Encoder-only model **ອ່ານ input ທັງໝົດໃນຄັ້ງດຽວ** ຈາກທັງສອງທິດທາງ (ຊ້າຍ→ຂວາ ແລະ ຂວາ→ຊ້າຍ) ເພື່ອ **ເຂົ້າໃຈຄວາມໝາຍ** ຂອງຂໍ້ຄວາມ. ໂມເດລນີ້ **ບໍ່ສ້າງ** ຂໍ້ຄວາມໃໝ່ — ພຽງແຕ່ **ວິເຄາະ ແລະ ຈັດໝວດ** ຂໍ້ມູນທີ່ມີຢູ່.
+
+> ຄິດຄືກັບ **ໝໍ** ທີ່ອ່ານໜັງສືທັງໝົດ ແລ້ວຕັດສິນວ່າ "ໜັງສືໜ້ານີ້ເປັນ Fiction" — ບໍ່ໄດ້ຂຽນໃໝ່ ແຕ່ **ເຂົ້າໃຈ ແລະ ຕອບຄຳຖາມ**.
+
+### Use Cases
+
+| ໜ້າທີ່ | ລາຍລະອຽດ |
+|--------|-----------|
+| **Text Classification** | Spam/Not Spam, Sentiment Analysis |
+| **NER** | ຫາຊື່ຄົນ, ສະຖານທີ່, ອົງກອນ ໃນຂໍ້ຄວາມ |
+| **Sentence Embedding** | ປ່ຽນປະໂຫຍກເປັນ vector ສຳລັບ Semantic Search |
+| **Extractive QA** | ຫາຄຳຕອບໃນ document ທີ່ມີຢູ່ |
+
+### ຕົວຢ່າງ Models
+
+| Model | ລາຍລະອຽດ |
+|-------|----------|
+| **BERT** | Encoder ທີ່ໂດ່ງດັງທີ່ສຸດ ຈາກ Google |
+| **RoBERTa** | BERT ທີ່ train ດ້ວຍຂໍ້ມູນຫຼາຍກວ່າ ແລະ ດີກວ່າ |
+| **XLM-RoBERTa** | ຮອງຮັບ 100+ ພາສາ (ລວມທັງພາສາໃກ້ຄຽງລາວ) |
+| **DeBERTa** | Disentangled Attention — ດີໃນ benchmark ຫຼາຍ |
+| **ELECTRA** | Train ໄວ ແລະ ປະຢັດ resource |
+
+<Callout type="tip">
+ສຳລັບ Lao NLP tasks ເຊັ່ນ text classification ຫຼື NER — **XLM-RoBERTa** ຄວນເປັນ starting point ທຳອິດ ເພາະຮອງຮັບ multilingual ແລະ ມີ pretrained weights ທີ່ດີ.
+</Callout>
+
+---
+
+## Decoder-only Model
+
+```
+Prompt tokens
+     ↓
+[ Decoder × N layers ]   ← Causal (Left-to-Right) Self-Attention
+     ↓
+Token₁ → Token₂ → Token₃ → ...   ← Autoregressive generation
+```
+
+Decoder-only model **ສ້າງຂໍ້ຄວາມທີລະຄຳ** (autoregressive) — ໂດຍໃຊ້ຄຳທີ່ຜ່ານມາທັງໝົດ ເພື່ອທຳນາຍ **ຄຳຕໍ່ໄປ**. ໃຊ້ **Causal Masking** ເພື່ອບໍ່ໃຫ້ "ແອບເບິ່ງ" ຄຳທີ່ຈະຕາມ.
+
+> ຄິດຄືກັບ **ນັກຂຽນ** ທີ່ຂຽນທີລະຄຳ — ຂຽນ "ມື້ນີ້" ກ່ອນ ຈຶ່ງຕໍ່ "ຟ້າ" ຈຶ່ງຕໍ່ "ແຈ່ມ" ຈຶ່ງຕໍ່ "ຫຼາຍ".
+
+### Use Cases
+
+| ໜ້າທີ່ | ລາຍລະອຽດ |
+|--------|-----------|
+| **Chatbot / LLM** | ສົນທະນາ, ຕອບຄຳຖາມ, ຊ່ວຍວຽກ |
+| **Code Generation** | ຂຽນ Code Python, SQL ແລະ ອື່ນໆ |
+| **Creative Writing** | ຂຽນນິຍາຍ, ບົດຄວາມ, ບົດກະວີ |
+| **Text Completion** | ຕໍ່ປະໂຫຍກ, ຂຽນ draft ໃຫ້ສຳເລັດ |
+
+### ຕົວຢ່າງ Models
+
+| Model | ລາຍລະອຽດ |
+|-------|----------|
+| **GPT-4 / GPT-2** | ໂມເດລ Decoder ຍຸກໃໝ່ ຈາກ OpenAI |
+| **LLaMA 3** | Open-source LLM ຈາກ Meta |
+| **Mistral** | ຂະໜາດກາງ, efficiency ສູງ |
+| **Claude** | ຈາກ Anthropic — ເນັ້ນ safety ແລະ reasoning |
+| **Gemma** | Lightweight ຈາກ Google |
+| **Qwen / DeepSeek** | Open-source ຈາກ China — ນິຍົມຫຼາຍ |
+
+<Callout type="info">
+ທຸກ LLM (Large Language Model) ທີ່ໃຊ້ chat ໃນປັດຈຸບັນ ລ້ວນເປັນ **Decoder-only** — GPT, Claude, LLaMA, Gemini ທຸກຕົວ.
+</Callout>
+
+---
+
+## Encoder-Decoder Model (Seq2Seq)
+
+```
+Source tokens
+      ↓
+[ Encoder × N ]        ← Bidirectional Self-Attention
+      ↓
+Context Representations
+      ↓
+[ Decoder × N ]        ← Causal Self-Attention
+      ↑ Cross-Attention  ← "ແນມ" Encoder ທຸກ step
+      ↓
+Target Token₁ → Token₂ → ...
+```
+
+Encoder-Decoder **ລວມທັງສອງ** ເຂົ້າດ້ວຍກັນ — Encoder ອ່ານ source ຈົນເຂົ້າໃຈ, ຈາກນັ້ນ Decoder ສ້າງ target ທີລະ step ໂດຍໃຊ້ **Cross-Attention** ເພື່ອ "ເບິ່ງ" Encoder ທຸກຄັ້ງ.
+
+> ຄິດຄືກັບ **ນາຍແປ** — ອ່ານ (encode) ພາສາລາວ ຈົນເຂົ້າໃຈ ຈຶ່ງ decode ອອກມາເປັນ ພາສາອັງກິດ ທີລະຄຳ ໂດຍຢັ້ງຢືນຄວາມໝາຍຕົ້ນ ທຸກຄັ້ງ.
+
+### Use Cases
+
+| ໜ້າທີ່ | ລາຍລະອຽດ |
+|--------|-----------|
+| **Machine Translation** | ແປພາສາ ລາວ↔ອັງກິດ, ໄທ↔ລາວ |
+| **Summarization** | ສະຫຼຸບບົດຄວາມຍາວໃຫ້ສັ້ນ |
+| **ASR** | ສຽງ → ຂໍ້ຄວາມ (ເຊັ່ນ Whisper) |
+| **TTS** | ຂໍ້ຄວາມ → ສຽງ |
+| **Abstractive QA** | ຕອບດ້ວຍຄຳຂອງຕົນເອງ (ບໍ່ copy ຈາກ source) |
+
+### ຕົວຢ່າງ Models
+
+| Model | ລາຍລະອຽດ |
+|-------|----------|
+| **T5 / mT5** | "Text-to-Text" ຈາກ Google — ໃຊ້ໄດ້ທຸກ NLP task |
+| **BART** | ດີໃນ Summarization ແລະ Translation |
+| **mBART / NLLB-200** | ຮອງຮັບ 200 ພາສາ — **ລວມທັງພາສາລາວ** |
+| **Whisper** | ASR ຈາກ OpenAI, ຮອງຮັບຫຼາຍພາສາ |
+| **MarianMT** | Translation model ທີ່ lightweight |
+
+<Callout type="warning">
+**Wav2Vec2** ໃຊ້ Encoder-only ສຳລັບ ASR — Decoder ແທນດ້ວຍ CTC Head ບໍ່ແມ່ນ seq2seq ຕົວຈິງ. ຢ່າສັບສົນກັບ Whisper ທີ່ເປັນ Encoder-Decoder ຕົວຈິງ.
+</Callout>
+
+---
+
+## ສຳຫຼຸບ ແລະ ວິທີເລືອກ
+
+| ໂຄງສ້າງ | ເລືອກເມື່ອ |
+|---------|-----------|
+| **Encoder-only** | ຕ້ອງການ **ເຂົ້າໃຈ** ຂໍ້ຄວາມ — classify, NER, embedding |
+| **Decoder-only** | ຕ້ອງການ **ສ້າງ** ຂໍ້ຄວາມ — chat, code, creative writing |
+| **Encoder-Decoder** | ຕ້ອງການ **ແປ ຫຼື ສ້າງຈາກ source** — translation, ASR, summarization |
+
+ທຸກໂຄງສ້າງ **ເປັນ Transformer ທັງໝົດ** — ສ່ວນທີ່ຕ່າງກັນຄື **ທິດທາງ attention** ແລະ **ວິທີ train**.
+
+---
+
+## ແຫຼ່ງຂໍ້ມູນ
+
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762) — Vaswani et al. (2017), ຕົ້ນກຳເນີດ Transformer
+- [BERT](https://arxiv.org/abs/1810.04805) — Devlin et al. (2019), Encoder-only original
+- [T5](https://arxiv.org/abs/1910.10683) — Raffel et al. (2020), Encoder-Decoder unified framework
+- [NLLB-200](https://arxiv.org/abs/2207.04672) — Meta (2022), 200 ພາສາລວມລາວ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
