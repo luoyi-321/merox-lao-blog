@@ -1,0 +1,211 @@
+---
+title: 'ເທັກໂນໂລຢີສຳຄັນຂອງ Large Language Model (LLM)'
+description: 'ສຳຫຼວດເທັກໂນໂລຢີຫຼັກທີ່ຂັບເຄື່ອນ LLM ທີ່ທັນສະໄໝ — ຈາກ Pretraining, Fine-tuning, ໄປຈົນຮອດ Prompt Learning ແລະ Knowledge Enhancement'
+date: 2026-05-12
+tags: ['deep-learning', 'transformer', 'fine-tuning', 'prompt-engineering', 'lao-ai', 'neural-networks', 'attention']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## LLM ຄືຫຍັງ ແລະ ເທັກໂນໂລຢີຫຼັກມີຫຍັງແດ່?
+
+Large Language Model (LLM) ແມ່ນໂມເດວ AI ຂະໜາດໃຫຍ່ທີ່ຖືກ Train ດ້ວຍຂໍ້ມູນຂໍ້ຄວາມຈຳນວນມະຫາສານ ເພື່ອໃຫ້ສາມາດເຂົ້າໃຈ ແລະ ສ້າງພາສາມະນຸດໄດ້. ໂມເດວທີ່ຮູ້ຈັກດີ ເຊັ່ນ GPT-4, Claude, ແລະ Gemini ລ້ວນແລ້ວອີງໃສ່ເທັກໂນໂລຢີດ້ານລຸ່ມ.
+
+ເທັກໂນໂລຢີຫຼັກທີ່ຂົນຂວາຍ LLM ມີ 5 ດ້ານ:
+
+| ດ້ານ | ຈຸດປະສົງ |
+|------|---------|
+| **Pretraining** | ສ້າງຄວາມຮູ້ທົ່ວໄປຈາກຂໍ້ມູນຈຳນວນຫຼວງຫຼາຍ |
+| **Fine-tuning** | ປັບໂມເດວໃຫ້ເໝາະກັບ Task ສະເພາະ |
+| **Prompt Learning** | ນຳໃຊ້ Prompt ດຶງຄວາມສາມາດຂອງໂມເດວ |
+| **Knowledge Enhancement** | ເສີມ External Knowledge ໃຫ້ໂມເດວ |
+| **Tool Learning** | ສອນໂມເດວໃຊ້ເຄື່ອງມືພາຍນອກ |
+
+---
+
+## 1. ການ Pretraining
+
+### ຍຸດທະສາດຫຼຸດຕົ້ນທຶນໃນການ Train
+
+ການ Train LLM ຂະໜາດໃຫຍ່ໃຊ້ Resources ຫຼາຍ ຈຶ່ງຕ້ອງການຍຸດທະສາດທີ່ຊາຍດ້ວຍ:
+
+**ວິທີທີ 1 — Efficient Optimization Task**
+
+ອອກແບບ Training Objective ໃຫ້ໂມເດວໄດ້ຮຽນຫຼາຍທີ່ສຸດຈາກ Sample ດຽວ ເຊັ່ນການໃຊ້ Masked Language Modeling ຄຽງຄູ່ກັບ Next Sentence Prediction.
+
+**ວິທີທີ 2 — Hot Start Strategy (Warmup)**
+
+ຄ່ອຍໆເພີ່ມ Learning Rate ຈາກຄ່ານ້ອຍໃນຊ່ວງຕົ້ນ (Linear Warmup) ເພື່ອແກ້ບັນຫາ Optimization ທີ່ Unstable ເວລາ Batch Size ໃຫຍ່.
+
+**ວິທີທີ 3 — Progressive Training**
+
+ເລີ່ມ Train ຈາກໂມເດວຕື້ນ (ໜ້ອຍ Layer) ແລ້ວຂະຫຍາຍ Depth ທີລະໜ້ອຍ ແທນທີ່ຈະ Train ທຸກ Layer ພ້ອມກັນທັນທີ.
+
+**ວິທີທີ 4 — Knowledge Inheritance**
+
+ໂມເດວຮຽນທັງຈາກ Raw Text ແລະ ຈາກຄວາມຮູ້ຂອງ LLM ທີ່ Train ໄວ້ແລ້ວ (Teacher Model). ໃນ CPM-2 ວິທີນີ້ເພີ່ມຄວາມໄວໃນຊ່ວງຕົ້ນ **37.5%**.
+
+**ວິທີທີ 5 — Predictable Scaling**
+
+ໃຊ້ໂມເດວຂະໜາດນ້ອຍທົດລອງ Hyperparameter ກ່ອນ ແລ້ວຄາດຄະເນຜົນຂອງໂມເດວໃຫຍ່. OpenAI ນຳໃຊ້ວິທີນີ້ໃນ GPT-4 ເພື່ອຫຼຸດຄ່າໃຊ້ຈ່າຍ.
+
+<Callout type="info">
+Predictable Scaling ແມ່ນພື້ນຖານຂອງ "Scaling Laws" — ກົດທີ່ວ່າ ຖ້າຮູ້ Performance ຂອງໂມເດວນ້ອຍ, ສາມາດຄາດຄະເນ Performance ຂອງໂມເດວໃຫຍ່ໄດ້ຢ່າງ Reliable.
+</Callout>
+
+### ໂຄງສ້າງ Transformer ທີ່ພັດທະນາຂຶ້ນ
+
+ຫຼັງ BERT, Transformer ຖືກພັດທະນາໃນ 2 ທິດທາງ:
+
+**ທິດທາງທີ 1 — Unified Framework**
+
+ປ່ຽນທຸກ NLP Task (Classification, Extraction, Translation, Dialogue) ໃຫ້ເປັນ Text-to-Text Generation ດຽວ — ຕົວຢ່າງ: T5 ແລະ BART.
+
+**ທິດທາງທີ 2 — Efficient Architecture**
+
+Transformer ດັ້ງເດີມມີຂໍ້ຈຳກັດ: ກິນ VRAM ຫຼາຍ, ຄວາມຊັບຊ້ອນ O(N²) ຕໍ່ Sequence ຍາວ. ສະນັ້ນ ຈຶ່ງເກີດ Architecture ໃໝ່:
+
+| Architecture | ຜູ້ພັດທະນາ | ຈຸດເດັ່ນ |
+|-------------|-----------|---------|
+| **RetNet** | Microsoft | Retention Mechanism — Train/Inference ໄວ, ປະຢັດ Memory |
+| **FlashAttention** | Stanford | ຫຼຸດ VRAM, ຮອງຮັບ Context ຍາວ |
+| **MoE (Mixture of Experts)** | Google/Meta | ໃຊ້ພຽງບາງ Module ຕໍ່ Token, ຫຼຸດ Compute |
+
+<Callout type="tip">
+MoE ເຊັ່ນ Switch Transformers, FastMoE ຊ່ວຍໃຫ້ Train ໂມເດວໃຫຍ່ຂຶ້ນ ໂດຍບໍ່ເພີ່ມ Compute ຕາມ Parameter ທຸກໂຕ — ແຕ່ລະ Token ໃຊ້ "Expert" ພຽງ 1-2 ອັນ.
+</Callout>
+
+---
+
+## 2. ການ Fine-tuning ສຳລັບ LLM
+
+LLM ທີ່ Train ຈາກ General Data ມັກຂາດຄວາມຮູ້ສະເພາະດ້ານ (Domain-specific Knowledge) ຈຶ່ງຕ້ອງການ Fine-tuning ເພື່ອ:
+
+- ປັບໃຫ້ເໝາະກັບ Task ສະເພາະ
+- ປົກປ້ອງ Sensitive Data ໂດຍ Train ພາຍໃນ
+- ຫຼຸດ Inference Cost ດ້ວຍໂມເດວຂະໜາດນ້ອຍກວ່າ
+
+### Instruction Tuning
+
+ການ Train ໃຫ້ໂມເດວ **ເຂົ້າໃຈ ແລະ ປະຕິບັດຕາມຄຳສັ່ງຂອງມະນຸດ** — ຕົວຢ່າງ FLAN ຂອງ Google ແລະ InstructGPT ຂອງ OpenAI.
+
+**3 ວິທີສ້າງຂໍ້ມູນ Instruction:**
+
+1. Human Annotated Data — ຄຸນນະພາບສູງ, ຄ່າໃຊ້ຈ່າຍສູງ
+2. LLM-generated Data — Scale ໄດ້ໄວ, ຄວບຄຸມ Diversity ໄດ້
+3. ຂໍ້ມູນຈາກຜູ້ໃຊ້ຈິງ — Diverse, ສະທ້ອນ Real-world Usage
+
+**Instruction Alignment (RLHF):**
+
+InstructGPT ແລະ ChatGPT ໃຊ້ RLHF (Reinforcement Learning from Human Feedback) ເພື່ອຕອບສະໜອງ 3 ຫຼັກ: **Helpful · Honest · Harmless** ແລະ ແກ້ Hallucination, Bias, ແລະ Harmful Content.
+
+<Callout type="warning">
+RLHF ມີຄ່າໃຊ້ຈ່າຍສູງ ຍ້ອນຕ້ອງໃຊ້ Human Annotators ຈຳນວນຫຼາຍ. ທາງເລືອກ DPO (Direct Preference Optimization) ກຳລັງໄດ້ຮັບຄວາມນິຍົມໃນ Open-source Models.
+</Callout>
+
+### Parameter-Efficient Tuning (PEFT)
+
+Full Fine-tuning ຂອງ LLM ໃຊ້ VRAM ຫຼາຍ ຈຶ່ງເກີດ PEFT — ການ Fine-tune ດ້ວຍ Parameter ໜ້ອຍ:
+
+| ວິທີ | ປະເພດ | ແນວຄິດ |
+|-----|-------|---------|
+| **Adapter** | Additive | ເພີ່ມ Module ໜ້ອຍໆ ລະຫວ່າງ Layer |
+| **Prefix-Tuning** | Additive | Train ສະເພາະ Prefix Tokens, Freeze ໂມເດວຫຼັກ |
+| **Prompt-Tuning** | Additive | Train Soft Prompt Tokens ຢ່າງດຽວ |
+| **P-Tuning** | Additive | ໃຊ້ MLP + LSTM ຊ່ວຍ Initialize Learnable Prompt |
+| **LoRA** | Reparameterization | Decompose Weight Matrix ດ້ວຍ Low-rank Matrices |
+| **QLoRA** | Reparameterization | LoRA + Quantization, Fine-tune LLM ໃຫຍ່ໃນ GPU ນ້ອຍ |
+
+**LoRA** ທີ່ນິຍົມທີ່ສຸດ: ແທນທີ່ຈະ Update Weight Matrix W ທຳ Decompose ໄປສູ່ BA (Low-rank):
+
+```
+W' = W + BA
+```
+
+ບ່ອນ B ∈ ℝ^(d×r) ແລະ A ∈ ℝ^(r×k), r ≪ min(d, k) — Train ພຽງ B ແລະ A, ໄວກວ່າ Full Fine-tuning ຫຼາຍ.
+
+**QLoRA** ໄປອີກຂັ້ນ: Quantize ໂມເດວຫຼັກ (4-bit NF4) ກ່ອນ ແລ້ວ Apply LoRA ເທິງ — ຊ່ວຍໃຫ້ Fine-tune ໂມເດວຂະໜາດ 65B ໃນ GPU ດຽວໄດ້.
+
+<Callout type="tip">
+ສຳລັບ Domain Adaptation ທົ່ວໄປ, LoRA rank=8 ຫຼື 16 ໃຫ້ຜົນດີ ໂດຍໃຊ້ Memory ພຽງ 1-2% ຂອງ Full Fine-tuning.
+</Callout>
+
+---
+
+## 3. Prompt Learning
+
+Prompt Learning ຄືການນຳໃຊ້ Prompt (ຂໍ້ຄວາມ Input ທີ່ອອກແບບດີ) ເພື່ອ **ດຶງຄວາມຮູ້ທີ່ຊ່ອນຢູ່ໃນໂມເດວ** ໂດຍບໍ່ຕ້ອງ Fine-tune.
+
+### ປະເພດ Prompting
+
+| ວິທີ | ລາຍລະອຽດ |
+|-----|----------|
+| **Zero-shot** | ຖາມໂດຍກົງ ບໍ່ໃຫ້ຕົວຢ່າງ |
+| **Few-shot** | ໃຫ້ຕົວຢ່າງ 2-5 ອັນກ່ອນຖາມ |
+| **In-context Learning (ICL)** | ໃຫ້ Context ພາຍໃນ Prompt ເພື່ອໃຫ້ໂມເດວ Adapt ໂດຍບໍ່ Update Weights |
+| **Chain-of-Thought (CoT)** | ໃຫ້ໂມເດວ "ຄິດດັງໆ" ເປັນຂັ້ນຕອນກ່ອນຕອບ |
+
+**Chain-of-Thought** ສຳຄັນທີ່ສຸດສຳລັບ Reasoning Task ຊັບຊ້ອນ:
+
+```
+ຖາມ: ຖ້າ Alice ມີໝາກໂປມ 10 ໜ່ວຍ ແລ້ວໃຫ້ Bob ໄປ 3 ໜ່ວຍ
+     ຫຼັງຈາກນັ້ນ Alice ຊື້ເພີ່ມ 5 ໜ່ວຍ ຕອນນີ້ Alice ມີຫຼາຍໂດ?
+
+CoT: 
+1. ເລີ່ມຕົ້ນ: 10 ໜ່ວຍ
+2. ໃຫ້ Bob: 10 - 3 = 7 ໜ່ວຍ
+3. ຊື້ເພີ່ມ: 7 + 5 = 12 ໜ່ວຍ
+ຄຳຕອບ: Alice ມີ 12 ໜ່ວຍ
+```
+
+<Callout type="info">
+ການຄົ້ນພົບວ່າ "Let's think step by step" ຊ່ວຍໃຫ້ LLM ແກ້ Math Problems ໄດ້ດີຂຶ້ນ 40%+ ຖືວ່າເປັນ Breakthrough ໃຫຍ່ໃນ Prompt Engineering (Wei et al., 2022).
+</Callout>
+
+---
+
+## 4. ການເພີ່ມພູນຄວາມຮູ້ໃຫ້ LLM
+
+Knowledge ແລະ Reasoning ແມ່ນຕົວຊີ້ວັດຄວາມສະຫຼາດຂອງ LLM. ແຕ່ LLM ມີຂໍ້ຈຳກັດ:
+
+- **Knowledge Cutoff** — ໂມເດວບໍ່ຮູ້ຂໍ້ມູນຫຼັງ Training Date
+- **Hallucination** — ສ້າງຂໍ້ມູນຜິດດ້ວຍຄວາມໝັ້ນໃຈ
+- **Limited Domain** — ຂໍ້ມູນ Domain ສະເພາະອາດຂາດ
+
+**4 ລະດັບການເພີ່ມ Knowledge:**
+
+```
+ລະດັບ Input      → RAG (Retrieval-Augmented Generation)
+ລະດັບ Architecture → Knowledge Fusion Layers
+ລະດັບ Parameter  → Knowledge Injection ຜ່ານ Fine-tuning
+ລະດັບ Tool      → ເຊື່ອມຕໍ່ Search Engine, Database, Knowledge Graph
+```
+
+**RAG** ເປັນວິທີທີ່ນິຍົມສຸດ: Retrieve ຂໍ້ມູນ Relevant ຈາກ Database ກ່ອນ ແລ້ວໃສ່ໃນ Prompt ໃຫ້ LLM ຕອບ — ຊ່ວຍແກ້ Hallucination ໄດ້ໂດຍກົງ.
+
+<Callout type="tip">
+ສຳລັບ Production Systems ທີ່ຕ້ອງການຂໍ້ມູນ Up-to-date ແລະ Accurate, RAG + LoRA Fine-tuning ຮ່ວມກັນໃຫ້ຜົນດີທີ່ສຸດ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+LLM ທີ່ທັນສະໄໝບໍ່ໄດ້ເກີດຈາກ Technique ດຽວ ແຕ່ເປັນການປະສົມ:
+
+- **Pretraining** ທີ່ Efficient ດ້ວຍ Scaling ແລະ Architecture ທີ່ດີ
+- **Fine-tuning** ທີ່ Lightweight ດ້ວຍ LoRA/QLoRA ແທນ Full Training
+- **Prompt Engineering** ທີ່ຊັດເຈນ ໂດຍສະເພາະ CoT ສຳລັບ Reasoning
+- **Knowledge Augmentation** ດ້ວຍ RAG ເພື່ອຂໍ້ມູນ Accurate ແລະ Updated
+
+ຄວາມກ້າວໜ້າໃນທຸກ 4 ດ້ານນີ້ຄຽງຄູ່ກັນ ຄືສິ່ງທີ່ Differentiate LLM ລຸ້ນໃໝ່ຈາກລຸ້ນເກົ່າ.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
