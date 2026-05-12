@@ -1,0 +1,257 @@
+---
+title: 'ພື້ນຖານ Machine Learning: ສ່ວນປະກອບ, Training, Inference ແລະ Fine-tuning'
+description: 'ຮຽນຮູ້ພື້ນຖານຂອງ Machine Learning ຕັ້ງແຕ່ Feature, Weight, Bias ຈົນເຖິງ Training, Inference, Pre-training, ແລະ 3 ວິທີ Fine-tuning ທີ່ນິຍົມ'
+date: 2026-05-12
+tags: ['deep-learning', 'fine-tuning', 'transformer', 'neural-networks', 'lao-ai', 'python', 'pytorch']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## Machine Learning ຄືຫຍັງ?
+
+Machine Learning ແມ່ນສາຂາໜຶ່ງຂອງ AI ທີ່ໃຫ້ໂຄງການຄອມພິວເຕີ **ຮຽນຮູ້ຈາກຂໍ້ມູນ** ໂດຍບໍ່ຕ້ອງໂຄດ rule ໃຫ້ຄົບທຸກກໍລະນີ.
+
+ແທນທີ່ຈະຂຽນ: `ຖ້າ x > 5 ແລ້ວ ຕອບ Y`, ເຮົາໃຫ້ໂມເດວ **ຮຽນຮູ້ pattern** ຈາກຂໍ້ມູນທີ່ label ໄວ້ ແລ້ວໂມເດວຈະສ້າງ rule ເອງໄດ້.
+
+<Callout type="info">
+ຫຼັກການງ່າຍໆ: ໃຫ້ຂໍ້ມູນ input (x) ພ້ອມ label (y) ຫຼາຍໆ ຄູ່, ໂມເດວຈະຮຽນຮູ້ function F ທີ່ map x → y ໄດ້ໃກ້ຄຽງທີ່ສຸດ.
+</Callout>
+
+---
+
+## ສ່ວນປະກອບຂອງໂມເດວ (Model Components)
+
+ກ່ອນຈະເຂົ້າໃຈ Training ໄດ້ ຕ້ອງຮູ້ຈັກສ່ວນປະກອບຫຼັກ 3 ຢ່າງ:
+
+### x — ຄຸນລັກສະນະ (Feature)
+
+Feature ຄືຂໍ້ມູນ input ທີ່ **ຮູ້ແລ້ວ** ແລະ ຖືກ label ໄວ້ລ່ວງໜ້າ.
+
+ຕົວຢ່າງ:
+- ໃນໂຄງການຄາດລາຄາເຮືອນ: x₁ = ຂະໜາດ, x₂ = ທຳເລ, x₃ = ຈຳນວນຫ້ອງ
+- ໃນ NLP: x₁ = token, x₂ = position, x₃ = context
+
+### w — ນ້ຳໜັກ (Weight)
+
+Weight ຄືພາຣາມິເຕີທີ່ **ໂມເດວຕ້ອງຮຽນຮູ້** ຈາກຂໍ້ມູນ. ໃນທຳອິດ w ຈະຖືກ initialize ແບບ random ແລ້ວຄ່ອຍໆ ປັບໃຫ້ດີຂຶ້ນໃນລະຫວ່າງ Training.
+
+### b — Bias (ຄ່າອະຄະຕິ)
+
+Bias ຄືພາຣາມິເຕີທີ່ຊ່ວຍ **ປັບ output** ໃຫ້ matches ກັບຂໍ້ມູນຈິງໄດ້ດີຂຶ້ນ. ຄິດວ່າ b ເໝືອນ "offset" ຂອງ model.
+
+ສູດຫຼັກຂອງ linear model ງ່າຍໆ:
+
+```
+ŷ = w₁x₁ + w₂x₂ + ... + wₙxₙ + b
+```
+
+<Callout type="tip">
+**ເປົ້າໝາຍ** ຂອງ Training ຄືການຊອກຫາຄ່າ **w** ແລະ **b** ທີ່ດີທີ່ສຸດ ເພື່ອໃຫ້ ŷ ໃກ້ຄຽງ y ທີ່ສຸດ.
+</Callout>
+
+---
+
+## ສອນໂມເດວ (Training)
+
+Training ຄືຂະບວນການທີ່ໂມເດວ **ຮຽນຮູ້ຈາກຂໍ້ມູນ** ແລະ ປັບ parameter ໃຫ້ດີຂຶ້ນໃນແຕ່ລະຮອບ.
+
+### ຂັ້ນຕອນ Training
+
+```
+Input  →  ໂມເດວຄາດຄະເນ ŷ  →  ຄຳນວນ Loss  →  Backpropagation  →  ປັບ w, b
+  ↑_______________________________________________________________________↓
+                        (loop ຫຼາຍຮອບ)
+```
+
+| ຂັ້ນຕອນ | ລາຍລະອຽດ |
+|---------|-----------|
+| **Input** | ຂໍ້ມູນ (x, y) ຈຳນວນຫຼາຍທີ່ label ແລ້ວ |
+| **Forward Pass** | ນຳ x ຜ່ານ model ໄດ້ ŷ (prediction) |
+| **Loss** | ຄຳນວນຄວາມຜິດພາດ: `Loss = f(ŷ, y)` |
+| **Backprop** | ຄຳນວນ gradient ຂອງ loss ກ່ຽວກັບ w, b |
+| **Update** | ໃຊ້ Gradient Descent ປັບ w ແລະ b |
+| **Output** | ໄດ້ພາຣາມິເຕີ w, b ທີ່ດີທີ່ສຸດ |
+
+ສູດ Gradient Descent ງ່າຍໆ:
+
+```python
+w = w - learning_rate * gradient_w
+b = b - learning_rate * gradient_b
+```
+
+<Callout type="warning">
+ຖ້າ `learning_rate` ສູງເກີນໄປ model ຈະ diverge (ຜິດພາດຫຼາຍຂຶ້ນ). ຖ້າຕ່ຳເກີນໄປ Training ຈະຊ້າຫຼາຍ. ຕ້ອງ tune ຢ່າງລະມັດລະວັງ.
+</Callout>
+
+---
+
+## ການນຳໂມເດວໄປໃຊ້ (Inference)
+
+Inference ຄືການນຳໂມເດວທີ່ **train ແລ້ວ** ມາໃຊ້ກັບຂໍ້ມູນໃໝ່ທີ່ບໍ່ເຄີຍເຫັນ.
+
+```
+ໂມເດວ (w, b ຄົງທີ່)  +  ຂໍ້ມູນໃໝ່ x  →  F(x)  →  ŷ
+```
+
+| | Training | Inference |
+|---|---------|-----------|
+| **ຈຸດປະສົງ** | ຮຽນຮູ້ w, b | ໃຊ້ w, b ທີ່ຮຽນແລ້ວ |
+| **Parameter** | ອັບເດດຢ່າງຕໍ່ເນື່ອງ | **ຄົງທີ່ (frozen)** |
+| **ຂໍ້ມູນ** | labeled data | ຂໍ້ມູນໃໝ່ |
+| **Gradient** | ຄຳນວນ | ບໍ່ຄຳນວນ |
+| **ຄ່າໃຊ້ຈ່າຍ GPU** | ສູງ | ຕ່ຳກວ່າ |
+
+<Callout type="info">
+ໃນ PyTorch, Inference ໃຊ້ `torch.no_grad()` ເພື່ອ disable gradient computation ຊ່ວຍປະຢັດ memory ໄດ້ຫຼາຍ.
+
+```python
+with torch.no_grad():
+    output = model(input_data)
+```
+</Callout>
+
+---
+
+## Pre-training ແລະ Fine-tuning
+
+### Pre-training
+
+Pre-training ຄືການ train **Base Model** ດ້ວຍຂໍ້ມູນຂະໜາດໃຫຍ່ຫຼາຍ ເພື່ອໃຫ້ໂມເດວ "ເຂົ້າໃຈ" ພາສາ ຫຼື domain ທົ່ວໄປ.
+
+- ຂໍ້ມູນ: ລະດັບ Internet (ຫຼາຍ terabytes)
+- ຊັບພະຍາກອນ: GPU/TPU cluster ຫຼາຍຮ້ອຍໃບ
+- ເວລາ: ອາດຫຼາຍອາທິດ ຫຼືຫຼາຍເດືອນ
+- ຕົວຢ່າງ: GPT-4, LLaMA 3, BERT, Mistral
+
+### Fine-tuning
+
+Fine-tuning ຄືການນຳ Base Model ທີ່ pre-train ແລ້ວ ມາ **ຝຶກເພີ່ມ** ດ້ວຍຂໍ້ມູນສະເພາະ domain ເພື່ອໃຫ້ໂມເດວ "ຊ່ຽວຊານ" ໃນດ້ານນັ້ນ.
+
+| ປຽບທຽບ | Pre-training | Fine-tuning |
+|---------|-------------|-------------|
+| ຂະໜາດຂໍ້ມູນ | ໃຫຍ່ຫຼາຍ (TB) | ນ້ອຍກວ່າ (GB ຫຼືໜ້ອຍກວ່າ) |
+| ຄ່າໃຊ້ຈ່າຍ | ສູງຫຼາຍ ($M+) | ຕ່ຳກວ່າຫຼາຍ |
+| ເປົ້າໝາຍ | ຮຽນຮູ້ທົ່ວໄປ | ສຳລັບວຽກສະເພາະ |
+| ຜົນລັບ | Base Model | ໂມເດວສະເພາະງານ |
+| ຕົວຢ່າງ | LLaMA 3 | Lao Medical LLM |
+
+---
+
+## 3 ວິທີ Fine-tuning ທີ່ນິຍົມ
+
+### 1. Prompt-tuning
+
+Prompt-tuning ແມ່ນວິທີ fine-tuning ທີ່ **lightweight** ທີ່ສຸດ — ບໍ່ແຕະຕ້ອງ weight ຂອງໂມເດວເລີຍ.
+
+```
+Input: [Soft Prompt tokens] + [ຂໍ້ຄວາມຈິງ]
+         ↑ trainable       ↑ ຄົງທີ່
+```
+
+- ເພີ່ມ **Soft Prompt** ທີ່ train ໄດ້ ໄວ້ດ້ານໜ້າ input
+- Train ພຽງແຕ່ prompt parameter (ຈຳນວນໜ້ອຍຫຼາຍ)
+- ໂມເດວຫຼັກ **freeze** ທັງໝົດ
+
+| | ຂໍ້ດີ | ຂໍ້ເສຍ |
+|---|-----|------|
+| Prompt-tuning | Parameter ໜ້ອຍ, ໄວ | ປະສິດທິພາບ ບໍ່ດີເທົ່າ Full Fine-tuning |
+
+### 2. Prefix-tuning
+
+Prefix-tuning ຄື **ການພັດທະນາຕໍ່** ຈາກ Prompt-tuning — ແທນທີ່ຈະໃສ່ prefix ສະເພາະ input layer, ໃສ່ prefix vector ເຂົ້າໄປໃນ **Key ແລະ Value ຂອງ Transformer ທຸກ layer**.
+
+```
+Layer 1:  [Prefix K, V] + [ຂໍ້ມູນຈິງ K, V]
+Layer 2:  [Prefix K, V] + [ຂໍ້ມູນຈິງ K, V]
+...
+Layer N:  [Prefix K, V] + [ຂໍ້ມູນຈິງ K, V]
+```
+
+| ວິທີ | ຕຳແໜ່ງທີ່ໃສ່ prefix | ຜົນກະທົບ |
+|------|-------------------|----------|
+| Prompt-tuning | Input layer ດຽວ | ສົ່ງຜົນ shallow |
+| Prefix-tuning | ທຸກ Transformer layer | ສົ່ງຜົນ deep ກວ່າ |
+
+<Callout type="tip">
+Prefix-tuning ເຮັດວຽກດີກວ່າ Prompt-tuning ໃນ task ທີ່ຮັບຂໍ້ມູນຍາວ ຫຼືຕ້ອງການ context ທີ່ complex.
+</Callout>
+
+### 3. LoRA (Low-Rank Adaptation)
+
+LoRA ແມ່ນໜຶ່ງໃນວິທີ Fine-tuning ທີ່ **ນິຍົມທີ່ສຸດ** ໃນປັດຈຸບັນ ໂດຍສະເພາະສຳລັບ LLM ແລະ diffusion model.
+
+**ແນວຄິດຫຼັກ:**
+
+ໃນ Full Fine-tuning ເຮົາຈະອັບເດດ weight matrix W ທັງໝົດ ຊຶ່ງໃຫຍ່ຫຼາຍ. LoRA ສັງເກດວ່າ **ການປ່ຽນແປງ ΔW ໃນ Fine-tuning ມີ rank ຕ່ຳ (low-rank)** ດັ່ງນັ້ນ:
+
+```
+W' = W + ΔW  ≈  W + A·B
+
+ເມື່ອ:
+  W  = weight ເດີມ (frozen)
+  A  = matrix (d × r)   — r << d
+  B  = matrix (r × k)
+  r  = rank (ໜ້ອຍຫຼາຍ ເຊັ່ນ 4, 8, 16)
+```
+
+ຕົວຢ່າງ: ຖ້າ W ມີຂະໜາດ 4096 × 4096 = **16.7M parameters**  
+ດ້ວຍ LoRA rank=8: A(4096×8) + B(8×4096) = **65,536 parameters** — ໜ້ອຍກວ່າ **256 ເທົ່າ**!
+
+```python
+import torch.nn as nn
+
+class LoRALayer(nn.Module):
+    def __init__(self, d, k, rank=8, alpha=16):
+        super().__init__()
+        self.A = nn.Linear(d, rank, bias=False)
+        self.B = nn.Linear(rank, k, bias=False)
+        self.scale = alpha / rank
+        nn.init.kaiming_uniform_(self.A.weight)
+        nn.init.zeros_(self.B.weight)
+
+    def forward(self, x):
+        return self.B(self.A(x)) * self.scale
+```
+
+| ວິທີ | Parameter ທີ່ train | ຄ່າໃຊ້ VRAM | ປະສິດທິພາບ |
+|------|-------------------|-----------|-----------|
+| Full Fine-tuning | ທັງໝົດ | ສູງຫຼາຍ | ດີທີ່ສຸດ |
+| Prompt-tuning | ໜ້ອຍທີ່ສຸດ | ຕ່ຳທີ່ສຸດ | ຕ່ຳທີ່ສຸດ |
+| Prefix-tuning | ໜ້ອຍ | ຕ່ຳ | ປານກາງ |
+| **LoRA** | **ໜ້ອຍ** | **ຕ່ຳ** | **ໃກ້ Full Fine-tuning** |
+
+<Callout type="info">
+LoRA ເປັນທີ່ນິຍົມຫຼາຍ ເພາະ balance ລະຫວ່າງ **ຄ່າໃຊ້ຈ່າຍ** ແລະ **ປະສິດທິພາບ** ໄດ້ດີ. ໃຊ້ library [PEFT](https://github.com/huggingface/peft) ຂອງ HuggingFace ສາມາດ apply LoRA ໄດ້ງ່າຍໆ ດ້ວຍ code ໜ້ອຍໆ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+Machine Learning ມີ building block ທີ່ຊັດເຈນ:
+
+1. **Model Components** — Feature (x), Weight (w), Bias (b) ເຮັດວຽກຮ່ວມກັນສ້າງ prediction
+2. **Training** — ຂະບວນການຮຽນຮູ້ w, b ທີ່ດີທີ່ສຸດຜ່ານ Gradient Descent
+3. **Inference** — ໃຊ້ w, b ທີ່ train ແລ້ວ ກັບຂໍ້ມູນໃໝ່ (parameter ຄົງທີ່)
+4. **Pre-training** — ສ້າງ Base Model ດ້ວຍຂໍ້ມູນໃຫຍ່
+5. **Fine-tuning** — ປັບ Base Model ໃຫ້ຊ່ຽວຊານວຽກສະເພາະ
+
+ສຳລັບ Fine-tuning ມີ 3 ວິທີຫຼັກ:
+
+| ວິທີ | ຄວາມ lightweight | ຄວາມໄວ | ຄວາມແນະນຳ |
+|------|----------------|--------|-----------|
+| Prompt-tuning | ສູງສຸດ | ໄວສຸດ | Task ງ່າຍໆ, ທົດລອງ |
+| Prefix-tuning | ສູງ | ໄວ | Task ທີ່ context ສຳຄັນ |
+| LoRA | ສູງ | ໄວ | **ສ່ວນໃຫຍ່ແນະນຳ** |
+
+ສຳລັບໂຄງການ Lao AI — LoRA ເໝາະສົມທີ່ສຸດ ເພາະ fine-tune LLM ດ້ວຍ labeled data ພາສາລາວ (ທີ່ຍັງໜ້ອຍ) ໄດ້ຢ່າງມີປະສິດທິພາບ ໂດຍບໍ່ຕ້ອງໃຊ້ GPU ຫຼາຍ.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
