@@ -1,0 +1,320 @@
+---
+title: 'ໄຟລ໌ AI Model ຄືຫຍັງ? — ຄຳອະທິບາຍສຳລັບຜູ້ເລີ່ມຕົ້ນ'
+description: 'ທຳຄວາມເຂົ້າໃຈ Format ໄຟລ໌ AI ທີ່ພົບເລື້ອຍ — .pt, .pth, .onnx, .safetensors, .gguf, .tflite ແລະ ອື່ນໆ — ແຕ່ລະອັນໃຊ້ຕອນໃດ ແລະ Workflow ຈິງໃນ Production'
+date: 2026-05-25
+tags: ['deep-learning', 'pytorch', 'lao-ai', 'python', 'neural-networks', 'tutorial']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## ໄຟລ໌ AI Model ຄືຫຍັງ?
+
+ຕອນທີ່ເຮົາ Train AI ສຳເລັດ, ໂມເດວຈະຖືກ **ບັນທຶກ** ອອກມາເປັນໄຟລ໌ — ຄ້າຍກັບການ Save Game ທີ່ເກັບ "ຄວາມຮູ້" ທັງໝົດທີ່ AI ຮຽນມາ.
+
+```
+AI Model  =  ສະໝອງຂອງ AI
+ໄຟລ໌ Model  =  ໄຟລ໌ທີ່ເກັບ "ຄວາມຮູ້" ນັ້ນໄວ້
+```
+
+ໂມເດວທຸກປະເພດ — ຕັ້ງແຕ່ Computer Vision, Speech, LLM, TTS — ລ້ວນແລ້ວຖືກ Save ໃນ Format ໄຟລ໌ທີ່ຕ່າງກັນ ຕາມ Framework ແລະ ຈຸດປະສົງ.
+
+<Callout type="info">
+Format ໄຟລ໌ Model ທີ່ເລືອກ ສົ່ງຜົນໂດຍກົງຕໍ່ **ຄວາມໄວ Inference**, **ຄວາມປອດໄພ**, ແລະ **Platform ທີ່ Deploy ໄດ້** — ຈຶ່ງສຳຄັນທີ່ຕ້ອງຮຽນຮູ້.
+</Callout>
+
+---
+
+## Format ໄຟລ໌ AI ທີ່ພົບເລື້ອຍ
+
+| Format | ໃຊ້ກັບ | ຈຸດປະສົງ |
+|--------|--------|---------|
+| `.pt` | PyTorch | Full model ຫຼື Scripted model |
+| `.pth` | PyTorch | Weights / Checkpoint |
+| `.onnx` | Universal | Deploy ຂ້າມ Framework |
+| `.safetensors` | LLM / Diffusion | Format ໃໝ່, ປອດໄພ |
+| `.gguf` | Local LLM | ແລ່ນ LLM ໃນ CPU |
+| `.ckpt` | TF / PyTorch | Checkpoint ລະຫວ່າງ Train |
+| `.pb` | TensorFlow | Frozen Graph |
+| `.tflite` | Mobile AI | TensorFlow Lite |
+| `.engine` | TensorRT | Optimized GPU |
+| `.bin` | HuggingFace | Model Weights |
+| `.h5` | Keras | Format ເກົ່າ |
+| `.json` | Config | ໂຄງສ້າງ Model |
+
+---
+
+## .pt ແລະ .pth — PyTorch Files
+
+PyTorch ໃຊ້ 2 Format ນີ້ຫຼາຍທີ່ສຸດ — ແຕ່ຫຼາຍຄົນ Confused ລະຫວ່າງ 2 ອັນ.
+
+### .pt — Full Model File
+
+ໃຊ້ບັນທຶກ **ໂມເດວທັງໝົດ** ລວມທັງ Architecture:
+
+```python
+# Save
+torch.save(model, "model.pt")
+
+# Load
+model = torch.load("model.pt")
+```
+
+### .pth — Weights / Checkpoint
+
+ໃຊ້ບັນທຶກ **ສະເພາະ Weights** (state_dict) — ເບົາກວ່າ, ໃຊ້ Train ຕໍ່:
+
+```python
+# Save weights only
+torch.save(model.state_dict(), "model.pth")
+
+# Load weights back
+model.load_state_dict(torch.load("model.pth"))
+```
+
+**ທຽບ .pt vs .pth:**
+
+| | `.pt` | `.pth` |
+|-|-------|--------|
+| ເກັບ | Full Model | Weights ເທົ່ານັ້ນ |
+| ຂະໜາດ | ໃຫຍ່ກວ່າ | ນ້ອຍກວ່າ |
+| ໃຊ້ | Deploy | Train ຕໍ່ / Transfer Learning |
+
+<Callout type="tip">
+Best Practice: ໃຊ້ `.pth` + `state_dict()` ສະເໝີ ຍ້ອນ Portable ກວ່າ ແລະ ໃຊ້ Memory ໜ້ອຍກວ່າ `.pt` ທີ່ Serialize ທັງ Class.
+</Callout>
+
+---
+
+## .onnx — "PDF ຂອງໂລກ AI" 🌐
+
+ONNX (Open Neural Network Exchange) ຄື **Formatກາງ** ທີ່ Framework ທຸກໂຕອ່ານໄດ້:
+
+```
+PyTorch   ──┐
+TensorFlow ──┤── ONNX ──► Mobile / Web / TensorRT / C++ / Edge
+JAX        ──┘
+```
+
+**ທຳໄມ ONNX ສຳຄັນ:**
+- Train ດ້ວຍ PyTorch → Deploy ໃນ C++ ໄດ້
+- ໄວຂຶ້ນ 2–5x ໂດຍໃຊ້ ONNX Runtime
+- Deploy ໃນ Mobile, Browser, Edge Device ໄດ້ທັນທີ
+
+**Export ຈາກ PyTorch:**
+
+```python
+import torch
+
+dummy_input = torch.randn(1, 3, 224, 224)
+torch.onnx.export(
+    model,
+    dummy_input,
+    "model.onnx",
+    input_names=["input"],
+    output_names=["output"],
+    dynamic_axes={"input": {0: "batch_size"}}
+)
+```
+
+**Run ດ້ວຍ ONNX Runtime:**
+
+```python
+import onnxruntime as ort
+import numpy as np
+
+session = ort.InferenceSession("model.onnx")
+outputs = session.run(None, {"input": np.random.randn(1, 3, 224, 224).astype(np.float32)})
+```
+
+```bash
+pip install onnxruntime        # CPU
+pip install onnxruntime-gpu    # GPU
+```
+
+<Callout type="info">
+ONNX Runtime ເຮັດໃຫ້ Inference ໄວຂຶ້ນ 2–5x ເມື່ອທຽບກັບ PyTorch ທຳມະດາ — ເໝາະສຳລັບ Production API.
+</Callout>
+
+---
+
+## .safetensors — LLM ແລະ Diffusion Format 🔒
+
+`.safetensors` ສ້າງໂດຍ Hugging Face ເພື່ອ **ແທນທີ່ `.bin`** — ໃຊ້ Widely ໃນ:
+- LLM (Llama, Mistral, Gemma)
+- Stable Diffusion
+- Text Generation Models
+
+**ຂໍ້ດີກວ່າ `.bin`:**
+
+| ດ້ານ | `.bin` (pickle) | `.safetensors` |
+|-----|----------------|----------------|
+| ຄວາມປອດໄພ | Execute Code ໄດ້ | ❌ Execute ບໍ່ໄດ້ |
+| ຄວາມໄວ Load | ຊ້າ | ໄວ (Memory-mapped) |
+| Memory | ໃຊ້ຫຼາຍ | Efficient |
+
+```python
+from safetensors.torch import load_file, save_file
+
+# Save
+save_file(model.state_dict(), "model.safetensors")
+
+# Load
+weights = load_file("model.safetensors")
+model.load_state_dict(weights)
+```
+
+<Callout type="warning">
+ຫ້າມ Load `.bin` / `.ckpt` ຈາກ Source ທີ່ບໍ່ໄວ້ໃຈ — ໄຟລ໌ Pickle ສາມາດ Execute Code ທີ່ເປັນອັນຕະລາຍໄດ້. ໃຊ້ `.safetensors` ສະເໝີຖ້າມີທາງເລືອກ.
+</Callout>
+
+---
+
+## .gguf — Local LLM Format 🏠
+
+`.gguf` ແມ່ນ Format ສຳລັບ **ແລ່ນ LLM ໃນ CPU** ດ້ວຍ `llama.cpp` ຫຼື Ollama — ໂດຍບໍ່ຕ້ອງ GPU:
+
+```
+llama-3-8b.Q4_K_M.gguf
+         │  │  │
+         │  │  └── ປະເພດ Quantization
+         │  └───── ຈຳນວນ Bits (4-bit)
+         └──────── ຊື່ Model
+```
+
+**Quantization Levels:**
+
+| Format | ຂະໜາດ | ຄຸນນະພາບ | RAM ທີ່ຕ້ອງການ |
+|--------|-------|---------|--------------|
+| `Q2_K` | ນ້ອຍສຸດ | ຕ່ຳ | ~3 GB (8B) |
+| `Q4_K_M` | ກາງ | ດີ | ~5 GB (8B) |
+| `Q8_0` | ໃຫຍ່ | ສູງ | ~9 GB (8B) |
+| `F16` | ໃຫຍ່ທີ່ສຸດ | ສູງສຸດ | ~16 GB (8B) |
+
+**Run ດ້ວຍ Ollama:**
+
+```bash
+ollama run llama3
+```
+
+```python
+# Python API
+import ollama
+
+response = ollama.chat(model="llama3", messages=[
+    {"role": "user", "content": "ສະບາຍດີ! ທ່ານເປັນແນວໃດ?"}
+])
+print(response["message"]["content"])
+```
+
+<Callout type="tip">
+`Q4_K_M` ເປັນ Sweet Spot ທີ່ດີທີ່ສຸດ — ຂະໜາດນ້ອຍ ແຕ່ຄຸນນະພາບດີ. ເໝາະກັບ RAM 8–16 GB.
+</Callout>
+
+---
+
+## .tflite ແລະ .engine — Mobile & GPU Optimization
+
+### .tflite (TensorFlow Lite) — Mobile AI
+
+ໃຊ້ Deploy ໃນ:
+- Android / iOS
+- Raspberry Pi
+- Edge Devices
+
+```python
+# Convert ຈາກ TensorFlow
+converter = tf.lite.TFLiteConverter.from_saved_model("saved_model")
+tflite_model = converter.convert()
+
+with open("model.tflite", "wb") as f:
+    f.write(tflite_model)
+```
+
+### .engine (TensorRT) — GPU Optimization
+
+NVIDIA TensorRT ໃຊ້ Optimize ໂມເດວໃຫ້ **ໄວສູງສຸດ** ໃນ GPU:
+
+```
+ONNX Model → TensorRT Engine → 3–10x Faster Inference
+```
+
+ເໝາະກັບ: Robotics, Autonomous Driving, Real-time Detection.
+
+---
+
+## Workflow ຈິງໃນ AI Projects
+
+### Computer Vision (YOLO / Detection)
+
+```
+Train ດ້ວຍ PyTorch
+         │
+    save model.pt
+         │
+ export → model.onnx
+         │
+    ┌────┴────┐
+    │         │
+TensorRT   Mobile
+.engine    .tflite
+```
+
+### Large Language Model
+
+```
+Fine-tune / Download safetensors
+         │
+   model.safetensors
+         │
+  convert ด้วย llama.cpp
+         │
+    model.gguf
+         │
+   Ollama / llama.cpp
+```
+
+---
+
+## ສຳລັບຜູ້ເລີ່ມຕົ້ນ — ຮຽນອັນໃດກ່ອນ?
+
+| ສາຍ | Format ທີ່ຄວນຮຽນ |
+|-----|----------------|
+| AI ທົ່ວໄປ / ຝຶກໂມເດວ | `.pt` → `.pth` |
+| Deploy / Production | `.onnx` → `.engine` |
+| LLM / Text AI | `.safetensors` → `.gguf` |
+| Mobile AI | `.onnx` → `.tflite` |
+
+**ລຳດັບການຮຽນທີ່ແນະນຳ:**
+
+```
+ຂັ້ນ 1: ຮຽນ .pt / .pth  →  ຝຶກ PyTorch
+ຂັ້ນ 2: ຮຽນ .onnx       →  Deploy ຄັ້ງທຳອິດ
+ຂັ້ນ 3: ຮຽນ .gguf        →  ທົດລອງ Local LLM
+ຂັ້ນ 4: ຮຽນ .safetensors →  LLM Fine-tuning
+```
+
+---
+
+## ສະຫຼຸບ
+
+Format ໄຟລ໌ Model ບໍ່ແມ່ນ Detail ນ້ອຍ — ການເລືອກ Format ທີ່ຜິດ ອາດ:
+- Deploy ບໍ່ໄດ້ໃນ Platform ທີ່ຕ້ອງການ
+- Inference ຊ້າ 10x ໂດຍໄມ່ຮູ້ສາເຫດ
+- ເກີດ Security Risk ຈາກ Pickle Files
+
+ຈຳ Rule ງ່າຍໆ:
+- **Train:** `.pth`
+- **Deploy ທົ່ວໄປ:** `.onnx`
+- **LLM ໃໝ່:** `.safetensors`
+- **LLM ໃນ CPU:** `.gguf`
+- **GPU Speed:** `.engine`
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*

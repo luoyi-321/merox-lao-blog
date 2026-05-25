@@ -1,0 +1,317 @@
+---
+title: 'Python AI Setup 101 — ຄູ່ມືເລີ່ມຕົ້ນ AI Development ສຳລັບຜູ້ຍິ່ງ'
+description: 'ຄູ່ມືຄົບຈົບດຽວ ສຳລັບການຕິດຕັ້ງ Python, Conda, Miniconda, Anaconda, pip, ແລະ uv ເພື່ອ​ເລີ່ມ​ຕົ້ນ AI Development ຈາກສູນ'
+date: 2026-05-25
+tags: ['python', 'deep-learning', 'pytorch', 'lao-ai', 'tutorial']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## ເປັນຫຍັງຕ້ອງ Setup Environment ກ່ອນ?
+
+ກ່ອນຂຽນ AI Code ສັກໂຕດຽວ, ສິ່ງທີ່ Developers ທຸກຄົນຕ້ອງເຮັດກ່ອນຄື **ຈັດ Environment ໃຫ້ຖືກ**. ຖ້າ Install ທຸກ Library ລົງໃນ Python ຫຼັກ (Global) ໂດຍບໍ່ຈັດ Environment, ຈະເກີດ:
+
+- Library Version ຂັດກັນ (Dependency Conflict)
+- Project ໜຶ່ງ Upgrade Library ແລ້ວ Project ອື່ນ Break
+- GPU / CUDA Version ຜິດ ໃຊ້ PyTorch ບໍ່ໄດ້
+
+**ວິທີແກ້:** ສ້າງ **Virtual Environment** ແຍກຕ່າງຫາກໃຫ້ແຕ່ລະ Project — ນີ້ຄືສິ່ງທີ່ Blog ນີ້ຈະສອນ.
+
+<Callout type="info">
+ຄຳວ່າ "Environment" ໃນ AI Development ໝາຍເຖິງ sandbox ທີ່ Python ແລະ Libraries ໂຮງຢູ່ຮ່ວມກັນ ໂດຍ Isolate ຈາກ System ຫຼັກ — ຄ້າຍກັບ container ສ່ວນຕົວຂອງແຕ່ລະ Project.
+</Callout>
+
+---
+
+## ສິ່ງທີ່ຕ້ອງການ (Toolkit Overview)
+
+| Tool | ໜ້າທີ່ | ໃຊ້ເມື່ອ |
+|------|--------|---------|
+| **Python** | ພາສາ Programming | ສະເໝີ |
+| **Conda** | Environment + Package Manager | AI/ML Stacks ທີ່ຊັບຊ້ອນ |
+| **pip** | Package Installer | Standard Python Packages |
+| **uv** | Fast Modern Package Manager | ຕ້ອງການຄວາມໄວ |
+
+---
+
+## Anaconda ແລະ Miniconda — ຕ່າງກັນແນວໃດ?
+
+ຄຳຖາມທີ່ Beginners ຖາມຫຼາຍທີ່ສຸດ: **ຕ້ອງ Install ອັນໃດ?**
+
+### Anaconda (Full Distribution)
+
+Anaconda ແມ່ນ Package Bundle ຂະໜາດໃຫຍ່ທີ່ Install ໄດ້ທີລະເທື່ອ:
+
+**ໄດ້ຮັບ:**
+- Python + Conda
+- 1,500+ Libraries ຕິດຕັ້ງໄວ້ລ່ວງໜ້າ (NumPy, Pandas, Scikit-learn ...)
+- Jupyter Notebook
+- Spyder IDE
+- Anaconda Navigator (GUI)
+
+**ຂໍ້ດີ:** ເໝາະກັບຜູ້ຮຽນ Data Science — ເປີດ Notebook ໄດ້ທັນທີ<br/>
+**ຂໍ້ເສຍ:** ໃຊ້ Disk 4–8 GB, ຕິດຕັ້ງຊ້າ, ມີ Packages ຫຼາຍທີ່ບໍ່ໃຊ້ຫຍັງ
+
+### Miniconda (Lightweight — ແນະນຳ 🚀)
+
+Miniconda ແມ່ນ Anaconda ສະບັບຫຍໍ້ — ໄດ້ສະເພາະ Python + Conda:
+
+**ໄດ້ຮັບ:**
+- Python
+- Conda
+- Dependencies ພື້ນຖານ
+
+**ຂໍ້ດີ:** Install ພຽງ 100–500 MB, ໄວ, ສະອາດ, Install ສະເພາະສິ່ງທີ່ຕ້ອງການ<br/>
+**ຂໍ້ເສຍ:** ຕ້ອງ Install Packages ເອງທຸກຢ່າງ
+
+<Callout type="tip">
+**ສຳລັບ AI / Deep Learning → ໃຊ້ Miniconda** ຍ້ອນ: ຕ້ອງການ PyTorch / CUDA Version ສະເພາະ, ຕ້ອງ Control Environment ເອງ, ບໍ່ຢາກ Library ຂີ້ຝຸ່ນຈາກ Anaconda.
+</Callout>
+
+---
+
+## ຕິດຕັ້ງ Miniconda (ທຸກ Platform)
+
+### macOS (Apple Silicon / Intel)
+
+```bash
+# Apple Silicon (M1/M2/M3)
+curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
+bash Miniconda3-latest-MacOSX-arm64.sh
+
+# Intel Mac
+curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+bash Miniconda3-latest-MacOSX-x86_64.sh
+```
+
+### Linux
+
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
+
+### Windows
+
+ດາວໂຫຼດ `.exe` Installer ຈາກ https://docs.conda.io/en/latest/miniconda.html
+ແລ່ວ Run Installer → ເລືອກ **"Add Conda to PATH"** → Finish
+
+### ຕິດຕັ້ງ Anaconda (ຖ້າຢາກໄດ້ GUI)
+
+ດາວໂຫຼດຈາກ https://www.anaconda.com/download ທຸກ Platform ມີ Installer Graphic.
+
+### ກວດສອບ
+
+```bash
+conda --version
+# conda 24.x.x
+```
+
+ຖ້າ Command ບໍ່ຖືກຮັບຮູ້, ໃຫ້ Run:
+
+```bash
+conda init
+# ແລ້ວ Restart Terminal
+```
+
+---
+
+## ສ້າງ Environment ສຳລັບ AI
+
+ຫຼັງຕິດຕັ້ງ Conda ສຳເລັດ, ເລີ່ມ Setup Project:
+
+```bash
+# ສ້າງ environment ຊື່ "ai" ດ້ວຍ Python 3.10
+conda create -n ai python=3.10
+
+# ເຂົ້າໃຊ້ environment
+conda activate ai
+
+# ທຳ Project / Install Libraries ໃນນີ້...
+
+# ອອກຈາກ environment
+conda deactivate
+```
+
+<Callout type="warning">
+ໃຊ້ Python 3.10 ຫຼື 3.11 ສຳລັບ AI ໃນຕອນນີ້ — Python 3.12+ ຍັງ Incompatible ກັບ Libraries ບາງໂຕ ເຊັ່ນ `torch`, `triton`.
+</Callout>
+
+**Conda Commands ທີ່ໃຊ້ເລື້ອຍ:**
+
+| Command | ໜ້າທີ່ |
+|---------|--------|
+| `conda create -n ai python=3.10` | ສ້າງ environment |
+| `conda activate ai` | ເຂົ້າ environment |
+| `conda deactivate` | ອອກ environment |
+| `conda env list` | ເບິ່ງ environments ທັງໝົດ |
+| `conda remove -n ai --all` | ລົບ environment |
+
+---
+
+## ຕິດຕັ້ງ Libraries ດ້ວຍ pip
+
+ພາຍໃນ Environment:
+
+```bash
+# ຄະນິດສາດ / ຂໍ້ມູນ
+pip install numpy pandas matplotlib
+
+# AI / Deep Learning
+pip install torch torchvision torchaudio
+pip install transformers datasets
+```
+
+**pip Commands ພື້ນຖານ:**
+
+| Command | ໜ້າທີ່ |
+|---------|--------|
+| `pip install <package>` | ຕິດຕັ້ງ |
+| `pip uninstall <package>` | ລົບ |
+| `pip list` | ເບິ່ງ Libraries ທີ່ Install ໄວ້ |
+| `pip freeze > requirements.txt` | Export dependencies |
+| `pip install -r requirements.txt` | Install ຈາກໄຟລ໌ |
+
+---
+
+## uv — Package Manager ທີ່ໄວທີ່ສຸດ ⚡
+
+`uv` ແມ່ນ Package Manager ຮຸ່ນໃໝ່ ຂຽນດ້ວຍ Rust ໂດຍ Astral — **ໄວກວ່າ pip 10–100x**.
+
+### ຕິດຕັ້ງ uv
+
+```bash
+# macOS / Linux
+curl -Ls https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+irm https://astral.sh/uv/install.ps1 | iex
+```
+
+```bash
+uv --version
+# uv 0.x.x
+```
+
+### ການໃຊ້ uv
+
+```bash
+# ສ້າງ virtual environment
+uv venv
+
+# Activate
+source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate       # Windows
+
+# Install packages (ໄວກວ່າ pip ຫຼາຍ)
+uv pip install numpy pandas torch transformers
+
+# Export dependencies
+uv pip freeze > requirements.txt
+
+# Install ຈາກ requirements.txt
+uv pip install -r requirements.txt
+```
+
+<Callout type="info">
+`uv` ຍັງ Support `pyproject.toml` ແລະ Lock Files — ເໝາະກັບ Production Projects ທີ່ຕ້ອງ Reproducible Environments.
+</Callout>
+
+---
+
+## Conda vs pip vs uv — ໃຊ້ອັນໃດ?
+
+| Tool | ໃຊ້ເມື່ອ |
+|------|---------|
+| **conda** | ໂຕ AI Stack ໃຫຍ່ (PyTorch + CUDA), ຕ້ອງ Control Python Version |
+| **pip** | Standard Packages, ໃຊ້ໄດ້ທຸກ Environment |
+| **uv** | ຕ້ອງການຕິດຕັ້ງໄວ, Modern Workflow, Production Projects |
+
+**Pattern ທີ່ Popular ທີ່ສຸດ:** conda ສ້າງ base environment → pip ຫຼື uv Install Libraries ພາຍໃນ.
+
+---
+
+## Workflow ສຳລັບ AI Project (Best Practice)
+
+```bash
+# ຂັ້ນຕອນທີ 1: ສ້າງ Conda Environment
+conda create -n ai python=3.10
+conda activate ai
+
+# ຂັ້ນຕອນທີ 2: ຕິດຕັ້ງ uv (Optional, ແຕ່ແນະນຳ)
+pip install uv
+
+# ຂັ້ນຕອນທີ 3: Install AI Libraries
+uv pip install torch transformers datasets numpy pandas
+
+# ຂັ້ນຕອນທີ 4: ທົດສອບ
+python test.py
+```
+
+---
+
+## ທົດສອບ PyTorch (Quick Sanity Check)
+
+ສ້າງໄຟລ໌ `test.py`:
+
+```python
+import torch
+
+print("PyTorch version:", torch.__version__)
+print("CUDA available:", torch.cuda.is_available())
+
+x = torch.rand(3, 3)
+print("Random tensor:")
+print(x)
+```
+
+ແລ່ວ Run:
+
+```bash
+python test.py
+```
+
+**Output ທີ່ຄາດຫວັງ (CPU):**
+
+```
+PyTorch version: 2.x.x
+CUDA available: False
+Random tensor:
+tensor([[0.1234, 0.5678, 0.9012],
+        ...])
+```
+
+ຖ້າ `CUDA available: True` ໝາຍຄວາມວ່າ GPU ຂອງທ່ານພ້ອມໃຊ້ງານ.
+
+<Callout type="tip">
+GPU Users: ຕ້ອງ Install PyTorch Version ທີ່ Matching ກັບ CUDA Version ຂອງ GPU ຂອງທ່ານ — ກວດ https://pytorch.org/get-started/locally/ ເພື່ອ Command ທີ່ຖືກຕ້ອງ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+| ຂັ້ນຕອນ | Action |
+|--------|--------|
+| 1 | Install **Miniconda** (ແນະນຳ) ຫຼື Anaconda |
+| 2 | `conda create -n ai python=3.10` |
+| 3 | `conda activate ai` |
+| 4 | `pip install uv` (Optional) |
+| 5 | `uv pip install torch transformers datasets` |
+| 6 | ທົດສອບດ້ວຍ `python test.py` |
+
+ຫຼັງ Setup ສຳເລັດ ທ່ານພ້ອມ:
+- ຝຶກ Fine-tune LLM
+- ສ້າງ AI Chatbot ດ້ວຍ Transformers
+- ສ້າງ Speech Model ສຳລັບ ພາສາລາວ
+- Build Full AI Project Structure
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
