@@ -1,0 +1,263 @@
+---
+title: 'Google Colab 101 — ຄູ່ມືເລີ່ມຕົ້ນສຳລັບ AI ແລະ Python'
+description: 'ຮຽນໃຊ້ Google Colab ຈາກສູນ — ຕັ້ງແຕ່ Cell, Runtime, GPU, ການ Mount Drive ໄປຈົນຮອດ Shortcut ແລະ Tips ທີ່ຊ່ວຍໃຫ້ເຮັດວຽກໄດ້ໄວຂຶ້ນ'
+date: 2026-05-26
+tags: ['python', 'deep-learning', 'lao-ai', 'tutorial', 'pytorch']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## Google Colab ຄືຫຍັງ?
+
+Google Colaboratory (Colab) ຄື **Jupyter Notebook ອອນລາຍ** ທີ່ແລ່ນໃນ Cloud ຂອງ Google — ໃຊ້ **ຟຣີ**, ບໍ່ຕ້ອງຕິດຕັ້ງຫຍັງ, ພຽງແຕ່ມີ Google Account ກໍ່ໃຊ້ໄດ້ທັນທີ.
+
+**ເໝາະກັບ:**
+- ການຮຽນ Machine Learning ແລະ Deep Learning
+- ທົດລອງ Python Code ໂດຍໄມ່ຕ້ອງ Setup Environment
+- ໃຊ້ GPU ຟຣີສຳລັບ Train AI Models
+- ແບ່ງປັນ Code ກັບທີມ ຄ້າຍ Google Docs
+
+<Callout type="info">
+Colab ສ້າງຕໍ່ຈາກ Jupyter Notebook — ຮູບແບບໄຟລ໌ `.ipynb` ດຽວກັນ, ສາມາດ Upload/Download ໄຟລ໌ `.ipynb` ລະຫວ່າງ Colab ແລະ Local ໄດ້.
+</Callout>
+
+---
+
+## ເລີ່ມໃຊ້ Colab ຄັ້ງທຳອິດ
+
+1. ໄປທີ່ `colab.research.google.com`
+2. Login ດ້ວຍ Google Account
+3. ເລືອກ **"New notebook"** ຫຼື Upload ໄຟລ໌ `.ipynb` ທີ່ມີຢູ່ແລ້ວ
+
+Notebook ໃໝ່ຈະ Save ອັດຕະໂນມັດໄປ Google Drive ຂອງທ່ານ.
+
+---
+
+## ທຳຄວາມຮູ້ຈັກ Cell
+
+Colab ເຮັດວຽກເປັນ **Cell** — Block ຂໍ້ຄວາມ/Code ທີ່ Run ແຍກຕ່າງຫາກ. ມີ 2 ປະເພດ:
+
+| ປະເພດ | ໃຊ້ທຳຫຍັງ |
+|-------|---------|
+| **Code Cell** | ຂຽນ ແລະ Run Python Code |
+| **Text Cell (Markdown)** | ຂຽນຄຳອະທິບາຍ, Headers, ໃຊ້ Markdown |
+
+ເພີ່ມ Cell ໃໝ່ → ກົດ **`+ Code`** ຫຼື **`+ Text`** ທີ່ Menu ດ້ານເທິງ.
+
+---
+
+## ການ Run Code
+
+| ຄຳສັ່ງ | ໜ້າທີ່ |
+|--------|--------|
+| `Shift + Enter` | Run Cell ປັດຈຸບັນ → ໄປ Cell ຖັດໄປ |
+| `Ctrl + Enter` | Run Cell ປັດຈຸບັນ → ຢູ່ Cell ດຽວກັນ |
+| Menu **Runtime → Run all** | Run ທຸກ Cell ພ້ອມກັນ |
+| Menu **Runtime → Interrupt** | ຢຸດການ Run |
+
+```python
+# ທົດລອງ Cell ທຳອິດ
+print("ສະບາຍດີ Colab!")
+x = 10 + 5
+print(f"ຜົນ: {x}")
+```
+
+---
+
+## ເປີດໃຊ້ GPU (ສຳຄັນ!)
+
+Colab ໃຫ້ GPU ຟຣີ — ຊ່ວຍ Train AI ໄວຂຶ້ນຫຼາຍ. ວິທີເປີດ:
+
+1. ໄປ Menu **Runtime → Change runtime type**
+2. ໃຕ້ "Hardware accelerator" ເລືອກ **GPU** (ຫຼື TPU)
+3. ກົດ **Save**
+
+ກວດສອບ GPU ທີ່ໄດ້ຮັບ:
+
+```python
+!nvidia-smi
+```
+
+ກວດ PyTorch ເຫັນ GPU ຫຼື ບໍ່:
+
+```python
+import torch
+print("CUDA available:", torch.cuda.is_available())
+print("GPU name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")
+```
+
+<Callout type="warning">
+GPU Session ຟຣີ ຈຳກັດເວລາ ~12 ຊົ່ວໂມງຕໍ່ Session ແລະ Disconnect ຖ້າ Idle ~90 ນາທີ. ບັນທຶກຜົນ Run ໃນ Google Drive ກ່ອນ Session ໝົດ.
+</Callout>
+
+---
+
+## ຕິດຕັ້ງ Library
+
+ໃຊ້ `!` ນຳໜ້າ ເພື່ອ Run Shell Command ໃນ Cell:
+
+```python
+# Library ທົ່ວໄປ
+!pip install numpy pandas matplotlib
+
+# AI / Deep Learning
+!pip install torch torchvision torchaudio
+!pip install transformers datasets
+
+# ກວດ Library ທີ່ Install ໄວ້
+!pip list | grep torch
+```
+
+<Callout type="info">
+Library ທີ່ Install ຈະຫາຍໄປເມື່ອ Session ສິ້ນສຸດ — ຕ້ອງ Install ໃໝ່ທຸກຄັ້ງທີ່ເປີດ Session ໃໝ່. ຖ້າໃຊ້ Library ດຽວກັນທຸກຄັ້ງ, ໃຫ້ Install ຢູ່ Cell ທຳອິດຂອງ Notebook.
+</Callout>
+
+---
+
+## ການຈັດການໄຟລ໌
+
+### ເຊື່ອມຕໍ່ Google Drive (ແນະນຳ)
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+
+# ຫຼັງ Mount ເຂົ້າໄຟລ໌ໄດ້ທີ່
+# /content/drive/MyDrive/your-folder/
+```
+
+ຕໍ່ຈາກນັ້ນ ອ່ານ / ຂຽນໄຟລ໌ໄດ້ທຳມະດາ:
+
+```python
+import pandas as pd
+
+# Load ຂໍ້ມູນຈາກ Drive
+df = pd.read_csv('/content/drive/MyDrive/data/dataset.csv')
+print(df.head())
+
+# Save ຜົນລັບໄປ Drive
+df.to_csv('/content/drive/MyDrive/output/result.csv', index=False)
+```
+
+### Upload ໄຟລ໌ຈາກ Computer
+
+```python
+from google.colab import files
+
+uploaded = files.upload()
+# Popup ຈະປາກົດ → ເລືອກໄຟລ໌ຈາກ Computer ໄດ້ທັນທີ
+```
+
+### Download ໄຟລ໌ຈາກ Colab
+
+```python
+from google.colab import files
+
+files.download('output.csv')
+# ໄຟລ໌ຈະ Download ລົງ Computer ອັດຕະໂນມັດ
+```
+
+### ເບິ່ງໄຟລ໌ໃນ Environment
+
+```python
+!ls /content
+!ls /content/drive/MyDrive/
+```
+
+---
+
+## Shortcuts ທີ່ຄວນຈຳ
+
+| Shortcut | ໜ້າທີ່ |
+|----------|--------|
+| `Shift + Enter` | Run Cell → ໄປ Cell ຖັດໄປ |
+| `Ctrl + Enter` | Run Cell → ຢູ່ Cell ດຽວກັນ |
+| `Ctrl + M` `B` | ເພີ່ມ Cell ດ້ານລຸ່ມ |
+| `Ctrl + M` `A` | ເພີ່ມ Cell ດ້ານເທິງ |
+| `Ctrl + M` `D` | ລົບ Cell |
+| `Ctrl + M` `Y` | ປ່ຽນເປັນ Code Cell |
+| `Ctrl + M` `M` | ປ່ຽນເປັນ Text Cell |
+| `Ctrl + /` | Comment / Uncomment Code |
+
+---
+
+## ຂໍ້ຈຳກັດຂອງ Colab ຟຣີ
+
+| Resource | ຈຳກັດ |
+|----------|-------|
+| RAM | ~12 GB |
+| Disk (ຊົ່ວຄາວ) | ~100 GB |
+| Session ສູງສຸດ | ~12 ຊົ່ວໂມງ |
+| Idle Timeout | ~90 ນາທີ |
+| GPU | T4 ຫຼື V100 (Random) |
+
+<Callout type="warning">
+ຂໍ້ມູນທຸກຢ່າງໃນ `/content` **ຈະຫາຍໝົດ** ເມື່ອ Session ສິ້ນສຸດ — ສະເໝີ Save ຜົນລັບໄວ້ໃນ Google Drive ກ່ອນ.
+</Callout>
+
+---
+
+## Tips ສຳລັບ AI Workflow ໃນ Colab
+
+**Cell ທຳອິດ — Setup ສະເໝີ:**
+
+```python
+# 1. Mount Drive
+from google.colab import drive
+drive.mount('/content/drive')
+
+# 2. Install Libraries ທີ່ຕ້ອງການ
+!pip install -q transformers datasets accelerate
+
+# 3. ກວດ GPU
+import torch
+print("GPU:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU only")
+```
+
+**Save Checkpoint ລະຫວ່າງ Train:**
+
+```python
+import torch
+
+# Save ທຸກ N epochs ໄປ Drive
+save_path = '/content/drive/MyDrive/models/checkpoint.pt'
+torch.save({
+    'epoch': epoch,
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'loss': loss,
+}, save_path)
+```
+
+<Callout type="tip">
+ໃຊ້ **Table of Contents** (ໄອຄອນ List ຢູ່ Sidebar ຊ້າຍ) Navigate Notebook ໃຫຍ່ໄດ້ໄວ — Colab ສ້າງ TOC ອັດຕະໂນມັດຈາກ Headers Markdown.
+</Callout>
+
+**Restart Runtime ຖ້າ Memory ເຕັມ:**
+
+Menu **Runtime → Restart runtime** (ຈະ Clear RAM ທັງໝົດ, ຕ້ອງ Run Cell ຈາກຕົ້ນ).
+
+---
+
+## ສະຫຼຸບ
+
+Google Colab ຄື Tool ທີ່ດີທີ່ສຸດສຳລັບ **ຜູ້ເລີ່ມຕົ້ນ AI** ຍ້ອນ:
+- ໃຊ້ **ຟຣີ** ທັນທີ ບໍ່ຕ້ອງ Setup
+- ມີ **GPU ຟຣີ** ສຳລັບ Train Model
+- ແບ່ງປັນໄດ້ຄ້າຍ Google Docs
+- ເຊື່ອມ Google Drive ໄດ້ງ່າຍ
+
+**ຈຳ 3 ຂໍ້ນີ້ໄວ້:**
+1. Mount Google Drive ກ່ອນເຮັດວຽກ ທຸກຄັ້ງ
+2. ເປີດ GPU ທີ່ Runtime → Change runtime type
+3. Session ໝົດ → ຂໍ້ມູນໃນ `/content` ຫາຍ → Save Drive ສະເໝີ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
