@@ -1,0 +1,269 @@
+---
+title: 'Kaggle 101 — ຄູ່ມືເລີ່ມຕົ້ນ Data Science ຈາກສູນ'
+description: 'ຮຽນຮູ້ Kaggle ຕັ້ງແຕ່ລົງທະບຽນ, ໃຊ້ Notebook, ດາວໂຫຼດ Dataset, ເຂົ້າຮ່ວມ Competition ໄປຈົນຮອດ Ranking System ທີ່ AI Developers ທຸກຄົນຕ້ອງຮູ້'
+date: 2026-05-26
+tags: ['python', 'deep-learning', 'lao-ai', 'tutorial', 'benchmark']
+authors: ['laligence']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## Kaggle ຄືຫຍັງ?
+
+Kaggle ແມ່ນ Platform ອອນລາຍທີ່ຮວມທຸກຢ່າງທີ່ Data Scientist ແລະ AI Developer ຕ້ອງການໄວ້ຄົບໃນທີ່ດຽວ:
+
+| Component | ໜ້າທີ່ |
+|-----------|--------|
+| **Datasets** | ຂໍ້ມູນຟຣີ 50,000+ ຊຸດ |
+| **Notebooks** | Jupyter Cloud + GPU ຟຣີ |
+| **Competitions** | ແຂ່ງ ML ຊິງລາງວັນຈາກບໍລິສັດຈິງ |
+| **Courses** | ຄອດສ໌ຟຣີ Python, ML, SQL, DL |
+| **Discussions** | Forum ຖາມ-ຕອບ ແລະ ແລກປ່ຽນ |
+
+<Callout type="info">
+Kaggle ໂດດເດັ່ນຈາກ Platform ອື່ນ ຍ້ອນ: Dataset + Notebook + Competition ຢູ່ Portal ດຽວ — ຂໍ້ມູນ Kaggle Dataset ສາມາດ Load ໂດຍກົງໃນ Notebook ໄດ້ທັນທີ ໂດຍໄມ່ຕ້ອງ Download.
+</Callout>
+
+---
+
+## ຂັ້ນຕອນທີ 1 — ລົງທະບຽນ
+
+1. ໄປທີ່ `kaggle.com`
+2. ກົດ **Register** → ລົງທະບຽນດ້ວຍ Google ຫຼື Email
+3. ຕື່ມຊື່, ອາຊີບ ແລະ ຄວາມສົນໃຈດ້ານ Data Science
+4. Confirm Email → ພ້ອມໃຊ້ງານ
+
+---
+
+## ຂັ້ນຕອນທີ 2 — ສ້າງ Notebook ທຳອິດ
+
+Kaggle Notebook ຄ້າຍກັນກັບ Google Colab — Jupyter ໃນ Cloud, ຟຣີ, ບໍ່ຕ້ອງ Setup:
+
+1. ຄລິກ **Code** ຢູ່ Menu ຊ້າຍ → **New Notebook**
+2. ເລືອກ Python ເປັນພາສາ
+3. ເລີ່ມຂຽນໂຕ Code:
+
+```python
+import pandas as pd
+import numpy as np
+
+# Load dataset ຈາກ Kaggle (ຫຼັງ Add dataset ແລ້ວ)
+df = pd.read_csv('/kaggle/input/your-dataset/file.csv')
+print(df.shape)
+df.head()
+```
+
+4. ກົດ **Run** ຫຼື `Shift + Enter`
+5. ກົດ **Save Version** ເມື່ອຕ້ອງການ Commit
+
+**GPU ຟຣີໃນ Kaggle Notebook:**
+
+| Resource | ຈຳກັດ/ອາທິດ |
+|----------|------------|
+| GPU (T4 x2) | 30 ຊົ່ວໂມງ |
+| TPU v3-8 | 20 ຊົ່ວໂມງ |
+| RAM | ~13 GB |
+| Disk | ~73 GB |
+
+ເປີດ GPU: **Settings Panel (ຂວາ) → Accelerator → GPU T4 x2**
+
+<Callout type="tip">
+GPU 30 ຊົ່ວໂມງ/ອາທິດ ຂອງ Kaggle ເໝາະກັບ Fine-tuning Model ຂະໜາດກາງ ຫຼື Train Model ໜ້ອຍໆ — ຖ້າຕ້ອງການ Train ຍາວ ໃຫ້ Mix ກັບ Google Colab.
+</Callout>
+
+---
+
+## ຂັ້ນຕອນທີ 3 — ຊອກຫາ Dataset
+
+ໄປທີ່ **Datasets** → ຄົ້ນຫາຂໍ້ມູນ:
+
+```
+ຕົວຢ່າງຄຳຄົ້ນຫາ:
+- "titanic"         → ຂໍ້ມູນ Classic ML
+- "lao language"    → ຂໍ້ມູນພາສາລາວ
+- "speech audio"    → ຂໍ້ມູນສຽງ
+- "stock price"     → ຂໍ້ມູນຫຸ້ນ
+```
+
+**ເພີ່ມ Dataset ໃນ Notebook:**
+
+1. ເປີດ Notebook → **Add Data** (ໄອຄອນ `+` ດ້ານຂວາ)
+2. ຄົ້ນຫາ Dataset ທີ່ຕ້ອງການ
+3. ກົດ **Add** → Path ຈະເປັນ `/kaggle/input/dataset-name/`
+
+```python
+import os
+
+# ກວດໄຟລ໌ທີ່ມີໃນ Dataset
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+```
+
+**Upload Dataset ຂອງຕົວເອງ:**
+
+ໄປ **Datasets → New Dataset** → Upload ໄຟລ໌ `.csv`, `.zip`, ຫຼື Folder.
+
+---
+
+## ຂັ້ນຕອນທີ 4 — ເຂົ້າຮ່ວມ Competition
+
+### Competition ທີ່ເໝາະສຳລັບ Beginners
+
+| Competition | ປະເພດ | ລະດັບ |
+|-------------|--------|-------|
+| **Titanic** | Classification | ມືໃໝ່ທີ່ສຸດ |
+| **House Prices** | Regression | ມືໃໝ່ |
+| **Digit Recognizer** | Image Classification | ເລີ່ມ Deep Learning |
+
+### ຂັ້ນຕອນ Submit
+
+```
+1. ໄປ Competitions → ເລືອກ Competition
+2. ກົດ "Join Competition"
+3. ສ້າງ Notebook → Train Model
+4. ສ້າງໄຟລ໌ submission.csv
+5. ກົດ "Submit Predictions"
+```
+
+**ຕົວຢ່າງ Titanic Submission:**
+
+```python
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+# Load data
+train = pd.read_csv('/kaggle/input/titanic/train.csv')
+test = pd.read_csv('/kaggle/input/titanic/test.csv')
+
+# Simple feature engineering
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare']
+train['Sex'] = train['Sex'].map({'male': 0, 'female': 1})
+test['Sex'] = test['Sex'].map({'male': 0, 'female': 1})
+
+X = train[features].fillna(0)
+y = train['Survived']
+X_test = test[features].fillna(0)
+
+# Train
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X, y)
+
+# Submit
+submission = pd.DataFrame({
+    'PassengerId': test['PassengerId'],
+    'Survived': model.predict(X_test)
+})
+submission.to_csv('submission.csv', index=False)
+print("ສ້າງ submission.csv ສຳເລັດ!")
+```
+
+<Callout type="warning">
+ໄຟລ໌ `submission.csv` ຕ້ອງມີ Column ຕາມທີ່ Competition ກຳໜົດ — ກວດ **Data** Tab ຂອງ Competition ເພື່ອເບິ່ງ Format ທີ່ຖືກຕ້ອງ.
+</Callout>
+
+---
+
+## ຂັ້ນຕອນທີ 5 — ຮຽນ Course ຟຣີ
+
+Kaggle ມີ Courses ຟຣີທີ່ Best ສຳລັບ Beginners:
+
+| Course | ໃຊ້ເວລາ | ເໝາະກັບ |
+|--------|---------|---------|
+| Python | ~5 ຊົ່ວໂມງ | ຜູ້ເລີ່ມຕົ້ນ |
+| Intro to Machine Learning | ~3 ຊົ່ວໂມງ | ຫຼັງຮຽນ Python |
+| Pandas | ~4 ຊົ່ວໂມງ | ຈັດການ Data |
+| Deep Learning | ~4 ຊົ່ວໂມງ | Neural Networks |
+| SQL | ~3 ຊົ່ວໂມງ | Database |
+| NLP | ~3 ຊົ່ວໂມງ | Text AI |
+
+ໄປທີ່ `kaggle.com/learn` → ເລີ່ມໄດ້ທັນທີ, ມີ Certificate ຫຼັງຈົບ.
+
+<Callout type="info">
+Kaggle Certificate ຈາກ Course ທີ່ຈົບ ສາມາດ Add ໃສ່ LinkedIn ໄດ້ — ຊ່ວຍສ້າງ Portfolio ສຳລັບ Data Science Job.
+</Callout>
+
+---
+
+## ລະບົບ Ranking ຂອງ Kaggle
+
+Kaggle ມີ Tier System 4 ດ້ານ — ແຕ່ລະດ້ານ Progress ເປັນ Independent:
+
+```
+Novice → Contributor → Expert → Master → Grandmaster
+```
+
+| Tier | ສິ່ງທີ່ຕ້ອງເຮັດ (Competitions) |
+|------|-------------------------------|
+| Contributor | Profile ຄົບ + Notebook, Dataset, Discussion ຄົນລະ 1 ອັນ |
+| Expert | Medal 2 ອັນ (Bronze ຂຶ້ນໄປ) |
+| Master | Medal 1 Silver + 2 Bronze |
+| Grandmaster | Medal 5 Gold |
+
+<Callout type="tip">
+**Tier ທີ່ Growth ງ່າຍສຸດ = Notebooks** — ຂຽນ Notebook ທີ່ Useful, ໄດ້ Upvotes ຫຼາຍ → ໄດ້ Medal ໄວ. ບໍ່ຕ້ອງ Win Competition ກໍ Rank ຂຶ້ນໄດ້.
+</Callout>
+
+---
+
+## Tips ສຳລັບ Beginners
+
+**1. ເລີ່ມຈາກ Titanic**
+
+Titanic ເປັນ Competition Classic ທີ່ມີ Notebook ຕົວຢ່າງຫຼາຍທີ່ສຸດ — Fork Notebook ຂອງຄົນອື່ນ (ກົດ Copy and Edit) ມາຮຽນໄດ້ ບໍ່ຜິດ Rule.
+
+**2. ອ່ານ Discussion ທຸກ Competition**
+
+Discussion Tab ມີ Tips, Tricks, ແລະ EDA ທີ່ Community ແຊ໌ — ອ່ານກ່ອນ Train ຊ່ວຍປະຢັດເວລາຫຼາຍ.
+
+**3. ໃຊ້ Kaggle API ດາວໂຫຼດ Dataset**
+
+```bash
+# ຕິດຕັ້ງ
+pip install kaggle
+
+# ຕັ້ງ API Key (ດາວໂຫຼດຈາກ Account Settings)
+# ວາງໄຟລ໌ kaggle.json ໄວ້ທີ່ ~/.kaggle/
+
+# ດາວໂຫຼດ Dataset
+kaggle datasets download -d username/dataset-name
+
+# ດາວໂຫຼດ Competition Data
+kaggle competitions download -c titanic
+```
+
+**4. ລຳດັບ Learning Path ທີ່ແນະນຳ**
+
+```
+Kaggle Python Course
+       ↓
+Kaggle ML Course
+       ↓
+Titanic Competition (Fork + Study)
+       ↓
+House Prices (Regression Practice)
+       ↓
+ຂຽນ Notebook ດ້ວຍ EDA + ຂຽນ Discussion
+       ↓
+Contributor Tier → Expert
+```
+
+---
+
+## ສະຫຼຸບ
+
+Kaggle ເໝາະກັບ **ທຸກລະດັບ** — Beginner ຮຽນ Course ຟຣີ, ໃຊ້ GPU ຟຣີ, ຝຶກ Competition; Senior ແຂ່ງຊິງ Cash Prize ຈາກ Google, Meta, Netflix.
+
+**3 ສິ່ງທີ່ຕ້ອງເຮັດໃນອາທິດທຳອິດ:**
+1. ລົງທະບຽນ + ເຮັດ Profile ໃຫ້ຄົບ → ໄດ້ **Contributor** Tier
+2. ຈົບ Kaggle Python Course
+3. Fork Titanic Notebook → Run → Submit ຄັ້ງທຳອິດ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
