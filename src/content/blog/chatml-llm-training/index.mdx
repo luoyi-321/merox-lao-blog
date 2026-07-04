@@ -1,0 +1,226 @@
+---
+title: 'ChatML ໃນມຸມມອງຂອງການຝຶກ LLM'
+description: 'ເຂົ້າໃຈວ່າ ChatML ແລະ Chat Template ເຮັດວຽກແນວໃດ ໃນ pipeline ຂອງການຝຶກ LLM, ຕັ້ງແຕ່ JSON ໄປຫາ Token IDs ແລະ ເປັນຫຍັງການເລືອກ template ໃຫ້ຖືກກັບ model ຈຶ່ງສຳຄັນ.'
+date: 2026-07-05
+tags: ['llm', 'fine-tuning', 'transformer', 'tokenizer', 'prompt-engineering', 'deep-learning']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+## ChatML ຄືຫຍັງ?
+
+ຖ້າທ່ານເລີ່ມຝຶກ LLM ເຊັ່ນ Llama, Qwen, Mistral, Gemma ຫຼື DeepSeek ທ່ານຈະພົບວ່າ dataset ສ່ວນໃຫຍ່ບໍ່ໄດ້ຖືກສົ່ງເຂົ້າ Transformer ເປັນ JSON ໂດຍກົງ.
+
+ຫຼາຍຄົນເຂົ້າໃຈວ່າ block ຂ້າງລຸ່ມນີ້ ແມ່ນສິ່ງທີ່ model ເຫັນ:
+
+```json
+{
+    "role": "user",
+    "content": "Hello"
+}
+```
+
+ແຕ່ໃນຄວາມເປັນຈິງ model ບໍ່ເຄີຍເຫັນ JSON. JSON ເປັນພຽງ "data structure" ທີ່ສະດວກສຳລັບ Python, JavaScript ຫຼື API ເທົ່ານັ້ນ.
+
+ສິ່ງທີ່ Transformer ເຫັນແທ້ໆ ແມ່ນ text sequence ທີ່ມີ special tokens.
+
+<Callout type="info">
+ChatML (Chat Markup Language) ແມ່ນຮູບແບບຂໍ້ຄວາມທີ່ໃຊ້ special tokens ເຊັ່ນ `<|im_start|>` ແລະ `<|im_end|>` ເພື່ອກຳນົດ role ຂອງແຕ່ລະ turn ໃນການສົນທະນາ. ມັນເກີດຂຶ້ນຄັ້ງທຳອິດຈາກ OpenAI ແລະ ຖືກນຳໄປໃຊ້ຢ່າງກວ້າງຂວາງໃນ open model ຫຼາຍໆຕົວ.
+</Callout>
+
+---
+
+## Pipeline ຂອງການຝຶກ LLM
+
+ຂໍ້ມູນຈະໄຫຼຜ່ານຫຼາຍຂັ້ນຕອນ ກ່ອນຈະກາຍເປັນສິ່ງທີ່ model ຮຽນຮູ້ໄດ້:
+
+```
+Dataset
+      │
+      ▼
+JSON Messages
+      │
+      ▼
+Chat Template
+      │
+      ▼
+ChatML Text
+      │
+      ▼
+Tokenizer
+      │
+      ▼
+Token IDs
+      │
+      ▼
+Transformer
+      │
+      ▼
+Next Token Prediction
+```
+
+ຂັ້ນຕອນທີ່ສຳຄັນທີ່ສຸດຄື **Chat Template** — ມັນເປັນຕົວແປງ JSON ໃຫ້ກາຍເປັນ prompt ທີ່ກົງກັບຮູບແບບທີ່ model ຖືກຝຶກ.
+
+---
+
+## ຕົວຢ່າງ: ຈາກ JSON ໄປຫາ Token IDs
+
+ເລີ່ມຈາກ dataset ທີ່ເປັນ JSON messages:
+
+```json
+[
+  {
+    "role": "system",
+    "content": "You are helpful."
+  },
+  {
+    "role": "user",
+    "content": "Explain AI."
+  },
+  {
+    "role": "assistant",
+    "content": "AI is ..."
+  }
+]
+```
+
+ຫຼັງຈາກຜ່ານ **Chat Template** ຈະກາຍເປັນ ChatML text:
+
+```
+<|im_start|>system
+You are helpful.
+<|im_end|>
+
+<|im_start|>user
+Explain AI.
+<|im_end|>
+
+<|im_start|>assistant
+AI is ...
+<|im_end|>
+```
+
+ຈາກນັ້ນ **Tokenizer** ຈະແປງເປັນ token IDs:
+
+```
+151644
+894
+2675
+151645
+...
+```
+
+ສຸດທ້າຍ token IDs ເຫຼົ່ານີ້ຈຶ່ງຖືກສົ່ງເຂົ້າ **Transformer**.
+
+---
+
+## ເປັນຫຍັງຕ້ອງມີ Special Tokens?
+
+ສົມມຸດວ່າ ບໍ່ມີ ChatML ແລະ model ເຫັນພຽງແຕ່ຂໍ້ຄວາມ plain:
+
+```
+You are helpful.
+
+Explain AI.
+
+AI is...
+```
+
+Model ຈະບໍ່ຮູ້ວ່າ:
+
+- ຂໍ້ຄວາມໃດແມ່ນ system prompt
+- ຂໍ້ຄວາມໃດແມ່ນ user
+- ຂໍ້ຄວາມໃດແມ່ນ assistant
+
+ແຕ່ເມື່ອເພີ່ມ special tokens ເຊັ່ນ `<|im_start|>user` ແລະ `<|im_end|>` ເຂົ້າໄປ model ຈະຮຽນຮູ້ທັນທີວ່າ:
+
+> "ຕໍ່ຈາກ user ຄວນຈະມີ assistant ຕອບ."
+
+ນີ້ຄືສິ່ງທີ່ model ຮຽນຮູ້ໃນລະຫວ່າງ Supervised Fine-Tuning (SFT).
+
+---
+
+## ChatML ບໍ່ໄດ້ສອນຄວາມຮູ້
+
+ຈຸດທີ່ຫຼາຍຄົນເຂົ້າໃຈຜິດ: ສິ່ງທີ່ ChatML ສອນ **ບໍ່ແມ່ນ** ວ່າ AI ຄວນຕອບຫຍັງ.
+
+ແຕ່ ChatML ສອນວ່າ:
+
+- AI ຄວນຕອບ **"ເມື່ອໃດ"**
+- AI ຄວນຕອບ **ໃນບົດບາດໃດ**
+
+ສ່ວນຄວາມຮູ້ (knowledge) ຈະມາຈາກ dataset. ໜ້າທີ່ຂອງ ChatML ຄືການ **ຈັດລະບຽບການສົນທະນາ** ໃຫ້ model ຮຽນຮູ້ໂຄງສ້າງ, ບໍ່ແມ່ນເນື້ອຫາ.
+
+---
+
+## Label Masking ໃນການຝຶກ
+
+ໃນ SFT ບໍ່ແມ່ນທຸກ token ຈະຖືກນຳໄປຄຳນວນ loss. ພິຈາລະນາໂຄງສ້າງ:
+
+```
+System
+User
+Assistant
+```
+
+ປົກກະຕິແລ້ວ **system** ແລະ **user** ຈະຖືກ mask ໄວ້, ແລະ loss ຈະຄຳນວນສະເພາະ **assistant response** ເທົ່ານັ້ນ.
+
+<Callout type="tip">
+ເຫດຜົນທີ່ mask ສ່ວນ system/user ອອກ ກໍ່ຍ້ອນເຮົາຕ້ອງການໃຫ້ model ຮຽນຮູ້ "ການຕອບ" ບໍ່ແມ່ນຮຽນທ່ອງ prompt ຂອງ user ຄືນ. ຖ້າບໍ່ mask, model ອາດຈະໃຊ້ capacity ໄປກັບການ predict ຂໍ້ຄວາມ input ທີ່ບໍ່ຈຳເປັນ.
+</Callout>
+
+---
+
+## Chat Template ຂອງແຕ່ລະ Model ບໍ່ຄືກັນ
+
+ນີ້ເປັນສິ່ງທີ່ຜູ້ຝຶກ LLM ມັກເຂົ້າໃຈຜິດ — **ບໍ່ແມ່ນທຸກ model ໃຊ້ ChatML**.
+
+| Model              | Chat Template          |
+| ------------------ | ---------------------- |
+| OpenAI Chat Models | ChatML                 |
+| Qwen               | ChatML (ປັບແຕ່ງ)       |
+| Llama 2            | `[INST] ... [/INST]`   |
+| Llama 3            | ຮູບແບບ header tokens    |
+| Gemma              | Gemma chat template    |
+| Mistral Instruct   | `[INST]`               |
+| DeepSeek           | ຮູບແບບຂອງຕົນເອງ        |
+
+ເພາະສະນັ້ນ ເມື່ອ fine-tune ຈະຕ້ອງໃຊ້ template ໃຫ້ກົງກັບ model ຕົ້ນສະບັບສະເໝີ.
+
+---
+
+## ຖ້າໃຊ້ Chat Template ຜິດ ຈະເກີດຫຍັງ?
+
+ຕົວຢ່າງ: ທ່ານນຳ dataset ຮູບແບບ ChatML ໄປ fine-tune Llama 2 ທີ່ຄວນໃຊ້ `[INST]`.
+
+Model ຈະເຫັນ token ທີ່ບໍ່ຄຸ້ນເຄີຍ ແລະ ຮຽນຮູ້ຜິດຮູບແບບ. ຜົນທີ່ຕາມມາຄື:
+
+- ຕອບບໍ່ສະໝ່ຳສະເໝີ
+- ສັບສົນບົດບາດ user/assistant
+- ຄຸນນະພາບ output ຫຼຸດລົງ
+
+<Callout type="warning">
+ກ່ອນ fine-tune ໃຫ້ກວດ `tokenizer_config.json` ຫຼື ໃຊ້ `tokenizer.apply_chat_template()` ຂອງ model ນັ້ນໆ ເພື່ອຢືນຢັນ template ທີ່ຖືກຕ້ອງ. ຢ່າສົມມຸດວ່າທຸກ model ໃຊ້ `<|im_start|>` — ການ mismatch ຂອງ special tokens ເປັນສາເຫດ bug ທີ່ພົບເລື້ອຍທີ່ສຸດຢ່າງໜຶ່ງໃນ SFT.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+ສຳລັບນັກຝຶກ LLM, ChatML ບໍ່ແມ່ນພຽງແຕ່ຮູບແບບຂໍ້ຄວາມ ແຕ່ເປັນ **"ຂົວ"** ລະຫວ່າງ dataset ແລະ Transformer.
+
+- **JSON** ເປັນຮູບແບບທີ່ມະນຸດ ແລະ API ໃຊ້ງານ
+- **Chat Template** ແປງ JSON ເປັນ ChatML ຫຼື prompt ຕາມທີ່ model ຖືກຝຶກ
+- **Tokenizer** ແປງຂໍ້ຄວາມເປັນ token IDs ແລ້ວສົ່ງເຂົ້າ **Transformer** ເພື່ອຮຽນຮູ້ການຄາດເດົາ token ຖັດໄປ
+
+ດັ່ງນັ້ນ ການເລືອກ chat template ໃຫ້ຖືກຕ້ອງ ແລະ ກົງກັບ model ຕົ້ນສະບັບ ຈຶ່ງເປັນປັດໄຈສຳຄັນທີ່ມີຜົນໂດຍກົງຕໍ່ຄຸນນະພາບຂອງການ fine-tuning.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
