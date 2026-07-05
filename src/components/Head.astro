@@ -2,6 +2,8 @@
 import { SITE, ANALYTICS, UMAMI } from '@/consts'
 import { ClientRouter } from 'astro:transitions'
 import Favicons from './Favicons.astro'
+import fs from 'node:fs'
+import path from 'node:path'
 
 interface Props {
   title?: string
@@ -17,8 +19,20 @@ const {
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).href
-const cleanPathname = Astro.url.pathname.replace(/\/$/, '')
-const ogImage = image || (cleanPathname ? new URL(`/og${cleanPathname}.png`, Astro.site).href : new URL('/og-default.png', Astro.site).href)
+// Strip the base prefix so we can resolve the page-specific OG image path
+// relative to the public/ directory.
+const cleanPathname = Astro.url.pathname
+  .replace(new RegExp(`^${base}`), '')
+  .replace(/\/$/, '')
+// Use a pre-generated per-page OG image (public/og/<path>.png) only when it
+// actually exists on disk; otherwise fall back to the site default. All URLs
+// must include the base path, or Facebook/Twitter fetch a 404.
+const ogRelPath = cleanPathname ? `og${cleanPathname}.png` : ''
+const ogExists =
+  ogRelPath && fs.existsSync(path.join(process.cwd(), 'public', ogRelPath))
+const ogImage =
+  image ||
+  new URL(`${base}/${ogExists ? ogRelPath : 'og-default.png'}`, Astro.site).href
 ---
 
 <head>

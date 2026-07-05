@@ -9,9 +9,10 @@ interface Props {
 
 const { post } = Astro.props
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const title = post.data.title || SITE.title
 const description = post.data.description || SITE.description
-const image = new URL('/static/1200x630.png', Astro.site)
+const image = new URL(`${base}/static/1200x630.png`, Astro.site)
 const author =
   post.data.authors && post.data.authors.length > 0
     ? post.data.authors.join(', ')
@@ -19,7 +20,7 @@ const author =
 
 const postUrl = new URL(Astro.url.pathname, Astro.site).href
 const postImage = post?.data?.image?.src
-  ? `${SITE.href}${post.data.image.src}`
+  ? new URL(post.data.image.src, Astro.site).href
   : image.href
 const publishedTime = post.data.date?.toISOString() || new Date().toISOString()
 // Use published time as modified time if no updatedDate field exists
@@ -45,7 +46,7 @@ const articleSchema = {
     "url": SITE.href,
     "logo": {
       "@type": "ImageObject",
-      "url": new URL('/reworkedmeroxdc1.webp', Astro.site).href
+      "url": new URL(`${base}/static/logo.png`, Astro.site).href
     }
   },
   "mainEntityOfPage": {
