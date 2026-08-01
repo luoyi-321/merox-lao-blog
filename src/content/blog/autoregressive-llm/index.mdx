@@ -1,0 +1,146 @@
+---
+title: 'AutoRegressive: ຫົວໃຈຂອງ LLM ທີ່ສ້າງຂໍ້ຄວາມທີລະ Token'
+description: 'ເຂົ້າໃຈ AutoRegressive (AR) — ວິທີທີ່ LLM ສ້າງຂໍ້ຄວາມທີລະ token, ເປັນຫຍັງມັນຊ້າ, ບົດບາດຂອງ KV Cache, ສະຖານະໃນປີ 2026, ແລະ ເທັກໂນໂລຢີໃໝ່ ເຊັ່ນ Diffusion LM, SSM ທີ່ກຳລັງທ້າທາຍມັນ.'
+date: 2026-08-01
+tags: ['llm', 'transformer', 'inference', 'deep-learning', 'kv-cache', 'architecture']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+import ARFlow from '@/components/ARFlow.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+ຖ້າຈະອະທິບາຍໃຫ້ເຂົ້າໃຈງ່າຍໆ, AutoRegressive ຄືວິທີພື້ນຖານທີ່ LLM ເກືອບທຸກຕົວໃຊ້ໃນການ "ຂຽນ" ຂໍ້ຄວາມ. ບົດຄວາມນີ້ຈະແບ່ງອອກເປັນ 5 ສ່ວນ — ຕັ້ງແຕ່ຫຼັກການ, ວິທີເຮັດວຽກ, ຂໍ້ຈຳກັດ, ສະຖານະໃນປີ 2026 ຈົນເຖິງເທັກໂນໂລຢີໃໝ່ທີ່ກຳລັງທ້າທາຍມັນ.
+
+---
+
+## AutoRegressive ແມ່ນຫຍັງ?
+
+**AutoRegressive (AR)** ແມ່ນວິທີການທີ່ AI ສ້າງຂໍ້ຄວາມ "ທີລະຄຳ" (token by token) ໂດຍໃຊ້ຂໍ້ມູນທີ່ມັນສ້າງມາແລ້ວເປັນບໍລິບົດ ເພື່ອຄາດເດົາຄຳຕໍ່ໄປ.
+
+ຖ້າເວົ້າໃຫ້ງ່າຍ:
+
+> ຄຳທີ່ຜ່ານມາ → ຄາດເດົາຄຳຕໍ່ໄປ → ເພີ່ມເຂົ້າໄປ → ຄາດເດົາຄຳຖັດໄປ
+
+ມັນເຮັດວຽກຊ້ຳໆ ຈົນກວ່າຈະໄດ້ປະໂຫຍກ ຫຼື ບົດຄວາມຄົບ.
+
+### ຕົວຢ່າງ
+
+ຖ້າຜູ້ໃຊ້ພິມ "ຂ້ອຍມັກກິນ..." AI ຈະຄ່ອຍໆສ້າງແຕ່ລະ token ອອກມາແບບນີ້:
+
+<ARFlow variant="loop" />
+
+AI ບໍ່ໄດ້ສ້າງປະໂຫຍກທັງໝົດພ້ອມກັນ — ມັນສ້າງ **token ລະ token**.
+
+---
+
+## ເປັນຫຍັງ LLM ຈຶ່ງໃຊ້ AutoRegressive?
+
+ເພາະວ່າພາສາຂອງມະນຸດມີລຳດັບ (sequence). ຕົວຢ່າງ ຫຼັງຈາກ "ຂ້ອຍ ກິນ ..." ຄຳຕໍ່ໄປອາດເປັນ ເຂົ້າ, ເຂົ້າໜົມ, ອາຫານ ຫຼື ກ້ວຍ.
+
+AI ຈະເລືອກຄຳທີ່ມີຄວາມນ່າຈະເປັນ (probability) ສູງທີ່ສຸດ ໂດຍອີງຈາກ context ທັງໝົດທີ່ຜ່ານມາ.
+
+<Callout variant="note" title="AR = ຄາດເດົາຈາກອະດີດ">
+ຄຳວ່າ "auto-regressive" ມາຈາກສະຖິຕິ ໝາຍເຖິງການຄາດເດົາຄ່າຕໍ່ໄປຈາກຄ່າກ່ອນໜ້າຂອງຕົນເອງ. ໃນ LLM ນັ້ນຄື: ແຕ່ລະ token ໃໝ່ຖືກຄາດເດົາຈາກ token ທັງໝົດທີ່ສ້າງມາກ່ອນ.
+</Callout>
+
+---
+
+## AutoRegressive ໃນ LLM ເຮັດວຽກແນວໃດ?
+
+ພາຍໃນ Transformer, ຂໍ້ຄວາມຈະໄຫຼຜ່ານ pipeline ນີ້ ແລ້ວວົນກັບມາທຸກຄັ້ງທີ່ມີ token ໃໝ່:
+
+<ARFlow variant="pipeline" />
+
+ຈຸດສຳຄັນຄື Transformer ຕ້ອງຄຳນວນໃໝ່ທຸກຄັ້ງທີ່ມີ token ໃໝ່ເຂົ້າມາ. ແຕ່ໃນທາງປະຕິບັດ ລະບົບຈະໃຊ້ **KV Cache (Key-Value Cache)** ເພື່ອເກັບຜົນຄຳນວນຂອງ token ເກົ່າ ແລ້ວຄຳນວນສະເພາະ token ໃໝ່ — ເຮັດໃຫ້ການ generate ໄວຂຶ້ນຫຼາຍ.
+
+<Callout variant="tip" title="KV Cache ຊ່ວຍຫຍັງ?">
+ຖ້າບໍ່ມີ KV Cache, ການສ້າງ token ທີ N ຕ້ອງຄຳນວນ attention ຄືນໃໝ່ໝົດຕັ້ງແຕ່ token ທຳອິດ — ຊ້າແບບ O(N²). KV Cache ເກັບ key/value ຂອງ token ເກົ່າໄວ້ ຈຶ່ງເຫຼືອພຽງຄຳນວນ token ໃໝ່ອັນດຽວ, ແລກກັບການໃຊ້ VRAM ຫຼາຍຂຶ້ນ.
+</Callout>
+
+---
+
+## ເປັນຫຍັງ AutoRegressive ຈຶ່ງຊ້າ?
+
+ເພາະມັນບໍ່ສາມາດສ້າງທຸກ token ພ້ອມກັນໄດ້ — ແຕ່ລະ token ຂຶ້ນກັບ token ກ່ອນໜ້າ:
+
+<ARFlow variant="latency" />
+
+ນີ້ຄື **serial dependency** ທີ່ເປັນຂໍ້ຈຳກັດໃຫຍ່ຂອງ LLM — ບໍ່ວ່າ GPU ຈະໄວສ່ຳໃດ, token ກໍ່ຕ້ອງອອກມາເປັນລຳດັບ.
+
+---
+
+## ສະຖານະຂອງ AutoRegressive ໃນ AI ປີ 2026
+
+ປັດຈຸບັນ (2026) AutoRegressive ຍັງເປັນ **ແນວທາງຫຼັກ (mainstream architecture)** ຂອງ LLM ຂະໜາດໃຫຍ່ເກືອບທັງໝົດ ເຊັ່ນ GPT, Llama, Qwen, DeepSeek, Mistral, Gemma ແລະ Claude series.
+
+ເຫດຜົນທີ່ຍັງນິຍົມ:
+
+- ຄຸນນະພາບການຂຽນສູງ
+- ຮອງຮັບ context ຍາວ
+- ຝຶກ ແລະ ເຂົ້າໃຈໄດ້ງ່າຍ
+- ມີ ecosystem ແລະ ຊອບແວຮອງຮັບຈຳນວນຫຼາຍ
+- ໝັ້ນຄົງ ແລະ ຄວາມຜິດພາດນ້ອຍໃນການໃຊ້ງານຈິງ
+
+---
+
+## ຖ້າມັນດີ ເປັນຫຍັງຈຶ່ງມີການຄົ້ນຄວ້າໃໝ່?
+
+ເພາະ AutoRegressive ຍັງມີຂໍ້ຈຳກັດ:
+
+| ຂໍ້ຈຳກັດ | ຜົນກະທົບ |
+| -------- | -------- |
+| Latency | ສ້າງທີລະ token → ຊ້າ |
+| GPU Utilization | ສ້າງທີລະ token ເຮັດໃຫ້ GPU ໃຊ້ພະລັງບໍ່ເຕັມທີ່ |
+| Memory | context ຍາວ → KV Cache ໃຫຍ່ → ໃຊ້ VRAM ຫຼາຍ |
+| Cost | ຕ້ອງໃຊ້ GPU ແພງ → inference ແພງ |
+
+---
+
+## ເທັກໂນໂລຢີໃໝ່ທີ່ກຳລັງທ້າທາຍ AutoRegressive
+
+ນັກຄົ້ນຄວ້າກຳລັງພັດທະນາແນວຄິດໃໝ່ ເພື່ອຫຼຸດ latency ແລະ ຄ່າໃຊ້ຈ່າຍ:
+
+### 1. Diffusion Language Models
+
+ແທນທີ່ຈະສ້າງຄຳທີລະຄຳ ຈະເລີ່ມຈາກລຳດັບທີ່ເປັນ "noise" ແລ້ວຄ່ອຍໆປັບປຸງຈົນເປັນຂໍ້ຄວາມທີ່ຖືກຕ້ອງ. ແນວຄິດນີ້ອາດອະນຸຍາດໃຫ້ປັບຫຼາຍຕຳແໜ່ງພ້ອມກັນ.
+
+### 2. Masked Language Models
+
+Model ຈະຄາດເດົາຄຳທີ່ຖືກປິດ (masked) ເຊັ່ນ BERT. ເກັ່ງດ້ານການເຂົ້າໃຈພາສາ ແຕ່ບໍ່ໄດ້ອອກແບບມາເພື່ອສ້າງຂໍ້ຄວາມຕໍ່ເນື່ອງໂດຍກົງ.
+
+### 3. State Space Models (SSM)
+
+ເຊັ່ນ Mamba ແລະ ວຽກວິໄຈທີ່ກ່ຽວຂ້ອງ ພະຍາຍາມຫຼຸດຄ່າໃຊ້ຈ່າຍຂອງ attention ແລະ ຈັດການ context ຍາວໃຫ້ມີປະສິດທິພາບຂຶ້ນ.
+
+### 4. Semi-AR ແລະ Parallel Decoding
+
+ຍັງອາໄສ AutoRegressive ເປັນຫຼັກ ແຕ່ພະຍາຍາມສ້າງຫຼາຍ token ໃນແຕ່ລະຮອບ ຫຼື ໃຊ້ການຄາດເດົາລ່ວງໜ້າ (speculative decoding) ເພື່ອເພີ່ມຄວາມໄວ.
+
+<Callout variant="warning" title="ໃໝ່ ≠ ແທນທີ່ທັນທີ">
+ແນວຄິດເຫຼົ່ານີ້ໜ້າສົນໃຈ ແຕ່ສ່ວນຫຼາຍຍັງຢູ່ໃນຂັ້ນວິໄຈ ຫຼື ໃຊ້ໄດ້ສະເພາະບາງ task. ໃນວຽກ generation ທົ່ວໄປ, AutoRegressive ຍັງໃຫ້ຄຸນນະພາບ ແລະ ຄວາມໝັ້ນຄົງດີກວ່າຢູ່.
+</Callout>
+
+---
+
+## AutoRegressive ຈະຫາຍໄປບໍ?
+
+**ຄຳຕອບສັ້ນໆ: ຍັງບໍ່.**
+
+ໃນປັດຈຸບັນ AutoRegressive ຍັງເປັນຫົວໃຈຂອງ LLM ສ່ວນໃຫຍ່ ເນື່ອງຈາກຄຸນນະພາບ ແລະ ຄວາມໝັ້ນຄົງໃນການໃຊ້ງານຈິງ. ແນວຄິດໃໝ່ໆ ເຊັ່ນ Diffusion, SSM ຫຼື Parallel Decoding ກຳລັງພັດທະນາຢ່າງໄວ ແຕ່ຍັງບໍ່ໄດ້ແທນທີ່ AutoRegressive ໃນວຽກງານທົ່ວໄປຢ່າງສົມບູນ.
+
+---
+
+## ສະຫຼຸບ
+
+AutoRegressive ບໍ່ແມ່ນ "ເທັກໂນໂລຢີເກົ່າ" ແຕ່ເປັນຮາກຖານທີ່ຍັງແຂງແຮງທີ່ສຸດຂອງ LLM ໃນປັດຈຸບັນ.
+
+ການຄົ້ນຄວ້າໃໝ່ໆ ບໍ່ໄດ້ມຸ່ງລົບລ້າງມັນ ແຕ່ມຸ່ງແກ້ໄຂຂໍ້ຈຳກັດ ເຊັ່ນ ຄວາມໄວ, ຄ່າໃຊ້ຈ່າຍ ແລະ ການໃຊ້ໜ່ວຍຄວາມຈຳ. ດັ່ງນັ້ນ ອະນາຄົດຂອງ AI ອາດຈະບໍ່ແມ່ນ AutoRegressive ຫຼື Non-AutoRegressive ຢ່າງໃດຢ່າງໜຶ່ງ ແຕ່ເປັນການປະສົມຂໍ້ດີຂອງຫຼາຍສະຖາປັດຕະຍະກຳເຂົ້າດ້ວຍກັນ.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*

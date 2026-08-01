@@ -1,0 +1,72 @@
+---
+import { Icon } from 'astro-icon/components'
+
+interface Props { variant?: 'loop' | 'pipeline' | 'latency' }
+const { variant = 'loop' } = Astro.props
+
+const steps = [
+  { ctx: ['ຂ້ອຍ', 'ມັກ', 'ກິນ'], next: 'ເຂົ້າ' },
+  { ctx: ['ຂ້ອຍ', 'ມັກ', 'ກິນ', 'ເຂົ້າ'], next: 'ກັບ' },
+  { ctx: ['ຂ້ອຍ', 'ມັກ', 'ກິນ', 'ເຂົ້າ', 'ກັບ'], next: 'ປາ' },
+]
+---
+
+{variant === 'loop' && (
+  <figure class="ar-flow not-prose" aria-labelledby="ar-loop-caption">
+    <div class="flow-heading"><span class="eyebrow">Autoregressive decoding</span><span class="tok-label"><Icon name="lucide:type" /> token by token</span></div>
+    <div class="steps">
+      {steps.map((step, i) => (
+        <div class="step">
+          <span class="step-index">t{i + 1}</span>
+          <div class="context">
+            {step.ctx.map((t, j) => (
+              <span class={`chip${j === step.ctx.length - 1 && i > 0 ? ' chip-new' : ''}`}>{t}</span>
+            ))}
+          </div>
+          <span class="model-mini"><Icon name="lucide:layers" /> model</span>
+          <Icon class="predict-arrow" name="lucide:arrow-right" />
+          <span class="chip chip-pred">{step.next}</span>
+        </div>
+      ))}
+    </div>
+    <div class="loop-row"><Icon name="lucide:corner-down-left" /><span><strong>Append + repeat</strong> · Token ທີ່ຄາດເດົາຖືກເພີ່ມກັບເຂົ້າ context ແລ້ວຄາດເດົາ token ຖັດໄປ</span></div>
+    <figcaption id="ar-loop-caption">ຜົນລວມ: <strong>ຂ້ອຍມັກກິນເຂົ້າກັບປາ</strong> — ສ້າງທີລະ token, ບໍ່ແມ່ນທັງປະໂຫຍກພ້ອມກັນ.</figcaption>
+  </figure>
+)}
+
+{variant === 'pipeline' && (
+  <figure class="ar-flow compact-flow not-prose" aria-label="Autoregressive inference pipeline">
+    <div class="flow-node"><Icon name="lucide:message-square-text" /><span><strong>Prompt</strong><small>ຂໍ້ຄວາມເຂົ້າ</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node"><Icon name="lucide:scissors" /><span><strong>Tokenizer</strong><small>→ token IDs</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node"><Icon name="lucide:brackets" /><span><strong>Embedding</strong><small>Vectors</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node model"><Icon name="lucide:layers" /><span><strong>Transformer</strong><small>+ KV cache</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node pred"><Icon name="lucide:sparkles" /><span><strong>Next token</strong><small>Append → loop</small></span></div>
+  </figure>
+)}
+
+{variant === 'latency' && (
+  <figure class="ar-flow not-prose" aria-labelledby="ar-latency-caption">
+    <div class="flow-heading"><span class="eyebrow">Serial dependency</span><span class="tok-label warn"><Icon name="lucide:clock" /> latency</span></div>
+    <div class="chain">
+      <span class="chip chip-pred">Token 1</span><Icon class="connector" name="lucide:arrow-right" />
+      <span class="chip chip-pred">Token 2</span><Icon class="connector" name="lucide:arrow-right" />
+      <span class="chip chip-pred">Token 3</span><Icon class="connector" name="lucide:arrow-right" />
+      <span class="dots">…</span><Icon class="connector" name="lucide:arrow-right" />
+      <span class="chip chip-pred">Token 100</span>
+    </div>
+    <figcaption id="ar-latency-caption">Token ທີ 100 ເກີດຂຶ້ນບໍ່ໄດ້ ຖ້າຍັງບໍ່ຮູ້ Token ທີ 99 — ນີ້ຄືຂໍ້ຈຳກັດຄວາມໄວຂອງ AR.</figcaption>
+  </figure>
+)}
+
+<style>
+  .ar-flow{margin:1.75rem 0;border:1px solid color-mix(in oklab,var(--border) 85%,transparent);border-radius:1rem;padding:1.25rem;background:linear-gradient(145deg,color-mix(in oklab,var(--muted) 38%,transparent),transparent 58%);box-shadow:0 14px 40px -34px color-mix(in oklab,var(--foreground) 50%,transparent)}
+  .flow-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}.eyebrow{color:var(--muted-foreground);font-size:.72rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}.tok-label{display:inline-flex;gap:.35rem;align-items:center;border:1px solid color-mix(in oklab,#6366f1 35%,var(--border));border-radius:999px;padding:.3rem .6rem;color:#4f46e5;background:color-mix(in oklab,#6366f1 9%,transparent);font-size:.7rem;font-weight:700}.tok-label.warn{border-color:color-mix(in oklab,#f59e0b 40%,var(--border));color:#d97706;background:color-mix(in oklab,#f59e0b 9%,transparent)}.tok-label :global(svg){width:.8rem}
+  .steps{display:flex;flex-direction:column;gap:.6rem}.step{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;border:1px solid var(--border);border-radius:.7rem;padding:.6rem .7rem;background:color-mix(in oklab,var(--background) 82%,transparent)}.step-index{flex:0 0 auto;font-family:var(--font-mono);font-size:.68rem;font-weight:700;color:#6366f1}.context{display:flex;gap:.3rem;flex-wrap:wrap}
+  .chip{border-radius:.45rem;padding:.28rem .5rem;background:var(--muted);font-size:.76rem;line-height:1}.chip-new{background:color-mix(in oklab,#6366f1 16%,var(--background));color:#4f46e5;font-weight:600}.chip-pred{background:color-mix(in oklab,#10b981 15%,var(--background));border:1px solid color-mix(in oklab,#10b981 35%,var(--border));color:#059669;font-weight:700}
+  .model-mini{display:inline-flex;align-items:center;gap:.3rem;margin-left:auto;border-radius:.45rem;padding:.28rem .5rem;background:color-mix(in oklab,#8b5cf6 12%,var(--background));color:#7c3aed;font-size:.66rem;font-weight:600}.model-mini :global(svg){width:.8rem}.predict-arrow{flex:0 0 auto;width:.85rem;color:var(--muted-foreground)}
+  .loop-row{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.9rem;border:1px dashed color-mix(in oklab,#6366f1 40%,var(--border));border-radius:.75rem;padding:.65rem;background:color-mix(in oklab,#6366f1 6%,transparent);color:var(--muted-foreground);font-size:.7rem;line-height:1.35}.loop-row strong{color:var(--foreground)}.loop-row :global(svg){flex:0 0 auto;width:.9rem;color:#6366f1}
+  .compact-flow{display:flex;align-items:stretch;justify-content:center;gap:.5rem;overflow-x:auto}.flow-node{display:flex;align-items:center;gap:.55rem;min-width:8rem;border:1px solid var(--border);border-radius:.7rem;padding:.7rem;background:var(--background)}.flow-node>:global(svg){flex:0 0 auto;width:1.05rem;color:#6366f1}.flow-node strong,.flow-node small{display:block;white-space:nowrap}.flow-node small{margin-top:.12rem;color:var(--muted-foreground);font-size:.61rem}.flow-node strong{font-size:.76rem}.flow-node.model{border-color:color-mix(in oklab,#8b5cf6 32%,var(--border));background:color-mix(in oklab,#8b5cf6 8%,var(--background))}.flow-node.model>:global(svg){color:#7c3aed}.flow-node.pred{border-color:color-mix(in oklab,#10b981 34%,var(--border));background:color-mix(in oklab,#10b981 8%,var(--background))}.flow-node.pred>:global(svg){color:#059669}.connector{align-self:center;flex:0 0 auto;width:.85rem;color:var(--muted-foreground)}
+  .chain{display:flex;align-items:center;justify-content:center;gap:.4rem;flex-wrap:wrap}.chain .chip{font-family:var(--font-mono);font-size:.7rem}.dots{color:var(--muted-foreground);font-weight:700}
+  figcaption{margin-top:1rem;color:var(--muted-foreground);font-size:.7rem;text-align:center;line-height:1.5}figcaption strong{color:var(--foreground)}
+  @media(max-width:560px){.ar-flow{padding:.9rem}.compact-flow{justify-content:flex-start}.model-mini{margin-left:0}}
+</style>
