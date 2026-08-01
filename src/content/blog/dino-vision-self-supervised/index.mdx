@@ -7,6 +7,7 @@ authors: ['sulixay']
 ---
 
 import Callout from '@/components/Callout.astro'
+import DinoFlow from '@/components/DinoFlow.astro'
 
 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
   <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
@@ -33,7 +34,7 @@ import Callout from '@/components/Callout.astro'
 
 ບໍ່ມີໃຜຂຽນວ່າອັນໃດແມ່ນຫຍັງ. DINO ສາມາດຮຽນຮູ້ representation ຂອງຮູບໄດ້ດ້ວຍຕົນເອງ.
 
-<Callout type="info">
+<Callout variant="note" title="ຄວາມໝາຍຂອງ Self-supervised learning">
 Self-supervised learning ແມ່ນວິທີການຝຶກ model ໂດຍໃຊ້ໂຄງສ້າງພາຍໃນຂອງຂໍ້ມູນເອງເປັນ "ຄຳຕອບ", ແທນທີ່ຈະໃຊ້ label ຈາກມະນຸດ. ນີ້ຄືເຫດຜົນທີ່ມັນ scale ໄດ້ດີ — ຍິ່ງມີຂໍ້ມູນຫຼາຍເທົ່າໃດ ຍິ່ງດີ ໂດຍບໍ່ຕ້ອງເສຍຄ່າ annotation.
 </Callout>
 
@@ -59,16 +60,7 @@ DINO ຈຶ່ງມາແກ້ບັນຫານີ້ ໂດຍຕັດຄ�
 
 ## ຫຼັກການຂອງ DINO
 
-ສົມມຸດວ່າມີຮູບແມວດຽວ ແລ້ວສ້າງອອກມາຫຼາຍ version ດ້ວຍ data augmentation:
-
-```
-Original
-   ├─ Crop
-   ├─ Rotate
-   ├─ Blur
-   ├─ Color Jitter
-   └─ Zoom
-```
+ສົມມຸດວ່າມີຮູບແມວດຽວ ແລ້ວສ້າງອອກມາຫຼາຍ version ດ້ວຍ data augmentation ເຊັ່ນ crop, blur, color jitter ແລະ zoom.
 
 ມະນຸດຮູ້ວ່າ ທຸກ version ແມ່ນແມວໂຕດຽວກັນ. DINO ກໍ່ຕ້ອງຮຽນໃຫ້ຮູ້ແບບນັ້ນ — ຄື ໃຫ້ feature ຂອງທຸກ version ຄ້າຍກັນ ເຖິງແມ່ນຮູບຈະຖືກແປງໄປແລ້ວ.
 
@@ -78,17 +70,11 @@ Original
 
 ນີ້ແມ່ນຫົວໃຈຂອງ DINO. ມີສອງ network ທີ່ໂຄງສ້າງຄືກັນ ແຕ່ບົດບາດຕ່າງກັນ:
 
-```
-Original Image  →  Teacher Network  →  Feature Vector
-                                          ▲
-                                          │ ຮຽນໃຫ້ຄ້າຍ
-                                          │
-Crop Image      →  Student Network  →  Feature Vector
-```
+<DinoFlow variant="training" />
 
 Student ພະຍາຍາມຮຽນໃຫ້ໄດ້ output ຄ້າຍກັບ Teacher. ຈຶ່ງເອີ້ນວ່າ **self-distillation**.
 
-<Callout type="tip">
+<Callout variant="tip" title="Teacher ຮຽນແນວໃດ?">
 Teacher ບໍ່ໄດ້ຝຶກ backprop ໂດຍກົງ — ນ້ຳໜັກຂອງມັນ update ດ້ວຍ EMA (exponential moving average) ຈາກ Student. ວິທີນີ້ຊ່ວຍໃຫ້ Teacher ໝັ້ນຄົງ ແລະ ປ້ອງກັນ "representation collapse" (ບັນຫາທີ່ model ຕອບ output ຄືກັນໝົດທຸກຮູບ).
 </Callout>
 
@@ -111,9 +97,7 @@ Image  →  Student  →  Feature  →  ຮຽນໃຫ້ກົງ target
 
 Output ບໍ່ແມ່ນ class ເຊັ່ນ `Dog` ຫຼື `Cat` ແຕ່ເປັນ **feature embedding** — vector ຂະໜາດ 768 ຫຼື 1024 dimension:
 
-```
-Image  →  DINO  →  [0.12, 0.81, -0.55, ...]   (768-dim vector)
-```
+<DinoFlow variant="embedding" />
 
 ---
 
@@ -163,11 +147,9 @@ Meta ໄດ້ອອກ **DINOv2** ເປັນການປັບປຸງຈາ
 
 ປັດຈຸບັນ AI ຫຼາຍລະບົບເປັນ **multimodal** — ຮັບໄດ້ທັງຮູບ ແລະ ຂໍ້ຄວາມ. ໂຄງສ້າງທົ່ວໄປ:
 
-```
-Image  →  DINOv2  →  Image Embedding  →  Projector  →  LLM  →  Answer
-```
+<DinoFlow variant="multimodal" />
 
-<Callout type="warning">
+<Callout variant="warning" title="LLM ເຫັນຮູບແນວໃດ?">
 LLM ບໍ່ໄດ້ "ເບິ່ງ" ຮູບໂດຍກົງ. ສ່ວນຫຼາຍມັນຮັບ **embedding** ທີ່ສະກັດມາຈາກ vision encoder (ເຊັ່ນ DINOv2 ຫຼື ViT ອື່ນໆ) ຜ່ານ projector ກ່ອນ ແລ້ວຈຶ່ງນຳໄປປະມວນຜົນຮ່ວມກັບ token ຂອງຂໍ້ຄວາມ. ຄຸນນະພາບຂອງ vision encoder ຈຶ່ງມີຜົນໂດຍກົງຕໍ່ຄວາມສາມາດ "ເບິ່ງຮູບ" ຂອງ multimodal model.
 </Callout>
 

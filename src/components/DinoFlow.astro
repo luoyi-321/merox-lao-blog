@@ -1,0 +1,63 @@
+---
+import { Icon } from 'astro-icon/components'
+
+interface Props { variant?: 'training' | 'embedding' | 'multimodal' }
+const { variant = 'training' } = Astro.props
+---
+
+{variant === 'training' && (
+  <figure class="dino-flow not-prose" aria-labelledby="dino-training-caption">
+    <div class="flow-heading"><span class="eyebrow">DINO training loop</span><span class="no-label"><Icon name="lucide:tag" /> 0 labels</span></div>
+    <div class="source"><span class="image-card"><Icon name="lucide:image" /></span><span><strong>ຮູບພາບດຽວ</strong><small>Original image</small></span></div>
+    <div class="branch" aria-hidden="true"><span></span><span></span></div>
+    <div class="training-grid">
+      <section class="path">
+        <div class="path-label"><b>01</b> Global views</div>
+        <div class="views"><span><Icon name="lucide:scan" /> Crop ໃຫຍ່</span><span><Icon name="lucide:contrast" /> Color</span></div>
+        <Icon class="arrow" name="lucide:arrow-down" />
+        <div class="network teacher"><span class="network-icon"><Icon name="lucide:graduation-cap" /></span><span><strong>Teacher</strong><small>Stable target</small></span><em>no gradient</em></div>
+        <Icon class="arrow" name="lucide:arrow-down" />
+        <div class="output teacher-output">Target distribution</div>
+      </section>
+      <section class="path">
+        <div class="path-label"><b>02</b> All views</div>
+        <div class="views"><span><Icon name="lucide:zoom-in" /> Crop ນ້ອຍ</span><span><Icon name="lucide:sparkles" /> Blur + jitter</span></div>
+        <Icon class="arrow" name="lucide:arrow-down" />
+        <div class="network student"><span class="network-icon"><Icon name="lucide:brain-circuit" /></span><span><strong>Student</strong><small>Learns by gradient</small></span><em>training</em></div>
+        <Icon class="arrow" name="lucide:arrow-down" />
+        <div class="output student-output">Predicted distribution</div>
+      </section>
+    </div>
+    <div class="match-row"><span class="match-icon"><Icon name="lucide:git-compare-arrows" /></span><p><strong>Match the outputs</strong><small>Student ຮຽນໃຫ້ output ໃກ້ກັບ Teacher</small></p><b>Loss ↓</b></div>
+    <div class="ema-row"><Icon name="lucide:refresh-cw" /><span><strong>EMA update</strong> · ນ້ຳໜັກ Teacher ຄ່ອຍໆ update ຈາກ Student</span><Icon name="lucide:arrow-left" /></div>
+    <figcaption id="dino-training-caption">ຮູບດຽວຖືກສ້າງເປັນຫຼາຍ view; Teacher ສ້າງ target ແລະ Student ຮຽນຈາກ target ນັ້ນ.</figcaption>
+  </figure>
+)}
+
+{variant === 'embedding' && (
+  <figure class="dino-flow compact-flow not-prose" aria-label="DINO embedding flow">
+    <div class="flow-node"><Icon name="lucide:image" /><span><strong>Image</strong><small>ຮູບພາບ</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node model"><Icon name="lucide:scan-eye" /><span><strong>DINOv2</strong><small>Vision encoder</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node vector"><Icon name="lucide:brackets" /><span><strong>Embedding</strong><small>[0.12, 0.81, −0.55, …]</small></span></div>
+  </figure>
+)}
+
+{variant === 'multimodal' && (
+  <figure class="dino-flow compact-flow multimodal not-prose" aria-label="Multimodal vision language flow">
+    <div class="flow-node"><Icon name="lucide:image" /><span><strong>Image</strong><small>Pixels</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node model"><Icon name="lucide:scan-eye" /><span><strong>DINOv2</strong><small>Visual features</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node"><Icon name="lucide:shuffle" /><span><strong>Projector</strong><small>Align spaces</small></span></div><Icon class="connector" name="lucide:arrow-right" />
+    <div class="flow-node"><Icon name="lucide:message-square-text" /><span><strong>LLM</strong><small>Answer</small></span></div>
+  </figure>
+)}
+
+<style>
+  .dino-flow{margin:1.75rem 0;border:1px solid color-mix(in oklab,var(--border) 85%,transparent);border-radius:1rem;padding:1.25rem;background:linear-gradient(145deg,color-mix(in oklab,var(--muted) 38%,transparent),transparent 58%);box-shadow:0 14px 40px -34px color-mix(in oklab,var(--foreground) 50%,transparent)}
+  .flow-heading,.source,.match-row,.ema-row,.network,.views,.flow-node{display:flex;align-items:center}.flow-heading{justify-content:space-between;margin-bottom:1.25rem}.eyebrow{color:var(--muted-foreground);font-size:.72rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}.no-label{display:inline-flex;gap:.35rem;align-items:center;border:1px solid color-mix(in oklab,#10b981 35%,var(--border));border-radius:999px;padding:.3rem .6rem;color:#059669;background:color-mix(in oklab,#10b981 9%,transparent);font-size:.7rem;font-weight:700}.no-label :global(svg){width:.8rem}
+  .source{justify-content:center;gap:.7rem}.source strong,.source small,.network strong,.network small,.flow-node strong,.flow-node small{display:block}.source small,.network small,.flow-node small{color:var(--muted-foreground)}.source small{font-size:.75rem}.image-card{display:grid;place-items:center;width:3rem;height:3rem;border-radius:.75rem;color:white;background:linear-gradient(135deg,#06b6d4,#6366f1);box-shadow:0 8px 20px -10px #4f46e5}.image-card :global(svg){width:1.35rem}
+  .branch{display:grid;grid-template-columns:1fr 1fr;width:50%;height:2rem;margin:.35rem auto 0;border-top:1px solid var(--border)}.branch span{border-left:1px solid var(--border)}.branch span:last-child{border-left:0;border-right:1px solid var(--border)}.training-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}.path{min-width:0;border:1px solid var(--border);border-radius:.85rem;padding:.85rem;background:color-mix(in oklab,var(--background) 82%,transparent)}.path-label{margin-bottom:.7rem;color:var(--muted-foreground);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em}.path-label b{margin-right:.35rem;color:#6366f1}.views{gap:.4rem;flex-wrap:wrap}.views span{display:inline-flex;align-items:center;gap:.3rem;border-radius:.45rem;padding:.35rem .5rem;background:var(--muted);font-size:.7rem}.views :global(svg){width:.78rem}.arrow{display:block;width:.9rem;height:1.7rem;margin:auto;color:var(--muted-foreground)}
+  .network{gap:.55rem;border-radius:.65rem;padding:.65rem}.teacher{background:color-mix(in oklab,#8b5cf6 11%,var(--background));border:1px solid color-mix(in oklab,#8b5cf6 30%,var(--border))}.student{background:color-mix(in oklab,#06b6d4 11%,var(--background));border:1px solid color-mix(in oklab,#06b6d4 32%,var(--border))}.network-icon{display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:.5rem;background:var(--background)}.network-icon :global(svg){width:1rem}.network strong{font-size:.82rem}.network small{font-size:.62rem}.network em{margin-left:auto;border-radius:999px;padding:.2rem .42rem;color:#7c3aed;background:color-mix(in oklab,#8b5cf6 14%,transparent);font-size:.56rem;font-style:normal;font-weight:700}.student em{color:#0891b2;background:color-mix(in oklab,#06b6d4 14%,transparent)}.output{border-radius:.55rem;padding:.55rem;text-align:center;font-family:var(--font-mono);font-size:.65rem}.teacher-output{color:#7c3aed;background:color-mix(in oklab,#8b5cf6 8%,var(--background))}.student-output{color:#0891b2;background:color-mix(in oklab,#06b6d4 8%,var(--background))}
+  .match-row{gap:.65rem;margin-top:.9rem;border:1px dashed color-mix(in oklab,#f59e0b 45%,var(--border));border-radius:.75rem;padding:.75rem;background:color-mix(in oklab,#f59e0b 7%,transparent)}.match-icon{display:grid;place-items:center;flex:0 0 2rem;height:2rem;border-radius:.55rem;color:#d97706;background:color-mix(in oklab,#f59e0b 14%,transparent)}.match-icon :global(svg){width:1rem}.match-row p{flex:1;margin:0;line-height:1.25}.match-row p strong,.match-row p small{display:block}.match-row p strong{font-size:.78rem}.match-row p small{margin-top:.2rem;color:var(--muted-foreground);font-size:.66rem}.match-row>b{color:#d97706;font-family:var(--font-mono);font-size:.72rem}.ema-row{justify-content:center;gap:.45rem;margin-top:.75rem;color:var(--muted-foreground);font-size:.67rem}.ema-row strong{color:var(--foreground)}.ema-row :global(svg){width:.8rem;color:#8b5cf6}figcaption{margin-top:1rem;color:var(--muted-foreground);font-size:.7rem;text-align:center;line-height:1.5}
+  .compact-flow{display:flex;align-items:stretch;justify-content:center;gap:.55rem;overflow-x:auto}.flow-node{gap:.55rem;min-width:8.5rem;border:1px solid var(--border);border-radius:.7rem;padding:.7rem;background:var(--background)}.flow-node>:global(svg){flex:0 0 auto;width:1.05rem;color:#6366f1}.flow-node strong,.flow-node small{white-space:nowrap}.flow-node strong{font-size:.76rem}.flow-node small{margin-top:.12rem;font-size:.61rem}.flow-node.vector{min-width:11.5rem}.connector{align-self:center;flex:0 0 auto;width:.85rem;color:var(--muted-foreground)}.multimodal .flow-node{min-width:7rem}
+  @media(max-width:560px){.dino-flow{padding:.9rem}.training-grid{grid-template-columns:1fr}.branch{display:none}.path:first-child{margin-top:1rem}.ema-row{align-items:flex-start}.compact-flow{justify-content:flex-start}}
+</style>
