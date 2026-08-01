@@ -1,0 +1,200 @@
+---
+title: 'DINO: ສາຍຕາຂອງ AI ທີ່ຮຽນຮູ້ຮູບໂດຍບໍ່ຕ້ອງມີ Label'
+description: 'ເຂົ້າໃຈ DINO ແລະ DINOv2 — ເທັກໂນໂລຢີ Self-Supervised Learning ຂອງ Meta AI ທີ່ສອນໃຫ້ model ຮຽນຮູ້ຮູບພາບໂດຍບໍ່ຕ້ອງມີ label, ຫຼັກການ Teacher-Student, Embedding, ແລະ ການນຳໄປໃຊ້ໃນ Vision AI ແລະ Multimodal LLM.'
+date: 2026-08-01
+tags: ['computer-vision', 'self-supervised', 'embedding', 'transformer', 'deep-learning', 'multimodal']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+ຖ້າເວົ້າເຖິງ **DINO** ໃນວົງການ AI ປັດຈຸບັນ ມັນບໍ່ແມ່ນ LLM ແຕ່ເປັນເທັກໂນໂລຢີສຳລັບ **computer vision** ທີ່ຊ່ວຍໃຫ້ model "ຮຽນຮູ້ຈາກຮູບພາບໂດຍບໍ່ຕ້ອງມີ label" (self-supervised learning) ແລະ ໄດ້ກາຍເປັນຮາກຖານຂອງ vision AI ຫຼາຍລະບົບ.
+
+---
+
+## DINO ແມ່ນຫຍັງ?
+
+**DINO** ຫຍໍ້ມາຈາກ:
+
+> **DI**stillation with **NO** labels
+
+ພັດທະນາໂດຍ Meta AI. ຈຸດເດັ່ນຄື **ບໍ່ຈຳເປັນຕ້ອງມີຄົນມາຕິດ label ໃຫ້ຮູບ**.
+
+ຍົກຕົວຢ່າງ ສົມມຸດວ່າມີຮູບ:
+
+- ໝາ 10 ລ້ານຮູບ
+- ແມວ 20 ລ້ານຮູບ
+- ຄົນ, ລົດ, ຕົ້ນໄມ້ ...
+
+ບໍ່ມີໃຜຂຽນວ່າອັນໃດແມ່ນຫຍັງ. DINO ສາມາດຮຽນຮູ້ representation ຂອງຮູບໄດ້ດ້ວຍຕົນເອງ.
+
+<Callout type="info">
+Self-supervised learning ແມ່ນວິທີການຝຶກ model ໂດຍໃຊ້ໂຄງສ້າງພາຍໃນຂອງຂໍ້ມູນເອງເປັນ "ຄຳຕອບ", ແທນທີ່ຈະໃຊ້ label ຈາກມະນຸດ. ນີ້ຄືເຫດຜົນທີ່ມັນ scale ໄດ້ດີ — ຍິ່ງມີຂໍ້ມູນຫຼາຍເທົ່າໃດ ຍິ່ງດີ ໂດຍບໍ່ຕ້ອງເສຍຄ່າ annotation.
+</Callout>
+
+---
+
+## ເປັນຫຍັງຕ້ອງມີ DINO?
+
+ໃນອະດີດ, ການຝຶກ CNN ຫຼື ViT ຕ້ອງເຮັດແບບ supervised:
+
+```
+Image  →  Dog / Cat / Car / Tree  (label ຈາກຄົນ)
+```
+
+ບັນຫາຂອງການໃຊ້ label ຈາກຄົນຄື:
+
+- **ແພງ** — ຕ້ອງຈ້າງຄົນຕິດ label
+- **ໃຊ້ເວລາ** — ຂໍ້ມູນລ້ານໆຮູບໃຊ້ເວລາດົນ
+- **Scale ຍາກ** — ຍິ່ງຂໍ້ມູນຫຼາຍ ຍິ່ງແພງ
+
+DINO ຈຶ່ງມາແກ້ບັນຫານີ້ ໂດຍຕັດຄວາມຈຳເປັນຂອງ label ອອກທັງໝົດ.
+
+---
+
+## ຫຼັກການຂອງ DINO
+
+ສົມມຸດວ່າມີຮູບແມວດຽວ ແລ້ວສ້າງອອກມາຫຼາຍ version ດ້ວຍ data augmentation:
+
+```
+Original
+   ├─ Crop
+   ├─ Rotate
+   ├─ Blur
+   ├─ Color Jitter
+   └─ Zoom
+```
+
+ມະນຸດຮູ້ວ່າ ທຸກ version ແມ່ນແມວໂຕດຽວກັນ. DINO ກໍ່ຕ້ອງຮຽນໃຫ້ຮູ້ແບບນັ້ນ — ຄື ໃຫ້ feature ຂອງທຸກ version ຄ້າຍກັນ ເຖິງແມ່ນຮູບຈະຖືກແປງໄປແລ້ວ.
+
+---
+
+## Teacher – Student
+
+ນີ້ແມ່ນຫົວໃຈຂອງ DINO. ມີສອງ network ທີ່ໂຄງສ້າງຄືກັນ ແຕ່ບົດບາດຕ່າງກັນ:
+
+```
+Original Image  →  Teacher Network  →  Feature Vector
+                                          ▲
+                                          │ ຮຽນໃຫ້ຄ້າຍ
+                                          │
+Crop Image      →  Student Network  →  Feature Vector
+```
+
+Student ພະຍາຍາມຮຽນໃຫ້ໄດ້ output ຄ້າຍກັບ Teacher. ຈຶ່ງເອີ້ນວ່າ **self-distillation**.
+
+<Callout type="tip">
+Teacher ບໍ່ໄດ້ຝຶກ backprop ໂດຍກົງ — ນ້ຳໜັກຂອງມັນ update ດ້ວຍ EMA (exponential moving average) ຈາກ Student. ວິທີນີ້ຊ່ວຍໃຫ້ Teacher ໝັ້ນຄົງ ແລະ ປ້ອງກັນ "representation collapse" (ບັນຫາທີ່ model ຕອບ output ຄືກັນໝົດທຸກຮູບ).
+</Callout>
+
+---
+
+## ເປັນຫຍັງບໍ່ຕ້ອງມີ Label?
+
+ເພາະ **Teacher ເປັນຄົນສ້າງ target ໃຫ້ Student** ໂດຍອັດຕະໂນມັດ:
+
+```
+Image  →  Teacher  →  Feature (target)
+Image  →  Student  →  Feature  →  ຮຽນໃຫ້ກົງ target
+```
+
+ບໍ່ມີ "Dog", ບໍ່ມີ "Cat", ບໍ່ມີ "Car" — ບໍ່ຕ້ອງມີ annotation ໃດໆເລີຍ. ຄຳຕອບມາຈາກ Teacher ເອງ.
+
+---
+
+## Output ຂອງ DINO ແມ່ນຫຍັງ?
+
+Output ບໍ່ແມ່ນ class ເຊັ່ນ `Dog` ຫຼື `Cat` ແຕ່ເປັນ **feature embedding** — vector ຂະໜາດ 768 ຫຼື 1024 dimension:
+
+```
+Image  →  DINO  →  [0.12, 0.81, -0.55, ...]   (768-dim vector)
+```
+
+---
+
+## Embedding ແມ່ນຫຍັງ?
+
+Embedding ຄື vector ທີ່ເປັນຕົວແທນຄວາມໝາຍຂອງຮູບ. ຮູບທີ່ຄ້າຍກັນຈະຢູ່ໃກ້ກັນໃນ vector space:
+
+```
+ຮູບແມວ A   →  [ 0.12,  0.81, -0.55, ...]  ┐ ຢູ່ໃກ້ກັນ
+ຮູບແມວ B   →  [ 0.10,  0.79, -0.53, ...]  ┘
+
+ຮູບລົດ     →  [-0.80,  0.11,  0.42, ...]     ຢູ່ໄກ
+```
+
+ນີ້ຄືສາເຫດທີ່ DINO ໃຊ້ໄດ້ດີກັບການຄົ້ນຫາຮູບຄ້າຍກັນ — ພຽງແຕ່ວັດໄລຍະຫ່າງລະຫວ່າງ vector.
+
+---
+
+## DINO ຖືກນຳໄປໃຊ້ຫຍັງ?
+
+| ການໃຊ້ງານ | ອະທິບາຍ |
+| --------- | ------- |
+| Image Search | Upload ຮູບ → embedding → ຄົ້ນຫາໃນ vector DB → ໄດ້ຮູບຄ້າຍທີ່ສຸດ |
+| Object Detection | ໃຊ້ເປັນ backbone ສະກັດ feature |
+| Segmentation | ຕັດແຍກວັດຖຸໃນຮູບ |
+| Robotics | ໃຫ້ຫຸ່ນຍົນເຂົ້າໃຈພາບທີ່ເຫັນ |
+| Visual SLAM | ສ້າງແຜນທີ່ 3D ຈາກພາບ |
+| Video Understanding | ເຂົ້າໃຈເນື້ອຫາໃນວິດີໂອ |
+| Retrieval | ຄົ້ນຫາດ້ວຍຮູບ (search by image) |
+
+---
+
+## DINOv2
+
+Meta ໄດ້ອອກ **DINOv2** ເປັນການປັບປຸງຈາກ DINO ໃນຫຼາຍດ້ານ:
+
+- Dataset ໃຫຍ່ຂຶ້ນ
+- Feature ມີຄຸນນະພາບສູງຂຶ້ນ
+- ຮອງຮັບ zero-shot ໄດ້ດີຂຶ້ນ
+- ໃຊ້ເປັນ backbone ສຳລັບ vision tasks ຫຼາຍຢ່າງ
+
+ປັດຈຸບັນ DINOv2 ເປັນໜຶ່ງໃນ vision encoder ທີ່ນິຍົມທີ່ສຸດສຳລັບການຄົ້ນຫາຮູບ, ຈັດກຸ່ມຮູບ, ແລະ ໃຊ້ເປັນ feature extractor.
+
+---
+
+## DINO ກັບ LLM ກ່ຽວຂ້ອງກັນແນວໃດ?
+
+ປັດຈຸບັນ AI ຫຼາຍລະບົບເປັນ **multimodal** — ຮັບໄດ້ທັງຮູບ ແລະ ຂໍ້ຄວາມ. ໂຄງສ້າງທົ່ວໄປ:
+
+```
+Image  →  DINOv2  →  Image Embedding  →  Projector  →  LLM  →  Answer
+```
+
+<Callout type="warning">
+LLM ບໍ່ໄດ້ "ເບິ່ງ" ຮູບໂດຍກົງ. ສ່ວນຫຼາຍມັນຮັບ **embedding** ທີ່ສະກັດມາຈາກ vision encoder (ເຊັ່ນ DINOv2 ຫຼື ViT ອື່ນໆ) ຜ່ານ projector ກ່ອນ ແລ້ວຈຶ່ງນຳໄປປະມວນຜົນຮ່ວມກັບ token ຂອງຂໍ້ຄວາມ. ຄຸນນະພາບຂອງ vision encoder ຈຶ່ງມີຜົນໂດຍກົງຕໍ່ຄວາມສາມາດ "ເບິ່ງຮູບ" ຂອງ multimodal model.
+</Callout>
+
+---
+
+## DINO ກັບ CLIP ຕ່າງກັນແນວໃດ?
+
+| DINO | CLIP |
+| ---- | ---- |
+| ຮຽນຈາກຮູບພາບເທົ່ານັ້ນ | ຮຽນຈາກຮູບ + ຂໍ້ຄວາມ |
+| Self-supervised | Contrastive learning |
+| ບໍ່ຕ້ອງມີ label | ຕ້ອງມີຄູ່ ຮູບ–ຂໍ້ຄວາມ |
+| ເກັ່ງການສ້າງ visual features | ເກັ່ງການເຊື່ອມໂຍງພາບກັບພາສາ |
+
+ໂດຍສະຫຼຸບ:
+
+- ຖ້າຕ້ອງການ **feature ຂອງຮູບທີ່ແຂງແຮງ** ສຳລັບ vision tasks ຫຼາຍປະເພດ → **DINOv2** ເປັນຕົວເລືອກທີ່ດີ.
+- ຖ້າຕ້ອງການ **ເຊື່ອມຮູບກັບພາສາ** (ເຊັ່ນ "ຄົ້ນຫາຮູບດ້ວຍຂໍ້ຄວາມ") → **CLIP** ຈະເໝາະກວ່າ.
+
+---
+
+## ສະຫຼຸບ
+
+DINO ຄື **"ສາຍຕາ" (vision representation learner)** ຂອງ AI. ມັນສອນໃຫ້ model ເຂົ້າໃຈຮູບພາບໂດຍບໍ່ຕ້ອງອາໄສການຕິດ label ຈາກມະນຸດ.
+
+ຜົນທີ່ໄດ້ຄື embedding ທີ່ມີຄຸນນະພາບສູງ ແລະ ສາມາດນຳໄປໃຊ້ໃນງານຕ່າງໆ ເຊັ່ນ image retrieval, object detection, 3D vision, robotics, video understanding ແລະ ເປັນພື້ນຖານສຳຄັນຂອງລະບົບ vision AI ສະໄໝໃໝ່ ລວມທັງ multimodal LLM.
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
