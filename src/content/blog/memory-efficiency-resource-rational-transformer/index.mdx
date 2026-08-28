@@ -1,0 +1,322 @@
+---
+title: "เมื่อ Transformer เรียนรู้ที่จะลืม: Working Memory แบบ Resource-Rational"
+description: "สรุป Best Paper ACL 2026 ที่จำลอง working memory ด้วย Gaussian noise ใน value vectors และพบว่าการจำแบบไม่สมบูรณ์อาจทำนายเวลาอ่านของมนุษย์ได้ดีขึ้น"
+date: 2026-08-27
+tags: ["ACL2026", "Transformer", "WorkingMemory", "Psycholinguistics", "CognitiveScience", "ResearchPaper", "AI"]
+authors: ["sulixay"]
+draft: false
+---
+
+import Callout from '@/components/Callout.astro'
+
+<div align="center">
+  <a href="https://www.laligence.ai/" target="_blank" rel="noopener">
+    <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" width="100" />
+  </a>
+</div>
+
+บทความนี้ได้รับรางวัล **Best Paper ของ ACL 2026** และตั้งคำถามที่น่าสนใจมากว่า:
+
+> ถ้าจะใช้ Transformer เป็นแบบจำลองการอ่านของมนุษย์ เราควรจำลองข้อจำกัดของ working memory อย่างไร?
+
+คำตอบของผู้เขียนไม่ใช่การตัด context ให้สั้นลง และไม่ใช่การลบคำเก่าทิ้งทั้งหมด แต่คือ **คำเก่ายังอยู่ในความจำ เพียงแต่ representation ค่อย ๆ สูญเสียความแม่นยำและมี noise มากขึ้นตามระยะทาง**
+
+**ต้นฉบับ:** [Memory Efficiency and Resource-Rational Encoding in Sentence Processing](https://aclanthology.org/2026.acl-long.1550/)
+
+---
+
+## สรุปในหนึ่งนาที
+
+ผู้เขียนเติม **Gaussian noise** ลงใน value vectors ของ Transformer โดย token ที่อยู่ไกลจะได้รับ noise มากกว่า จากนั้นบังคับให้โมเดลเรียนรู้ว่าจะใช้ “ความแม่นยำของหน่วยความจำ” อย่างประหยัดเพียงใด
+
+ผลสำคัญมี 4 ข้อ:
+
+- memory constraint ระดับปานกลางทำนาย reading time ของมนุษย์ได้ดีขึ้นในบางชุดข้อมูล
+- บริบทหลายแบบถูกบีบให้มี prediction representation คล้ายกันมากขึ้น
+- โมเดลทิ้งรายละเอียดเฉพาะบางอย่าง แต่รักษาหมวดหมู่ที่เป็นประโยชน์ต่อการทำนาย
+- constraint ที่แรงขึ้นไม่ได้ดีขึ้นเสมอไป
+
+<Callout type="tip">
+แนวคิดหลักของ paper คือ working-memory capacity อาจหมายถึง **คุณภาพและความละเอียดของ representation** ไม่ใช่เพียงจำนวน token ที่เข้าถึงได้
+</Callout>
+
+---
+
+## 1. Resource-rational หมายถึงอะไร?
+
+คำว่า *rational* ในที่นี้ไม่ได้แปลว่า “สมบูรณ์แบบ” แต่หมายถึง **การใช้ทรัพยากรที่จำกัดให้คุ้มที่สุดสำหรับงานที่ต้องทำ**
+
+สมมติว่ามนุษย์มี working-memory budget จำกัด เราไม่สามารถจำทุกคำ ทุกเสียง และทุกรายละเอียดได้อย่างแม่นยำเท่ากัน ระบบจึงต้องหาจุดสมดุลระหว่าง:
+
+$$
+\text{ทำนายคำต่อไปให้ดี}
+\qquad\text{และ}\qquad
+\text{ใช้หน่วยความจำน้อย}
+$$
+
+เช่น เมื่ออ่านประโยค:
+
+> The doctor near the old building usually ...
+
+เราอาจจำได้ว่า subject เป็นบุคคล เป็น animate entity ประโยคยังรอ verb และมี modifier แทรกอยู่ โดยไม่จำเป็นต้องรักษาทุกรายละเอียดของคำว่า *doctor* ให้แม่นยำเท่ากัน
+
+---
+
+## 2. จาก “จำหรือลืม” สู่ความจำที่ค่อย ๆ เลือน
+
+งานก่อนหน้ามักจำลองข้อจำกัดของ working memory ด้วย limited context, local attention หรือลบ token เก่า วิธีเหล่านี้มีขอบแข็ง:
+
+| วิธี | ภาพของความจำ |
+|---|---|
+| Context window | อยู่ใน window จึงจำได้; อยู่นอก window จึงหายไป |
+| Binary erasure | เก็บ token ไว้ หรือลบทิ้ง |
+| Paper นี้ | token ยังอยู่ แต่ representation มีความละเอียดลดลงต่อเนื่อง |
+
+งานนี้ต่อยอดแนวคิด **lossy-context surprisal** ซึ่งมองว่ามนุษย์คาดเดาคำถัดไปจากบริบทที่ผ่านช่องทางความจำแบบสูญเสียข้อมูลแล้ว:
+
+$$
+\text{บริบทจริง}
+\rightarrow
+\text{memory representation ที่เสียข้อมูล}
+\rightarrow
+\text{การคาดเดาคำถัดไป}
+$$
+
+จุดต่างสำคัญคือ paper นี้ไม่ทำลาย token โดยตรง แต่ทำให้ hidden representation มี noise
+
+---
+
+## 3. โมเดลทำงานอย่างไร?
+
+ใน attention ปกติ output ของ query ตำแหน่ง $q$ คือ:
+
+$$
+z_q=\sum_k a_{qk}v_k
+$$
+
+โดย $a_{qk}$ คือ attention weight และ $v_k$ คือ value representation ของ token ตำแหน่ง $k$ งานนี้เปลี่ยน $v_k$ เป็น noisy value:
+
+$$
+\tilde v_{qk}\sim\mathcal N(v_k,\tau_{qk}^{-1}I)
+$$
+
+คำสำคัญคือ **precision**:
+
+$$
+\tau=\frac{1}{\sigma^2}
+$$
+
+- $\tau$ สูง → variance ต่ำ → noise น้อย → จำแม่น
+- $\tau$ ต่ำ → varianceสูง → noise มาก → จำไม่ชัด
+
+Precision ลดลงตามระยะทางแบบ exponential:
+
+$$
+\tau_{qk}=\tau_0e^{-\theta(q-k)}
+$$
+
+โดย $q-k$ คือระยะจากคำปัจจุบันไปยังคำในอดีต, $\tau_0$ คือ precision สูงสุด และ $\theta$ คือ decay rate ที่โมเดลเรียนรู้เอง
+
+| ค่า $\theta$ | ความหมาย |
+|---|---|
+| สูง | ความแม่นยำของความจำเสื่อมเร็ว |
+| ใกล้ 0 | precision แทบไม่ลดตามระยะทาง |
+
+<Callout type="info">
+Paper ไม่ได้เติม noise ลงใน attention weights: **attention weight** ตอบว่าจะดึงข้อมูลจากที่ไหน ส่วน **value precision** ตอบว่าข้อมูลที่ดึงมายังชัดเพียงใด นี่คือการแยก retrieval ออกจาก encoding quality
+</Callout>
+
+---
+
+## 4. โมเดลเรียนรู้ที่จะประหยัด memory อย่างไร?
+
+Training objective มีสองส่วน:
+
+$$
+\mathcal L=\mathcal L_{\text{next-word}}+\lambda\mathcal L_{\text{memory}}
+$$
+
+ส่วนแรกบังคับให้ทำนายคำถัดไปได้ดี:
+
+$$
+-\log p(w_t\mid w_{<t})
+$$
+
+ส่วนที่สองลงโทษการใช้ encoding precision สูง เพราะ precision สูงเปรียบเสมือนการใช้ทรัพยากร working memory มาก ผู้เขียนทดลอง:
+
+$$
+\lambda\in\{0,\;0.001,\;0.01,\;0.1,\;1\}
+$$
+
+- $\lambda=0$: ไม่มีค่าปรับในการใช้ memory
+- $\lambda$ เล็ก: มีข้อจำกัดเล็กน้อย
+- $\lambda$ ใหญ่: precision มีราคาแพง โมเดลต้องยอมรับ noise มากขึ้น
+
+เมื่อไม่มีค่าปรับ head ส่วนใหญ่เรียน $\theta\approx0$ เพราะการเก็บข้อมูลให้แม่นทั้งหมดช่วย next-word prediction เมื่อ constraint เพิ่มขึ้น lower-layer heads เริ่มมี decay เร็วก่อน ส่วน higher layers รักษา precision ระยะไกลได้นานกว่า
+
+คำอธิบายที่เป็นไปได้คือ lower layers จัดการข้อมูล local เช่นรูปคำ morphology และ syntax ระยะใกล้ ส่วน higher layers เก็บความหมายโดยรวมและ dependency ระยะไกล อย่างไรก็ตาม นี่เป็น **interpretation** จากความรู้เดิม ไม่ใช่ผล probe โดยตรงของทุก head
+
+---
+
+## 5. โมเดลที่ทำนายคำแย่ลง อาจเหมือนมนุษย์มากขึ้น
+
+ผู้เขียนใช้ surprisal จากแต่ละ language model ทำนายเวลาอ่านของมนุษย์:
+
+$$
+S(w_t)=-\log p(w_t\mid w_{<t})
+$$
+
+คำที่มี probability ต่ำจะมี surprisal สูง และมนุษย์มักอ่านช้าลง การทดลองครอบคลุม:
+
+| ชุดข้อมูล | วิธีวัด | ผู้เข้าร่วม |
+|---|---|---:|
+| Provo | Eye tracking; first-fixation และ total reading time | 84 |
+| SPR Natural Stories | Self-paced reading | 181 |
+| A-Maze Natural Stories | เลือกระหว่างคำจริงกับคำหลอก | 100 |
+
+โมเดล regression พื้นฐานใช้ word length, frequency, position และตัวแปรควบคุมอื่น จากนั้นเพิ่ม surprisal เข้าไป แล้วเปรียบเทียบ held-out log-likelihood
+
+ผลชัดที่สุดอยู่ที่ **SPR Natural Stories**: constraint ระดับปานกลางช่วย human alignment มากที่สุด ส่วน Provo first fixation มีแนวโน้มดีขึ้นเล็กน้อย แต่ Provo total time และ A-Maze ไม่มี improvement ชัดเจน
+
+<Callout type="warning">
+ข้อสรุปที่เหมาะสมคือ memory constraint **สามารถ** เพิ่ม human alignment ใน reading measure บางชนิด ไม่ใช่ “ยิ่งจำได้น้อยยิ่งเหมือนมนุษย์”
+</Callout>
+
+Natural Stories ใช้บริบทยาวและมีโครงสร้างภาษาที่พบไม่บ่อย จึงอาจพึ่ง working memory มากกว่า Provo ส่วน A-Maze มีภาระการตัดสินใจเพิ่มเติม จึงอาจไม่ได้สะท้อน incremental reading process เพียงอย่างเดียว
+
+เมื่อ constraint สูงขึ้น perplexity โดยทั่วไปก็สูงขึ้น โมเดลทำนายข้อความแย่ลง แต่บางครั้งทำนายพฤติกรรมมนุษย์ได้ดีขึ้น:
+
+$$
+\text{LM ที่ทำนายคำดีที่สุด}
+\neq
+\text{แบบจำลองมนุษย์ที่ดีที่สุด}
+$$
+
+---
+
+## 6. Noise เปลี่ยน attention อย่างไร?
+
+เมื่อ memory constraint ปานกลาง โมเดลให้ attention กับ token ใกล้มากขึ้น นั่นคือ locality bias สามารถเกิดขึ้นเองได้โดยไม่ต้อง hard-code local mask
+
+แต่ความสัมพันธ์นี้ไม่เป็น monotonic เมื่อ constraint รุนแรงมาก locality bias กลับอ่อนลง เพราะโมเดลอาจไม่แน่ใจว่าตำแหน่งใดมีข้อมูลที่เชื่อถือได้ จึงกระจาย attention กว้างและสม่ำเสมอขึ้น
+
+ดังนั้น encoding และ retrieval มีความสัมพันธ์กัน แต่ไม่ใช่สิ่งเดียวกัน และ attention weights เพียงอย่างเดียวอาจไม่พออธิบาย working memory
+
+---
+
+## 7. Representation ถูกบีบให้แน่นขึ้น
+
+ผู้เขียนสร้างประโยค 1,000 ตัวอย่างในรูป:
+
+> Det Noun1 Prep Det Noun2 Adv ...
+
+ครึ่งหนึ่งมี Noun1 เป็น animate และอีกครึ่งเป็น inanimate หลังโมเดลอ่านถึง adverb ผู้เขียนเก็บ log probability ของคำถัดไปทุกคำใน vocabulary ทำให้แต่ละบริบทกลายเป็น vector:
+
+$$
+x_i\in\mathbb R^V
+$$
+
+จากนั้นใช้ PCA ลดเหลือ 50 dimensions และวัด Euclidean distance ระหว่างบริบท:
+
+$$
+d_{ij}=\sqrt{(x_i-x_j)^\top(x_i-x_j)}
+$$
+
+เมื่อ constraint สูงขึ้น mean pairwise distance ลดลง บริบทต่าง ๆ จึงมี prediction distributions คล้ายกันมากขึ้น กล่าวอีกแบบคือ representational space ถูก **compress**
+
+สิ่งสำคัญคือ representation ในการทดลองนี้ไม่ใช่ hidden state ภายใน Transformer แต่เป็นพื้นที่ที่สร้างจาก output probability distributions
+
+---
+
+## 8. Compression ทำให้บาง category ชัดขึ้นได้อย่างไร?
+
+แม้ animate และ inanimate ไม่ได้แยกเป็นสอง cluster ชัดขึ้นตามสมมติฐาน แต่ temporal prepositions อย่าง *before* และ *after* กลับแยกจาก spatial prepositions ชัดขึ้นเมื่อ memory constraint เพิ่มขึ้น
+
+ผู้เขียนวัดการแยก cluster ด้วย silhouette score:
+
+$$
+s(i)=\frac{b(i)-a(i)}{\max(a(i),b(i))}
+$$
+
+ผลนี้ไม่ขัดกับการ compression เพราะโมเดลไม่จำเป็นต้องบีบทุก dimension เท่ากัน มันอาจทิ้ง lexical nuance เช่นความต่างระหว่าง *doctor* กับ *lawyer* แต่รักษา feature ที่ช่วย prediction เช่น relation เป็น temporal หรือ spatial และโครงสร้างถัดไปน่าจะเป็น clause หรือ noun phrase
+
+```text
+รายละเอียดเฉพาะลดลง
+        ↓
+เก็บ feature ที่ช่วยงาน
+        ↓
+category บางชนิดชัดขึ้น
+```
+
+อย่างไรก็ตาม paper แสดงผลนี้ชัดสำหรับ preposition category เพียงกรณีเดียว จึงยังไม่ควรสรุปว่า constraint ทำให้ linguistic category ทุกประเภทชัดขึ้น
+
+---
+
+## 9. เทียบกับ local attention
+
+| | Local-attention paper | Memory-efficiency paper |
+|---|---|---|
+| เป้าหมาย | ศึกษา computational expressivity | ศึกษา cognitive plausibility |
+| สิ่งที่จำกัด | token มองตำแหน่งใดได้ | value ที่มองเห็นยังแม่นเพียงใด |
+| กลไก | local mask แบบตายตัว | decay rate เรียนรู้แยกตาม head/layer |
+| Token ระยะไกล | เข้าถึงไม่ได้เมื่ออยู่นอก window | ยังเข้าถึงได้ แต่มี noise มากขึ้น |
+| คำถาม | recognize ภาษาใดได้ | คล้ายพฤติกรรมมนุษย์เพียงใด |
+
+Memory noise ทำให้ locality bias เกิดขึ้นเองในระดับหนึ่ง แต่ encoding constraint ที่แรงขึ้นไม่ได้ทำให้ local retrieval เพิ่มขึ้นอย่างต่อเนื่อง เราจึงไม่สามารถแทน working memory ด้วย local attention เพียงอย่างเดียว
+
+---
+
+## 10. จุดแข็ง
+
+- แยก encoding quality ออกจาก retrieval mechanism อย่างชัดเจน
+- เปลี่ยน memory จาก binary “จำ/ลืม” เป็น continuous precision
+- ให้แต่ละ attention head และ layer เรียน decay rate เอง
+- เชื่อม cognitive theory, information theory และ Transformer เข้าด้วยกัน
+- ทดสอบทั้ง reading time และโครงสร้างของ output representations
+- แสดงผลที่ไม่ trivial: โมเดลที่ perplexity แย่ลงอาจเหมือนมนุษย์มากขึ้น
+
+---
+
+## 11. ข้อจำกัดสำคัญ
+
+### โมเดลและภาษายังมีขอบเขตจำกัด
+
+งานนี้ใช้โมเดลสไตล์ GPT-2 small และภาษาอังกฤษ ผลอาจไม่เหมือนเดิมใน LLM ขนาดใหญ่ multilingual models หรือ architecture สมัยใหม่
+
+### Transformer ไม่ได้ incremental เหมือนมนุษย์จริง
+
+แม้ใช้ causal mask แต่ระหว่าง training Transformer คำนวณหลายตำแหน่งแบบขนาน ขณะที่มนุษย์รับคำทีละคำและ update memory state ต่อเนื่อง ผู้เขียนจึงเสนอว่า RNN หรือ state-space model อาจสมจริงกว่าในอนาคต
+
+### ระยะทางเป็นเส้นตรงเกินไป
+
+Decay ใช้ token distance $q-k$ แต่มนุษย์อาจจัดความจำตาม hierarchical structure คำสองคำอาจอยู่ไกลกันในประโยคแต่ใกล้กันทาง syntax
+
+### ยังแปล $\lambda$ เป็น human capacity ไม่ได้
+
+เราไม่สามารถบอกได้ว่า $\lambda=0.01$ เท่ากับ working-memory capacity ของมนุษย์กี่หน่วย ทำได้เพียงสังเกตว่าระดับปานกลางตรงกับข้อมูลบางชุดมากที่สุด
+
+### ผล reading-time ไม่สม่ำเสมอทุก corpus
+
+ผลดีชัดใน SPR Natural Stories และมีแนวโน้มใน Provo first fixation แต่ไม่ชัดใน total time หรือ A-Maze จึงเป็นหลักฐานสนับสนุนบางส่วน ไม่ใช่ universal theory
+
+### Gaussian noise ยังเป็น simplification
+
+โมเดลสมมติว่า noise ของ token ต่าง ๆ เป็นอิสระกัน แต่ความจำมนุษย์มี similarity-based interference เช่น คำนามที่คล้ายกันอาจรบกวนกันเป็นพิเศษ
+
+---
+
+## บทสรุป
+
+แนวคิดใหม่ที่สุดของ paper ไม่ใช่เพียง “เติม noise แล้วเหมือนมนุษย์ขึ้น” แต่คือ:
+
+> Working-memory capacity ควรนิยามเป็นคุณภาพและความละเอียดของ representation ไม่ใช่เพียงจำนวน token ที่เข้าถึงหรือดึงกลับมาได้
+
+เมื่อทรัพยากรมีจำกัด โมเดลเรียนรู้ที่จะปล่อยรายละเอียดที่ไกลหรือมีประโยชน์น้อยให้เลือนลง รักษาข้อมูลระดับสูง ทำนายด้วยความมั่นใจน้อยลง บีบบริบทหลายแบบให้มี representation ใกล้กัน และเก็บหมวดหมู่บางชนิดที่มีประโยชน์ต่องาน
+
+บางทีมนุษย์อาจเข้าใจภาษาได้ดี ไม่ใช่เพราะเราจำทุกอย่าง แต่เพราะเรา **ลืมรายละเอียดอย่างมีกลยุทธ์ และรักษาโครงสร้างที่มีประโยชน์ไว้**
+
+---
+
+## อ้างอิง
+
+- [Memory Efficiency and Resource-Rational Encoding in Sentence Processing — ACL Anthology](https://aclanthology.org/2026.acl-long.1550/)
