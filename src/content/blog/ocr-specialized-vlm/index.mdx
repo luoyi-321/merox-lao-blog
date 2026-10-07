@@ -1,0 +1,276 @@
+---
+title: 'OCR ຍຸກໃໝ່: ເມື່ອ Vision-Language Model ອ່ານຫຼາຍກວ່າເອກະສານ'
+description: 'ເຂົ້າໃຈການປ່ຽນແປງຂອງ OCR ຈາກ cascaded pipeline ແບບເກົ່າ ໄປສູ່ OCR-specialized VLM ແບບ end-to-end, ເປັນຫຍັງ document parsing ຢ່າງດຽວຍັງບໍ່ພໍ, ແລະ ຄວາມສາມາດ OCR ທີ່ໂລກຈິງຕ້ອງການ.'
+date: 2026-10-07
+tags: ['ocr', 'computer-vision', 'multimodal', 'vlm', 'transformer', 'deep-learning']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+import OCRFlow from '@/components/OCRFlow.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+**OCR (Optical Character Recognition)** ແມ່ນເທັກໂນໂລຢີທີ່ໃຫ້ຄອມພິວເຕີ "ອ່ານ" ຕົວໜັງສືຈາກຮູບພາບ — ບໍ່ວ່າຈະເປັນເອກະສານສະແກນ, ໃບບິນ, ປ້າຍຮ້ານ, ຫຼື screenshot. ໃນໄລຍະຫຼາຍປີທີ່ຜ່ານມາ OCR ຖືກແກ້ໄຂດ້ວຍ pipeline ທີ່ປະກອບດ້ວຍຫຼາຍ module ແຍກກັນ. ແຕ່ການມາຂອງ **Vision-Language Model (VLM)** ກຳລັງປ່ຽນວິທີຄິດກ່ຽວກັບ OCR ທັງໝົດ.
+
+ບົດຄວາມນີ້ຈະອະທິບາຍວ່າ: ເປັນຫຍັງ pipeline ແບບເກົ່າຈຶ່ງມີບັນຫາ, OCR-specialized VLM ແມ່ນຫຍັງ, ແລະ ເປັນຫຍັງ model OCR ທີ່ແທ້ຈິງຕ້ອງເຮັດໄດ້ຫຼາຍກວ່າການແປງເອກະສານເປັນ Markdown.
+
+---
+
+## OCR ແບບດັ້ງເດີມ: Cascaded Pipeline
+
+ລະບົບ OCR ແບບດັ້ງເດີມເຮັດວຽກແບບ **cascaded pipeline** — ຄືສາຍພານໂຮງງານ ທີ່ແຕ່ລະຂັ້ນຕອນມີ model ຂອງຕົນເອງ:
+
+<OCRFlow variant="cascade" />
+
+ວິທີນີ້ເຂົ້າໃຈງ່າຍ ແລະ ແຕ່ລະ module ສາມາດພັດທະນາແຍກກັນໄດ້. ແຕ່ມັນມີບັນຫາໃຫຍ່ສອງຢ່າງ:
+
+### ບັນຫາທີ 1: Error Propagation (ຄວາມຜິດພາດສົ່ງຕໍ່)
+
+ຖ້າຂັ້ນຕອນ detection ພາດ box ໜຶ່ງ, ຂັ້ນຕອນ recognition ກໍບໍ່ມີທາງອ່ານມັນໄດ້. ຖ້າ recognition ອ່ານ "ໍ" ຜິດເປັນ "ໍ່", ຂັ້ນຕອນ downstream ກໍຈະເຂົ້າໃຈຄວາມໝາຍຜິດ. **ຄວາມຜິດພາດໃນຂັ້ນຕອນຕົ້ນໆ ຈະສະສົມ ແລະ ຂະຫຍາຍໃຫຍ່ຂຶ້ນ** ໃນຂັ້ນຕອນຕໍ່ໄປ ໂດຍບໍ່ມີທາງແກ້ຄືນ.
+
+<Callout type="info">
+ສົມມຸດວ່າແຕ່ລະ module ມີຄວາມຖືກຕ້ອງ 95%. ຖ້າມີ 4 module ຕໍ່ກັນ, ຄວາມຖືກຕ້ອງລວມອາດຫຼຸດລົງເຫຼືອປະມານ 0.95⁴ ≈ **81%** — ເຖິງແມ່ນແຕ່ລະສ່ວນຈະເບິ່ງຄືດີແລ້ວກໍຕາມ.
+</Callout>
+
+### ບັນຫາທີ 2: Architectural Redundancy (ໂຄງສ້າງຊ້ຳຊ້ອນ)
+
+ແຕ່ລະ module ມີ backbone, feature extractor, ແລະ ການ train ເປັນຂອງຕົນເອງ. ຫຼາຍ module ຕ້ອງ "ເບິ່ງ" ຮູບດຽວກັນຊ້ຳໆ ແລະ ຮຽນຮູ້ feature ທີ່ຄ້າຍກັນ. ຜົນຄື: ລະບົບໃຫຍ່, ຊ້າ, ແລະ maintain ຍາກ — ປ່ຽນ module ໜຶ່ງ ອາດຕ້ອງປັບ module ອື່ນຕາມ.
+
+---
+
+## VLM: ທາງເລືອກແບບ End-to-End
+
+**Vision-Language Model (VLM)** ເຊັ່ນ Qwen-VL, InternVL, ຫຼື GPT-4o ສາມາດຮັບຮູບພາບ ແລະ ຂໍ້ຄວາມເປັນ input ແລ້ວສ້າງຂໍ້ຄວາມເປັນ output ໄດ້ໂດຍກົງ — ພາຍໃນ **model ດຽວ**.
+
+<OCRFlow variant="vlm" />
+
+ແທນທີ່ຈະຕ້ອງມີ detection → recognition → reasoning ແຍກກັນ, VLM ເຮັດທຸກຢ່າງພ້ອມກັນ. ຈາກແນວໂນ້ມນີ້ ວົງການ AI ຈຶ່ງເລີ່ມພັດທະນາ **OCR-specialized VLM** — VLM ທີ່ອອກແບບ ແລະ train ມາເພື່ອວຽກ OCR ໂດຍສະເພາະ.
+
+### OCR ເປັນບັນຫາ "ການເຂົ້າໃຈພາບ-ຂໍ້ຄວາມ" ແບບລວມ
+
+ແນວຄິດຫຼັກຂອງ OCR-specialized VLM ຄື: ເບິ່ງ OCR ເປັນ **unified visual-text understanding problem** ບ່ອນທີ່ 4 ຄວາມສາມາດຖືກເຮັດພ້ອມກັນໃນ architecture ດຽວ:
+
+| ຄວາມສາມາດ | ຄວາມໝາຍ | ຕົວຢ່າງ |
+|-----------|----------|---------|
+| **Fine-grained perception** | ເຫັນລາຍລະອຽດນ້ອຍໆ ຂອງຕົວອັກສອນ | ແຍກ "ບ" ກັບ "ປ", ສະຫຼະ ແລະ ວັນນະຍຸດ |
+| **Layout modeling** | ເຂົ້າໃຈໂຄງສ້າງໜ້າເອກະສານ | ຮູ້ວ່າອັນໃດເປັນຫົວຂໍ້, column, ຕາຕະລາງ |
+| **Structured generation** | ສ້າງ output ທີ່ມີໂຄງສ້າງ | Markdown, HTML, JSON, LaTeX |
+| **Semantic reasoning** | ເຂົ້າໃຈຄວາມໝາຍ ແລະ ໃຊ້ເຫດຜົນ | "ໃບບິນນີ້ໝົດກຳນົດຈ່າຍວັນໃດ?" |
+
+<Callout type="tip">
+ຂໍ້ດີທີ່ໃຫຍ່ທີ່ສຸດຂອງ end-to-end ຄື **ຂໍ້ມູນບໍ່ສູນຫາຍລະຫວ່າງທາງ**. model ສາມາດໃຊ້ context ທາງຄວາມໝາຍມາຊ່ວຍການອ່ານ — ເຊັ່ນ ຖ້າຕົວອັກສອນມົວ ແຕ່ຢູ່ໃນຊ່ອງ "ວັນທີ", model ກໍຄາດເດົາໄດ້ວ່າມັນຄວນເປັນຕົວເລກ.
+</Callout>
+
+---
+
+## ບັນຫາ: OCR VLM ສ່ວນໃຫຍ່ຍັງຕິດຢູ່ກັບ Document Parsing
+
+ເຖິງວ່າ VLM ຈະມີສັກກະຍະສູງ, ແຕ່ OCR-specialized VLM ສ່ວນໃຫຍ່ໃນປັດຈຸບັນ ຍັງຖືກອອກແບບອ້ອມ **document parsing** ເປັນຫຼັກ — ຄື ການແປງ **ໜຶ່ງໜ້າເອກະສານ** ໃຫ້ເປັນ output ທີ່ມີໂຄງສ້າງ ເຊັ່ນ Markdown, HTML, ຫຼື LaTeX.
+
+```
+[ຮູບໜ້າ PDF]  ──►  OCR VLM  ──►  # ຫົວຂໍ້
+                                  ເນື້ອຫາ...
+                                  | col1 | col2 |
+```
+
+Document parsing ສຳຄັນແທ້ — ມັນເປັນພື້ນຖານຂອງ RAG, ການ digitize ເອກະສານ, ແລະ ການສ້າງ dataset ສຳລັບ train LLM. ແຕ່ມັນເປັນພຽງ **ສ່ວນໜຶ່ງ** ຂອງສິ່ງທີ່ OCR ໃນໂລກຈິງຕ້ອງການ.
+
+<Callout type="warning">
+Model ທີ່ໄດ້ຄະແນນສູງໃນ benchmark document parsing ບໍ່ໄດ້ໝາຍຄວາມວ່າມັນຈະອ່ານປ້າຍຂ້າງທາງ, ດຶງຂໍ້ມູນຈາກບັດປະຈຳຕົວ, ຫຼື ຕອບຄຳຖາມຈາກເອກະສານຫຼາຍໜ້າໄດ້ດີ. ຢ່າຕັດສິນ OCR model ຈາກ metric ດຽວ.
+</Callout>
+
+---
+
+## OCR ໃນໂລກຈິງຕ້ອງການຫຍັງແດ່?
+
+ຄວາມຕ້ອງການ OCR ໃນໂລກຈິງກວ້າງກວ່າ document parsing ຫຼາຍ. ນີ້ຄື 5 ຄວາມສາມາດສຳຄັນທີ່ OCR model ທີ່ແທ້ຈິງຄວນມີ:
+
+<OCRFlow variant="scope" />
+
+### 1. Text Spotting ໃນສະພາບແວດລ້ອມເປີດ (Scene Text)
+
+ອ່ານຕົວໜັງສືໃນຮູບທຳມະຊາດ — ປ້າຍຮ້ານ, ປ້າຍຈາລະຈອນ, ສະຫຼາກສິນຄ້າ — ທີ່ມີມຸມອຽງ, ແສງບໍ່ດີ, font ແປກ, ຫຼື ຕົວໜັງສືໂຄ້ງ. ຕ້ອງບອກທັງ **ຂໍ້ຄວາມ** ແລະ **ຕຳແໜ່ງ** (bounding box ຫຼື polygon).
+
+### 2. Structured Field Extraction (ການດຶງຂໍ້ມູນເປັນ Field)
+
+ດຶງຂໍ້ມູນສະເພາະອອກເປັນ key-value — ເອີ້ນອີກຢ່າງວ່າ **Key Information Extraction (KIE)**:
+
+```json
+{
+  "ຊື່ຮ້ານ": "ຮ້ານກາເຟ ນ້ຳງື່ມ",
+  "ວັນທີ": "2026-10-07",
+  "ລາຍການ": [
+    { "ຊື່": "ກາເຟເຢັນ", "ລາຄາ": 25000 },
+    { "ຊື່": "ເຂົ້າໜົມປັງ", "ລາຄາ": 15000 }
+  ],
+  "ຍອດລວມ": 40000
+}
+```
+
+ໃຊ້ຫຼາຍໃນ ໃບບິນ, ໃບແຈ້ງໜີ້, ບັດປະຈຳຕົວ, ແບບຟອມທະນາຄານ.
+
+### 3. Question Answering ຈາກຮູບທີ່ມີຕົວໜັງສື
+
+ຕອບຄຳຖາມທີ່ຄຳຕອບ **ອີງໃສ່ຕົວໜັງສືໃນຮູບ** (text-grounded VQA). ເຊັ່ນ: "ຮ້ານນີ້ເປີດຈັກໂມງ?", "ໃນກຣາຟນີ້ປີໃດມີຍອດຂາຍສູງສຸດ?". Model ຕ້ອງອ່ານ ແລ້ວ **ຄິດ** — ບໍ່ແມ່ນພຽງແຕ່ copy ຂໍ້ຄວາມອອກມາ.
+
+### 4. Multilingual Text-Image Translation
+
+ອ່ານຕົວໜັງສືໃນຮູບ ແລ້ວແປເປັນພາສາອື່ນໂດຍກົງ — ເຊັ່ນ ຖ່າຍຮູບເມນູພາສາຈີນ ແລ້ວໄດ້ຄຳແປພາສາລາວ. ວິທີແບບເກົ່າຕ້ອງ OCR → MT ສອງຂັ້ນ (ແລະ error propagation ກໍເກີດອີກ), ແຕ່ VLM ສາມາດເຮັດໄດ້ໃນຂັ້ນດຽວ ພ້ອມໃຊ້ context ຂອງຮູບຊ່ວຍແປ.
+
+### 5. Reasoning ຂ້າມຫຼາຍໜ້າ ຫຼື ຫຼາຍຮູບ
+
+ເອກະສານຈິງບໍ່ໄດ້ມີໜ້າດຽວ. ສັນຍາ 30 ໜ້າ, ລາຍງານການເງິນ, ຫຼື ຮູບໃບບິນຫຼາຍໃບ — model ຕ້ອງເຊື່ອມຂໍ້ມູນ **ຂ້າມໜ້າ** ໄດ້. ເຊັ່ນ: "ລວມຍອດໃບບິນທັງ 5 ໃບນີ້ໃຫ້ແດ່" ຫຼື "ເງື່ອນໄຂໃນໜ້າ 3 ຂັດກັບໜ້າ 17 ບໍ່?"
+
+### ສະຫຼຸບສົມທຽບ
+
+| Task | Input | Output | Document Parsing ພໍບໍ? |
+|------|-------|--------|:---:|
+| Document parsing | 1 ໜ້າເອກະສານ | Markdown / HTML / LaTeX | ✅ |
+| Text spotting | ຮູບທຳມະຊາດ | ຂໍ້ຄວາມ + ຕຳແໜ່ງ | ❌ |
+| Field extraction (KIE) | ໃບບິນ, ບັດ, ຟອມ | JSON key-value | ❌ |
+| Text-grounded QA | ຮູບ + ຄຳຖາມ | ຄຳຕອບ | ❌ |
+| Text-image translation | ຮູບທີ່ມີຕົວໜັງສື | ຄຳແປ | ❌ |
+| Multi-page reasoning | ຫຼາຍໜ້າ / ຫຼາຍຮູບ | ຄຳຕອບ ຫຼື ສະຫຼຸບ | ❌ |
+
+---
+
+## OCR-Specialized Model ທີ່ແທ້ຈິງຄວນເປັນແນວໃດ?
+
+ຈາກທັງໝົດທີ່ກ່າວມາ, OCR-specialized model ທີ່ແທ້ຈິງ **ບໍ່ຄວນເປັນພຽງ document parser**. ມັນຄວນເປັນ model ດຽວທີ່:
+
+- **ເຫັນລະອຽດ** — ອ່ານໄດ້ທັງເອກະສານສະອາດ ແລະ ຮູບທີ່ຍາກ
+- **ເຂົ້າໃຈໂຄງສ້າງ** — layout, ຕາຕະລາງ, ແບບຟອມ
+- **ສ້າງ output ຢືດຢຸ່ນ** — Markdown, JSON, ຄຳຕອບ, ຄຳແປ ຕາມຄຳສັ່ງ (instruction)
+- **ຄິດເປັນ** — ໃຊ້ເຫດຜົນກັບສິ່ງທີ່ອ່ານໄດ້
+- **ເຮັດວຽກກັບຫຼາຍໜ້າ ແລະ ຫຼາຍພາສາ**
+
+ກ່າວອີກຢ່າງ: OCR ກຳລັງປ່ຽນຈາກ "**ອ່ານຕົວໜັງສືອອກມາ**" ໄປສູ່ "**ເຂົ້າໃຈທຸກສິ່ງທີ່ເປັນຕົວໜັງສືໃນໂລກພາບ**".
+
+---
+
+## Cascaded vs VLM ເທິງ Edge Device: Offline, CPU ເທົ່ານັ້ນ
+
+ໃນທາງທິດສະດີ VLM ດີກວ່າ. ແຕ່ຖ້າຕ້ອງ run **offline ເທິງ CPU** — ເຊັ່ນ laptop ທົ່ວໄປ, mini PC ໃນຫ້ອງການ, Raspberry Pi, ຫຼື ເຄື່ອງ kiosk ທີ່ບໍ່ມີ GPU ແລະ ບໍ່ມີ internet — ພາບຈະປ່ຽນໄປຫຼາຍ. ມາສົມທຽບ 4 ດ້ານ: **dataset ສຳລັບ train, compute resource, latency, ແລະ IO**.
+
+<OCRFlow variant="edge" />
+
+<Callout type="warning">
+ຕົວເລກໃນ section ນີ້ເປັນ **ຄ່າປະມານ (order of magnitude)** ເພື່ອໃຫ້ເຫັນພາບ — ຜົນຈິງຂຶ້ນກັບ CPU, RAM, ຂະໜາດຮູບ, ຈຳນວນແຖວຂໍ້ຄວາມ, ແລະ runtime (ONNX Runtime, OpenVINO, llama.cpp...). ຄວນ benchmark ເທິງ hardware ຂອງຕົນເອງສະເໝີ.
+</Callout>
+
+### 1. Dataset ສຳລັບ Train
+
+**Cascaded pipeline** — ແຕ່ລະ module ຕ້ອງການ label ຄົນລະແບບ ແຕ່ **ສ້າງງ່າຍ ແລະ ລາຄາຖືກ**:
+
+- **Detection**: ຮູບ + box/polygon ລະດັບແຖວ — ປົກກະຕິຫຼັກພັນ ຫາ ຫຼັກໝື່ນຮູບກໍເລີ່ມໃຊ້ໄດ້
+- **Recognition**: ຮູບແຖວທີ່ crop ແລ້ວ + ຂໍ້ຄວາມ — ສາມາດ **ສ້າງ synthetic** ໄດ້ເກືອບບໍ່ຈຳກັດ ໂດຍ render ຂໍ້ຄວາມລາວດ້ວຍຫຼາຍ font, ໃສ່ noise, blur, ມຸມອຽງ (ຫຼັກແສນ ຫາ ຫຼັກລ້ານແຖວ)
+- Train ແລະ fine-tune **ແຍກ module** ໄດ້ — ອ່ານຜິດ ກໍແກ້ສະເພາະ recognizer
+
+**OCR VLM** — ຕ້ອງການ data ທີ່ **ໃຫຍ່ ແລະ ຫຼາກຫຼາຍກວ່າຫຼາຍ**:
+
+- ຕ້ອງເລີ່ມຈາກ base VLM ທີ່ pretrain ດ້ວຍຄູ່ ຮູບ-ຂໍ້ຄວາມ ຫຼັກລ້ານ ຫາ ຫຼັກພັນລ້ານ (ສ່ວນໃຫຍ່ໃຊ້ຂອງທີ່ມີຢູ່ແລ້ວ)
+- Fine-tune OCR ຕ້ອງມີ sample **ຫຼາຍ task**: ໜ້າ → Markdown, ໃບບິນ → JSON, ຮູບ + ຄຳຖາມ → ຄຳຕອບ, ຮູບ → ຄຳແປ
+- Label ແພງ: ຕ້ອງ transcribe **ທັງໜ້າ** ຕາມລຳດັບການອ່ານທີ່ຖືກ, ຕາຕະລາງເປັນ HTML, ສູດເປັນ LaTeX
+- ຂໍ້ດີ: ຫຼາຍ task **ບໍ່ຕ້ອງການ box-level label**
+
+### 2. Compute Resource
+
+| | Cascaded (mobile-size) | OCR VLM ນ້ອຍ (0.25–1B) | VLM ໃຫຍ່ (~7B) |
+|---|---|---|---|
+| **Train / fine-tune** | GPU ດຽວ (8–24 GB), ຫຼາຍຊົ່ວໂມງ–ມື້ | GPU 24–80 GB (ຫຼື LoRA) | ຫຼາຍ GPU 80 GB |
+| **ຂະໜາດ model (disk)** | ~10–20 MB | ~0.2–1 GB (INT4/INT8) | ~4–5 GB (INT4) |
+| **RAM ຕອນ inference** | ~100–300 MB | ~0.5–2 GB | ~6–8 GB+ |
+| **ຕົວຢ່າງ** | PP-OCR mobile | SmolDocling (256M), GOT-OCR2.0 (580M), PaddleOCR-VL (0.9B) | olmOCR (7B) |
+
+ສຳລັບ edge device ທີ່ມີ RAM 2–4 GB, cascaded ສາມາດ run ພ້ອມກັບ app ອື່ນໄດ້ສະບາຍ, ສ່ວນ VLM ໃຫຍ່ ແທບບໍ່ມີທາງ.
+
+### 3. Latency
+
+**Cascaded** ເຮັດ forward pass ຈຳນວນຄົງທີ່: detection 1 ຄັ້ງ + recognition ຕາມຈຳນວນແຖວ (batch ພ້ອມກັນໄດ້). ເທິງ CPU ທົ່ວໄປ ໜຶ່ງໜ້າ/ໜຶ່ງຮູບ ມັກໃຊ້ເວລາ **ຕ່ຳກວ່າ 1 ວິນາທີ ຫາ ສອງສາມວິນາທີ**.
+
+**VLM** ມີ 2 ໄລຍະ:
+
+1. **Prefill** — vision encoder ແປງຮູບເປັນ image tokens ຫຼາຍຮ້ອຍ ຫາ ຫຼາຍພັນ token ແລ້ວ LLM ປະມວນຜົນທັງໝົດ → ຫຼາຍວິນາທີເທິງ CPU, ແລະ **ຮູບ resolution ສູງ = token ຫຼາຍ = ຊ້າຂຶ້ນ**
+2. **Decode** — ສ້າງ output **ເທື່ອລະ token**. ໜ້າເອກະສານໜຶ່ງໜ້າເປັນ Markdown ອາດຍາວ 1,000–3,000 tokens
+
+ນີ້ຄືເຫດຜົນທີ່ VLM ເທິງ CPU ອາດໃຊ້ເວລາ **30 ວິນາທີ ຫາ ຫຼາຍນາທີຕໍ່ໜ້າ**. ແຕ່ຖ້າ output ສັ້ນ (ເຊັ່ນ ຕອບຄຳຖາມ 10–20 tokens) latency ຈະຂຶ້ນກັບ prefill ເປັນຫຼັກ ແລະ ຍັງພໍຮັບໄດ້.
+
+### 4. IO: Memory Bandwidth, Disk ແລະ Output
+
+ນີ້ຄືຈຸດທີ່ຫຼາຍຄົນມອງຂ້າມ. ຕອນ decode, **ທຸກ token ທີ່ສ້າງ ຕ້ອງອ່ານ weight ຂອງ LLM ທັງໝົດຈາກ RAM** — ດັ່ງນັ້ນ ຄວາມໄວ VLM ເທິງ CPU ຖືກຈຳກັດດ້ວຍ **memory bandwidth** ຫຼາຍກວ່າ ຄວາມແຮງຂອງ CPU (memory-bound):
+
+```python
+# ປະມານ decode speed ຂອງ VLM ເທິງ CPU (memory-bound)
+bandwidth_gb_s = 40       # DDR4 dual-channel ປະມານ
+params_b = 1.0            # LLM 1B parameters
+bytes_per_param = 0.5     # INT4 quantization
+model_gb = params_b * bytes_per_param
+
+max_tok_s = bandwidth_gb_s / model_gb   # ≈ 80 tok/s (ເພດານທາງທິດສະດີ)
+real_tok_s = max_tok_s * 0.3            # ຕົວຈິງມັກໄດ້ 20–50% ຂອງເພດານ
+page_tokens = 1500                      # ໜ້າເອກະສານ 1 ໜ້າ
+
+print(f"≈ {page_tokens / real_tok_s:.0f} s ຕໍ່ໜ້າ (decode ຢ່າງດຽວ)")  # ≈ 62 s
+```
+
+ດ້ານ IO ອື່ນໆ:
+
+| ດ້ານ IO | Cascaded | OCR VLM |
+|---|---|---|
+| **Memory IO ຕໍ່ output** | ຕ່ຳ — model ນ້ອຍ, ສ່ວນໃຫຍ່ compute-bound | ສູງ — ອ່ານ weight ທັງໝົດທຸກ token |
+| **Cold start (load ຈາກ disk)** | ~10–20 MB → ເກືອບທັນທີ | 0.2–5 GB → ຫຼາຍວິນາທີ ຫາ ຫຼາຍສິບວິນາທີ ເທິງ SD card/eMMC |
+| **Input** | ຮູບ resize ຕາມຕ້ອງການ, crop ແຖວໄດ້ | ຮູບ → image tokens; resolution ສູງ ກິນ RAM ແລະ ເວລາ |
+| **Output** | text + box + confidence ຕໍ່ແຖວ, deterministic, ກວດງ່າຍ | token stream; ອາດ **hallucinate** ຫຼື ຂ້າມແຖວ, ຕຳແໜ່ງຕ້ອງຂໍເປັນພິເສດ |
+
+<Callout type="info">
+ດ້ວຍສູດດຽວກັນ: VLM 7B INT4 (~4 GB) ເທິງ RAM 40 GB/s ມີເພດານພຽງ ~10 tok/s — ໜ້າດຽວ 1,500 tokens ອາດໃຊ້ **ຫຼາຍນາທີ**. ການເລືອກ model ນ້ອຍ ແລະ quantize ຈຶ່ງສຳຄັນກວ່າການຊື້ CPU ທີ່ມີ core ຫຼາຍຂຶ້ນ.
+</Callout>
+
+### ເລືອກແບບໃດສຳລັບ Edge?
+
+| ສະຖານະການ | ແນະນຳ |
+|---|---|
+| ຕ້ອງການພຽງ text + ຕຳແໜ່ງ, ໄວ, ເຄື່ອງອ່ອນ | **Cascaded** (PP-OCR mobile style) |
+| ຕ້ອງການ KIE / QA / ແປ ແຕ່ຍັງ offline CPU | **Hybrid**: cascaded + LLM ນ້ອຍ (text-only) |
+| ຕ້ອງການ Markdown/ຕາຕະລາງ ທີ່ມີໂຄງສ້າງ, ລໍຖ້າໄດ້ | **VLM ນ້ອຍ** (≤ 1B, INT4/INT8) |
+| ມີ internet ບາງເວລາ | ອ່ານ offline ດ້ວຍ cascaded, ສົ່ງເຄສຍາກໄປ VLM ໃຫຍ່ເທິງ server |
+
+ທາງເລືອກ **hybrid** ເປັນຈຸດສົມດຸນທີ່ດີສຳລັບ edge: ໃຫ້ cascaded ອ່ານ (ໄວ ແລະ ນ້ອຍ) ແລ້ວສົ່ງພຽງ **text** ໃຫ້ LLM ນ້ອຍຄິດຕໍ່. Text ຂອງໃບບິນໜຶ່ງໃບມີພຽງສອງສາມຮ້ອຍ token — ໜ້ອຍກວ່າ image tokens ຂອງ VLM ຫຼາຍ.
+
+<OCRFlow variant="hybrid" />
+
+<Callout type="tip">
+ຂໍ້ເສຍຂອງ hybrid ຄື error propagation ກັບຄືນມາ — ຖ້າ recognizer ອ່ານຜິດ LLM ກໍໄດ້ຂໍ້ມູນຜິດ. ວິທີຫຼຸດຜົນກະທົບ: ສົ່ງ **confidence score** ຂອງແຕ່ລະແຖວໄປໃຫ້ LLM ນຳ, ແລະ ໃຫ້ຄົນກວດສະເພາະ field ທີ່ confidence ຕ່ຳ.
+</Callout>
+
+---
+
+## ຄວາມໝາຍສຳລັບພາສາລາວ
+
+ສຳລັບພາສາລາວ ການປ່ຽນແປງນີ້ທັງເປັນໂອກາດ ແລະ ສິ່ງທ້າທາຍ:
+
+- **ໂອກາດ**: ແທນທີ່ຈະຕ້ອງສ້າງ detector + recognizer + layout model ແຍກກັນສຳລັບພາສາລາວ, ເຮົາສາມາດ fine-tune VLM ດຽວໃຫ້ຮອງຮັບຫຼາຍ task ພ້ອມກັນ
+- **ສິ່ງທ້າທາຍ**: ຕົວອັກສອນລາວມີສະຫຼະ ແລະ ວັນນະຍຸດທີ່ຊ້ອນກັນທາງຕັ້ງ, ບໍ່ມີການເວັ້ນວັກລະຫວ່າງຄຳ, ແລະ ຂໍ້ມູນ train (ເອກະສານ, ໃບບິນ, ປ້າຍ ທີ່ມີ label) ຍັງມີໜ້ອຍຫຼາຍ
+
+<Callout type="tip">
+ຖ້າຢາກເລີ່ມສ້າງ OCR ລາວດ້ວຍ VLM, ໃຫ້ເລີ່ມຈາກ **ການສ້າງ dataset ທີ່ຫຼາກຫຼາຍ task** — ບໍ່ແມ່ນມີແຕ່ຄູ່ (ຮູບ, ຂໍ້ຄວາມ) ແຕ່ຄວນມີ (ຮູບ, ຄຳຖາມ, ຄຳຕອບ), (ໃບບິນ, JSON), ແລະ (ຮູບ, ຄຳແປ) ນຳ. ນີ້ຈະຊ່ວຍໃຫ້ model ຮຽນຮູ້ OCR ແບບຮອບດ້ານ ແທນທີ່ຈະເກັ່ງແຕ່ document parsing.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+- **Cascaded pipeline** ແບບເກົ່າ (detection → recognition → downstream) ມີບັນຫາ **error propagation** ແລະ **ໂຄງສ້າງຊ້ຳຊ້ອນ**
+- **VLM** ເປີດທາງໃຫ້ OCR ແບບ **end-to-end** ທີ່ perception, layout, structured generation ແລະ reasoning ເກີດຂຶ້ນໃນ model ດຽວ
+- OCR-specialized VLM ສ່ວນໃຫຍ່ໃນປັດຈຸບັນ ຍັງເນັ້ນພຽງ **document parsing** (ໜຶ່ງໜ້າ → Markdown/HTML/LaTeX)
+- ແຕ່ OCR ໃນໂລກຈິງຕ້ອງການຫຼາຍກວ່ານັ້ນ: **text spotting, field extraction, text-grounded QA, text-image translation, ແລະ multi-page reasoning**
+- OCR model ທີ່ແທ້ຈິງ ຄວນເປັນ **ຜູ້ເຂົ້າໃຈພາບ-ຂໍ້ຄວາມແບບຮອບດ້ານ** ບໍ່ແມ່ນພຽງເຄື່ອງແປງ PDF
+- ເທິງ **edge device offline CPU**, cascaded ຍັງຊະນະດ້ານ data, RAM, latency ແລະ memory IO — **hybrid** (cascaded + LLM ນ້ອຍ) ມັກເປັນທາງເລືອກທີ່ສົມດຸນທີ່ສຸດ
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*

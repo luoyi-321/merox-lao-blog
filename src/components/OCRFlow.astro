@@ -1,0 +1,183 @@
+---
+import { Icon } from 'astro-icon/components'
+
+interface Props { variant?: 'cascade' | 'vlm' | 'scope' | 'edge' | 'hybrid' }
+const { variant = 'cascade' } = Astro.props
+
+const stages = [
+  { n: '01', icon: 'lucide:scan', title: 'Detection', sub: 'ຊອກຫາ box', acc: '95%' },
+  { n: '02', icon: 'lucide:scan-text', title: 'Recognition', sub: 'ອ່ານຕົວອັກສອນ', acc: '90%' },
+  { n: '03', icon: 'lucide:layout-panel-top', title: 'Layout', sub: 'ຈັດລຳດັບ', acc: '86%' },
+  { n: '04', icon: 'lucide:brain', title: 'Downstream', sub: 'KIE / QA / MT', acc: '81%' },
+]
+
+const caps = [
+  { icon: 'lucide:eye', title: 'Fine-grained perception', sub: 'ເຫັນສະຫຼະ ແລະ ວັນນະຍຸດ' },
+  { icon: 'lucide:layout-panel-top', title: 'Layout modeling', sub: 'ຫົວຂໍ້, column, ຕາຕະລາງ' },
+  { icon: 'lucide:code-xml', title: 'Structured generation', sub: 'Markdown, JSON, LaTeX' },
+  { icon: 'lucide:brain', title: 'Semantic reasoning', sub: 'ເຂົ້າໃຈ ແລະ ໃຊ້ເຫດຜົນ' },
+]
+
+const tasks = [
+  { icon: 'lucide:map-pin', title: 'Text spotting', sub: 'ປ້າຍຮ້ານ, ປ້າຍທາງ' },
+  { icon: 'lucide:braces', title: 'Field extraction', sub: 'ໃບບິນ → JSON' },
+  { icon: 'lucide:message-circle-question', title: 'Text-grounded QA', sub: 'ຖາມຈາກຮູບ' },
+  { icon: 'lucide:languages', title: 'Image translation', sub: 'ເມນູຈີນ → ລາວ' },
+  { icon: 'lucide:files', title: 'Multi-page reasoning', sub: 'ຂ້າມຫຼາຍໜ້າ/ຮູບ' },
+]
+
+// bar width = relative cost (rough, log-ish scale); lower is better unless noted
+const edgeRows = [
+  { icon: 'lucide:database', label: 'Training data', note: 'ຂໍ້ມູນ train', c: [22, 'synthetic lines + boxes'], v: [85, 'multi-task, full-page labels'] },
+  { icon: 'lucide:cpu', label: 'Training compute', note: 'GPU', c: [15, '1 GPU · ຊົ່ວໂມງ–ມື້'], v: [70, '24–80 GB GPU (fine-tune)'] },
+  { icon: 'lucide:hard-drive', label: 'Model size', note: 'disk', c: [6, '~10–20 MB'], v: [60, '~0.2–1 GB (INT4/8)'] },
+  { icon: 'lucide:memory-stick', label: 'RAM', note: 'inference', c: [10, '~100–300 MB'], v: [55, '~0.5–2 GB'] },
+  { icon: 'lucide:timer', label: 'Latency / page', note: 'CPU', c: [8, '< 1 s'], v: [90, '30 s – ຫຼາຍນາທີ'] },
+  { icon: 'lucide:arrow-down-up', label: 'Memory IO', note: 'per output', c: [12, 'compute-bound'], v: [88, 'ອ່ານ weight ທັງໝົດທຸກ token'] },
+]
+---
+
+{variant === 'cascade' && (
+  <figure class="ocr-flow not-prose" aria-labelledby="ocr-cascade-caption">
+    <div class="flow-heading"><span class="eyebrow">Cascaded OCR pipeline</span><span class="pill warn"><Icon name="lucide:triangle-alert" /> error propagation</span></div>
+    <div class="cascade">
+      <div class="stage input"><span class="stage-icon"><Icon name="lucide:image" /></span><span><strong>Image</strong><small>ຮູບພາບ</small></span></div>
+      {stages.map((s, i) => (
+        <>
+          <Icon class="connector" name="lucide:arrow-right" />
+          <div class="stage" style={`--err:${i * 22 + 12}%`}>
+            <span class="stage-num">{s.n}</span>
+            <span class="stage-icon"><Icon name={s.icon} /></span>
+            <span><strong>{s.title}</strong><small>{s.sub}</small></span>
+            <span class="acc">{s.acc}</span>
+          </div>
+        </>
+      ))}
+    </div>
+    <div class="error-bar" aria-hidden="true"><span></span></div>
+    <div class="legend"><span>ຄວາມຖືກຕ້ອງສະສົມ (ສົມມຸດແຕ່ລະ module ຖືກ 95%)</span><b>0.95⁴ ≈ 81%</b></div>
+    <div class="redundancy"><Icon name="lucide:layers" /><span><strong>Architectural redundancy</strong> · ແຕ່ລະ module ມີ backbone ແລະ ການ train ຂອງຕົນເອງ — ເບິ່ງຮູບດຽວກັນຊ້ຳໆ</span></div>
+    <figcaption id="ocr-cascade-caption">ຄວາມຜິດພາດໃນຂັ້ນຕອນຕົ້ນ ຖືກສົ່ງຕໍ່ ແລະ ສະສົມ ໄປຫາທຸກຂັ້ນຕອນທີ່ຕາມມາ.</figcaption>
+  </figure>
+)}
+
+{variant === 'vlm' && (
+  <figure class="ocr-flow not-prose" aria-labelledby="ocr-vlm-caption">
+    <div class="flow-heading"><span class="eyebrow">OCR-specialized VLM</span><span class="pill ok"><Icon name="lucide:check" /> end-to-end</span></div>
+    <div class="vlm-row">
+      <div class="inputs">
+        <div class="stage input"><span class="stage-icon"><Icon name="lucide:image" /></span><span><strong>Image</strong><small>ໃບບິນ, ປ້າຍ, PDF</small></span></div>
+        <div class="stage input prompt"><span class="stage-icon"><Icon name="lucide:message-square-text" /></span><span><strong>Prompt</strong><small>"ຍອດລວມເທົ່າໃດ?"</small></span></div>
+      </div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="model-box">
+        <div class="model-parts">
+          <span><Icon name="lucide:scan-eye" /> Vision encoder</span>
+          <Icon class="mini-arrow" name="lucide:arrow-right" />
+          <span><Icon name="lucide:shuffle" /> Projector</span>
+          <Icon class="mini-arrow" name="lucide:arrow-right" />
+          <span><Icon name="lucide:brain" /> LLM</span>
+        </div>
+        <div class="caps">
+          {caps.map((c) => (
+            <div class="cap"><Icon name={c.icon} /><span><strong>{c.title}</strong><small>{c.sub}</small></span></div>
+          ))}
+        </div>
+        <div class="model-label">Single architecture</div>
+      </div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="stage output"><span class="stage-icon"><Icon name="lucide:file-text" /></span><span><strong>Output</strong><small>"125,000 ກີບ"</small></span></div>
+    </div>
+    <figcaption id="ocr-vlm-caption">ທັງ 4 ຄວາມສາມາດ ເກີດຂຶ້ນພ້ອມກັນໃນ model ດຽວ — ບໍ່ມີຂໍ້ມູນສູນຫາຍລະຫວ່າງ module.</figcaption>
+  </figure>
+)}
+
+{variant === 'scope' && (
+  <figure class="ocr-flow not-prose" aria-labelledby="ocr-scope-caption">
+    <div class="flow-heading"><span class="eyebrow">OCR scope: today vs. real world</span></div>
+    <div class="scope">
+      <section class="ring today">
+        <div class="ring-label">ສິ່ງທີ່ OCR VLM ສ່ວນໃຫຍ່ເຮັດ</div>
+        <div class="doc-parse">
+          <span class="stage-icon"><Icon name="lucide:file-text" /></span>
+          <span><strong>Document parsing</strong><small>1 ໜ້າ → Markdown / HTML / LaTeX</small></span>
+        </div>
+      </section>
+      <section class="ring world">
+        <div class="ring-label">ສິ່ງທີ່ໂລກຈິງຕ້ອງການເພີ່ມ</div>
+        <div class="tasks">
+          {tasks.map((t) => (
+            <div class="task"><Icon name={t.icon} /><span><strong>{t.title}</strong><small>{t.sub}</small></span></div>
+          ))}
+        </div>
+      </section>
+    </div>
+    <figcaption id="ocr-scope-caption">Document parsing ເປັນພຽງສ່ວນນ້ອຍຂອງ OCR — model ທີ່ແທ້ຈິງຕ້ອງຄອບຄຸມທຸກ task ໃນ model ດຽວ.</figcaption>
+  </figure>
+)}
+
+{variant === 'edge' && (
+  <figure class="ocr-flow not-prose" aria-labelledby="ocr-edge-caption">
+    <div class="flow-heading"><span class="eyebrow">Edge · offline · CPU only</span><span class="pill neutral"><Icon name="lucide:cpu" /> ຄ່າປະມານ</span></div>
+    <div class="edge-grid">
+      <div class="edge-head"></div>
+      <div class="edge-head c"><Icon name="lucide:workflow" /> Cascaded</div>
+      <div class="edge-head v"><Icon name="lucide:brain" /> OCR VLM</div>
+      {edgeRows.map((r) => (
+        <>
+          <div class="edge-label"><Icon name={r.icon} /><span><strong>{r.label}</strong><small>{r.note}</small></span></div>
+          <div class="edge-cell c"><span class="bar" style={`--w:${r.c[0]}%`}></span><small>{r.c[1]}</small></div>
+          <div class="edge-cell v"><span class="bar" style={`--w:${r.v[0]}%`}></span><small>{r.v[1]}</small></div>
+        </>
+      ))}
+    </div>
+    <figcaption id="ocr-edge-caption">ແຖບຍາວ = ຕົ້ນທຶນສູງ. VLM ໄດ້ຄວາມຢືດຢຸ່ນ ແຕ່ຈ່າຍດ້ວຍ data, RAM, latency ແລະ memory IO ເທິງ CPU.</figcaption>
+  </figure>
+)}
+
+{variant === 'hybrid' && (
+  <figure class="ocr-flow not-prose" aria-labelledby="ocr-hybrid-caption">
+    <div class="flow-heading"><span class="eyebrow">Hybrid pipeline for edge</span><span class="pill ok"><Icon name="lucide:check" /> offline CPU</span></div>
+    <div class="cascade">
+      <div class="stage input"><span class="stage-icon"><Icon name="lucide:image" /></span><span><strong>Image</strong><small>ໃບບິນ</small></span></div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="stage"><span class="stage-icon"><Icon name="lucide:scan-text" /></span><span><strong>Det + Rec</strong><small>~15 MB · &lt; 1 s</small></span></div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="stage"><span class="stage-icon"><Icon name="lucide:text" /></span><span><strong>Text + boxes</strong><small>~200–500 tokens</small></span></div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="stage llm"><span class="stage-icon"><Icon name="lucide:brain" /></span><span><strong>Small LLM</strong><small>0.5–1B · text only</small></span></div>
+      <Icon class="connector" name="lucide:arrow-right" />
+      <div class="stage output"><span class="stage-icon"><Icon name="lucide:braces" /></span><span><strong>JSON / ຄຳຕອບ</strong><small>KIE, QA, ແປ</small></span></div>
+    </div>
+    <figcaption id="ocr-hybrid-caption">ໃຊ້ cascaded ອ່ານ (ໄວ, ນ້ອຍ) ແລ້ວໃຫ້ LLM ນ້ອຍຄິດຕໍ່ຈາກ text — ບໍ່ຕ້ອງປະມວນຜົນ image tokens ຫຼາຍຮ້ອຍຕົວເທິງ CPU.</figcaption>
+  </figure>
+)}
+
+<style>
+  .ocr-flow{margin:1.75rem 0;border:1px solid color-mix(in oklab,var(--border) 85%,transparent);border-radius:1rem;padding:1.25rem;background:linear-gradient(145deg,color-mix(in oklab,var(--muted) 38%,transparent),transparent 58%);box-shadow:0 14px 40px -34px color-mix(in oklab,var(--foreground) 50%,transparent)}
+  .flow-heading{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:1.1rem}.eyebrow{color:var(--muted-foreground);font-size:.72rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .pill{display:inline-flex;gap:.35rem;align-items:center;border-radius:999px;padding:.3rem .6rem;font-size:.7rem;font-weight:700;white-space:nowrap}.pill :global(svg){width:.8rem}.pill.warn{color:#dc2626;border:1px solid color-mix(in oklab,#ef4444 35%,var(--border));background:color-mix(in oklab,#ef4444 9%,transparent)}.pill.ok{color:#059669;border:1px solid color-mix(in oklab,#10b981 35%,var(--border));background:color-mix(in oklab,#10b981 9%,transparent)}
+  strong,small{display:block}strong{font-size:.76rem}small{margin-top:.12rem;color:var(--muted-foreground);font-size:.62rem}
+  .stage{position:relative;display:flex;align-items:center;gap:.5rem;min-width:0;border:1px solid var(--border);border-radius:.7rem;padding:.6rem;background:color-mix(in oklab,#ef4444 var(--err,0%),var(--background))}.stage-icon{display:grid;place-items:center;flex:0 0 1.8rem;height:1.8rem;border-radius:.5rem;color:#6366f1;background:color-mix(in oklab,#6366f1 12%,transparent)}.stage-icon :global(svg){width:1rem}.stage.input .stage-icon{color:white;background:linear-gradient(135deg,#06b6d4,#6366f1)}
+  .stage-num{position:absolute;top:-.55rem;left:.5rem;border-radius:999px;padding:0 .35rem;color:#6366f1;background:var(--background);font-family:var(--font-mono);font-size:.58rem;font-weight:700}.acc{margin-left:auto;font-family:var(--font-mono);font-size:.62rem;font-weight:700;color:#dc2626}
+  .cascade{display:flex;align-items:stretch;gap:.4rem}.cascade .stage{flex:1 1 0}.connector{align-self:center;flex:0 0 auto;width:.85rem;color:var(--muted-foreground)}
+  .error-bar{height:.4rem;margin-top:.9rem;border-radius:999px;background:var(--muted);overflow:hidden}.error-bar span{display:block;width:100%;height:100%;background:linear-gradient(90deg,#10b981,#f59e0b 55%,#ef4444)}
+  .legend{display:flex;justify-content:space-between;gap:.5rem;margin-top:.4rem;color:var(--muted-foreground);font-size:.66rem}.legend b{color:#dc2626;font-family:var(--font-mono)}
+  .redundancy{display:flex;align-items:center;gap:.6rem;margin-top:.9rem;border:1px dashed color-mix(in oklab,#f59e0b 45%,var(--border));border-radius:.75rem;padding:.7rem;background:color-mix(in oklab,#f59e0b 7%,transparent);font-size:.68rem;line-height:1.4}.redundancy :global(svg){flex:0 0 1rem;width:1rem;color:#d97706}.redundancy strong{display:inline;font-size:.7rem}
+  .vlm-row{display:flex;align-items:center;gap:.5rem}.inputs{display:flex;flex-direction:column;gap:.5rem;flex:0 0 9.5rem}.prompt .stage-icon{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+  .model-box{position:relative;flex:1;min-width:0;border:1px solid color-mix(in oklab,#8b5cf6 35%,var(--border));border-radius:.9rem;padding:.8rem;background:color-mix(in oklab,#8b5cf6 7%,var(--background))}.model-label{position:absolute;top:-.6rem;right:.8rem;border-radius:999px;padding:.1rem .5rem;color:#7c3aed;background:var(--background);border:1px solid color-mix(in oklab,#8b5cf6 35%,var(--border));font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .model-parts{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.35rem;margin-bottom:.7rem}.model-parts span{display:inline-flex;align-items:center;gap:.3rem;border-radius:.45rem;padding:.3rem .5rem;background:var(--background);border:1px solid var(--border);font-size:.66rem;font-weight:600}.model-parts :global(svg){width:.8rem;color:#7c3aed}.mini-arrow{width:.7rem;color:var(--muted-foreground)}
+  .caps{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}.cap{display:flex;align-items:center;gap:.45rem;border-radius:.55rem;padding:.5rem;background:var(--background)}.cap>:global(svg){flex:0 0 auto;width:.95rem;color:#7c3aed}.cap strong{font-size:.68rem}.cap small{font-size:.58rem}
+  .stage.output{flex:0 0 8.5rem}.stage.output .stage-icon{color:#059669;background:color-mix(in oklab,#10b981 14%,transparent)}
+  .scope{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:.8rem}.ring{border-radius:.85rem;padding:.85rem}.ring-label{margin-bottom:.7rem;color:var(--muted-foreground);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .today{border:1px solid color-mix(in oklab,#6366f1 35%,var(--border));background:color-mix(in oklab,#6366f1 7%,var(--background))}.doc-parse{display:flex;align-items:center;gap:.5rem;border-radius:.6rem;padding:.6rem;background:var(--background)}
+  .world{border:1px dashed color-mix(in oklab,#10b981 45%,var(--border));background:color-mix(in oklab,#10b981 6%,var(--background))}.tasks{display:grid;grid-template-columns:1fr 1fr;gap:.45rem}.task{display:flex;align-items:center;gap:.45rem;border-radius:.55rem;padding:.5rem;background:var(--background)}.task>:global(svg){flex:0 0 auto;width:.95rem;color:#059669}.task strong{font-size:.68rem}.task small{font-size:.58rem}
+  .pill.neutral{color:var(--muted-foreground);border:1px solid var(--border);background:var(--muted)}
+  .edge-grid{display:grid;grid-template-columns:minmax(8rem,.9fr) minmax(0,1fr) minmax(0,1fr);gap:.45rem .7rem;align-items:center}.edge-head{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700}.edge-head :global(svg){width:.9rem}.edge-head.c{color:#0891b2}.edge-head.v{color:#7c3aed}
+  .edge-label{display:flex;align-items:center;gap:.45rem}.edge-label>:global(svg){flex:0 0 auto;width:.95rem;color:var(--muted-foreground)}.edge-label strong{font-size:.7rem}
+  .edge-cell{min-width:0}.edge-cell .bar{display:block;width:var(--w);min-width:.4rem;height:.5rem;border-radius:999px}.edge-cell.c .bar{background:linear-gradient(90deg,#06b6d4,#0891b2)}.edge-cell.v .bar{background:linear-gradient(90deg,#a78bfa,#7c3aed)}.edge-cell small{margin-top:.25rem;font-size:.6rem}
+  .stage.llm .stage-icon{color:#7c3aed;background:color-mix(in oklab,#8b5cf6 14%,transparent)}.cascade .stage.output{flex:1 1 0}
+  figcaption{margin-top:1rem;color:var(--muted-foreground);font-size:.7rem;text-align:center;line-height:1.5}
+  @media(max-width:720px){.cascade,.vlm-row{flex-direction:column;align-items:stretch}.cascade .connector,.vlm-row>.connector{transform:rotate(90deg);margin:auto}.inputs,.stage.output{flex:none}.scope{grid-template-columns:1fr}}
+  @media(max-width:420px){.ocr-flow{padding:.9rem}.edge-grid{grid-template-columns:6.5rem minmax(0,1fr) minmax(0,1fr);gap:.45rem}.edge-label>:global(svg),.edge-label small{display:none}.caps,.tasks{grid-template-columns:1fr}.flow-heading{flex-wrap:wrap}}
+</style>
