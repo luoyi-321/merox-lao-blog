@@ -1,0 +1,130 @@
+---
+import { Icon } from 'astro-icon/components'
+
+interface Props { variant?: 'compare' | 'pipeline' | 'results' }
+const { variant = 'compare' } = Astro.props
+
+// B-WER (%) from Yamashita et al. 2026, Joint ICL, top-10 terms
+const results = [
+  { icon: 'lucide:stethoscope', name: 'MedSyn', domain: 'ການແພດ', before: 41.43, after: 28.05 },
+  { icon: 'lucide:plane', name: 'ATCOSIM', domain: 'ຈາລະຈອນທາງອາກາດ', before: 46.4, after: 30.65 },
+  { icon: 'lucide:landmark', name: 'Earnings', domain: 'ການເງິນ', before: 50.93, after: 45.66 },
+]
+const scale = 55
+const relative = (r) => Math.round(((r.before - r.after) / r.before) * 100)
+---
+
+{variant === 'compare' && (
+  <figure class="asr-flow not-prose" aria-labelledby="asr-compare-caption">
+    <div class="flow-heading"><span class="eyebrow">Custom vocabulary vs RAG</span></div>
+    <div class="compare">
+      <section class="lane old">
+        <div class="lane-label"><Icon name="lucide:x" /> ຍັດ dictionary ທັງໝົດ</div>
+        <div class="steps">
+          <div class="node"><Icon name="lucide:book-marked" /><span><strong>Dictionary ທັງໝົດ</strong><small>ຫຼາຍພັນຄຳ</small></span></div>
+          <Icon class="connector" name="lucide:arrow-down" />
+          <div class="node"><Icon name="lucide:audio-lines" /><span><strong>ASR</strong><small>prompt ຍາວ, ຊ້າລົງ</small></span></div>
+          <Icon class="connector" name="lucide:arrow-down" />
+          <div class="node bad"><Icon name="lucide:triangle-alert" /><span><strong>Over-biasing</strong><small>ຄຳທຳມະດາກາຍເປັນຄຳສະເພາະ</small></span></div>
+        </div>
+      </section>
+      <section class="lane new">
+        <div class="lane-label"><Icon name="lucide:check" /> RAG ເລືອກສະເພາະຄຳທີ່ກ່ຽວຂ້ອງ</div>
+        <div class="steps">
+          <div class="node"><Icon name="lucide:file-text" /><span><strong>First-pass hypothesis</strong><small>ຂໍ້ຄວາມຮອບທຳອິດ</small></span></div>
+          <Icon class="connector" name="lucide:arrow-down" />
+          <div class="node"><Icon name="lucide:search-check" /><span><strong>Embedding retrieval</strong><small>ຄົ້ນຫາໃນ dictionary</small></span></div>
+          <Icon class="connector" name="lucide:arrow-down" />
+          <div class="node good"><Icon name="lucide:target" /><span><strong>Context ສັ້ນ</strong><small>ສະເພາະຄຳທີ່ກ່ຽວຂ້ອງ</small></span></div>
+        </div>
+      </section>
+    </div>
+    <figcaption id="asr-compare-caption">ແທນທີ່ຈະສົ່ງຄຳສັບທັງໝົດໃຫ້ model, RAG ຄັດເລືອກສະເພາະຄຳທີ່ກ່ຽວຂ້ອງກັບສຽງທ່ອນນັ້ນ.</figcaption>
+  </figure>
+)}
+
+{variant === 'pipeline' && (
+  <figure class="asr-flow not-prose" aria-labelledby="asr-pipeline-caption">
+    <div class="flow-heading"><span class="eyebrow">Error-aware selective retrieval</span><span class="pill"><Icon name="lucide:check" /> no training</span></div>
+    <div class="audio-row"><Icon name="lucide:audio-lines" /><span><strong>ໄຟລ໌ສຽງ</strong><small>"... hydralazine 25 mg ..."</small></span></div>
+    <Icon class="connector" name="lucide:arrow-down" />
+    <div class="stage-card">
+      <div class="stage-num">01</div>
+      <div class="stage-body">
+        <strong>Joint ASR + Error Localization</strong>
+        <small>SpeechLLM ຖອດຂໍ້ຄວາມ ແລະ ຊີ້ span ທີ່ສົງໄສ ໃນ inference ດຽວ</small>
+        <div class="hypothesis">... <mark>hydroxyzine</mark> 25 mg ...</div>
+      </div>
+    </div>
+    <div class="gate"><Icon name="lucide:arrow-down" /><span><b>Hard gate:</b> ບໍ່ມີ span → ຂ້າມຂັ້ນຕອນ 2 ແລະ 3, ໃຊ້ຜົນຮອບທຳອິດເລີຍ</span></div>
+    <div class="stage-card">
+      <div class="stage-num">02</div>
+      <div class="stage-body">
+        <strong>Terminology Retrieval ດ້ວຍ ANE</strong>
+        <small>ໃຊ້ span ເປັນ query ຄົ້ນຫາຄຳທີ່ອອກສຽງໃກ້ກັນໃນ dictionary</small>
+        <div class="terms"><span class="hit">hydralazine</span><span>hydrochlorothiazide</span><span>hydrocortisone</span></div>
+      </div>
+    </div>
+    <Icon class="connector" name="lucide:arrow-down" />
+    <div class="stage-card">
+      <div class="stage-num">03</div>
+      <div class="stage-body">
+        <strong>Second-pass Re-recognition</strong>
+        <small>SpeechLLM ຕົວເກົ່າຟັງສຽງອີກຄັ້ງ ໂດຍມີ hypothesis ແລະ ຄຳທີ່ຄົ້ນໄດ້ເປັນ context</small>
+        <div class="hypothesis corrected">... <mark>hydralazine</mark> 25 mg ...</div>
+      </div>
+    </div>
+    <figcaption id="asr-pipeline-caption">ທັງ 3 ຂັ້ນຕອນໃຊ້ pretrained model ຕົວດຽວກັນ ໂດຍບໍ່ມີການ update parameter. ຄຳໃນ dictionary ເປັນຕົວຢ່າງປະກອບ.</figcaption>
+  </figure>
+)}
+
+{variant === 'results' && (
+  <figure class="asr-flow not-prose" aria-labelledby="asr-results-caption">
+    <div class="flow-heading"><span class="eyebrow">B-WER ກ່ອນ ແລະ ຫຼັງ second pass (%)</span></div>
+    <div class="legend">
+      <span><i class="swatch before"></i> First pass</span>
+      <span><i class="swatch after"></i> Second pass</span>
+    </div>
+    <div class="chart">
+      {results.map((r) => (
+        <div class="group">
+          <div class="group-label"><Icon name={r.icon} /><span><strong>{r.name}</strong><small>{r.domain}</small></span></div>
+          <div class="bars">
+            <div class="bar-row" title={`${r.name}, first pass: B-WER ${r.before}%`}>
+              <span class="bar before" style={`--f:${r.before / scale}`}></span><b>{r.before.toFixed(2)}</b>
+            </div>
+            <div class="bar-row" title={`${r.name}, second pass: B-WER ${r.after}%`}>
+              <span class="bar after" style={`--f:${r.after / scale}`}></span><b>{r.after.toFixed(2)}</b>
+            </div>
+          </div>
+          <div class="delta">−{relative(r)}%</div>
+        </div>
+      ))}
+    </div>
+    <figcaption id="asr-results-caption">ຄ່າຕ່ຳກວ່າ = ດີກວ່າ. ຕົວເລກ −% ຄືການຫຼຸດລົງແບບ relative. ໂດເມນການເງິນປັບປຸງໄດ້ໜ້ອຍກວ່າ ເຊິ່ງອາດມາຈາກສັດສ່ວນຄຳສະເພາະທີ່ຕ່ຳກວ່າ.</figcaption>
+  </figure>
+)}
+
+<style>
+  .asr-flow{--before:#c2710c;--after:#4f46e5;margin:1.75rem 0;border:1px solid color-mix(in oklab,var(--border) 85%,transparent);border-radius:1rem;padding:1.25rem;background:linear-gradient(145deg,color-mix(in oklab,var(--muted) 38%,transparent),transparent 58%);box-shadow:0 14px 40px -34px color-mix(in oklab,var(--foreground) 50%,transparent)}
+  :global([data-theme='dark']) .asr-flow{--before:#d97706;--after:#6d6af0}
+  .flow-heading{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:1.1rem}.eyebrow{color:var(--muted-foreground);font-size:.72rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+  .pill{display:inline-flex;gap:.35rem;align-items:center;border-radius:999px;padding:.3rem .6rem;color:#059669;border:1px solid color-mix(in oklab,#10b981 35%,var(--border));background:color-mix(in oklab,#10b981 9%,transparent);font-size:.7rem;font-weight:700;white-space:nowrap}.pill :global(svg){width:.8rem}
+  strong,small{display:block}strong{font-size:.76rem}small{margin-top:.12rem;color:var(--muted-foreground);font-size:.64rem}
+  .connector{display:block;width:.9rem;height:1.4rem;margin:auto;color:var(--muted-foreground)}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.lane{min-width:0;border-radius:.85rem;padding:.85rem}.lane.old{border:1px dashed color-mix(in oklab,#ef4444 40%,var(--border));background:color-mix(in oklab,#ef4444 5%,var(--background))}.lane.new{border:1px solid color-mix(in oklab,#10b981 40%,var(--border));background:color-mix(in oklab,#10b981 6%,var(--background))}
+  .lane-label{display:flex;align-items:center;gap:.35rem;margin-bottom:.7rem;font-size:.72rem;font-weight:700}.lane-label :global(svg){flex:0 0 auto;width:.9rem}.old .lane-label{color:#dc2626}.new .lane-label{color:#059669}
+  .node{display:flex;align-items:center;gap:.5rem;border:1px solid var(--border);border-radius:.6rem;padding:.55rem;background:var(--background)}.node>:global(svg){flex:0 0 auto;width:1rem;color:#6366f1}.node.bad>:global(svg){color:#dc2626}.node.good>:global(svg){color:#059669}
+  .audio-row{display:flex;align-items:center;justify-content:center;gap:.6rem}.audio-row>:global(svg){width:1.3rem;color:#6366f1}
+  .stage-card{display:flex;gap:.7rem;border:1px solid var(--border);border-radius:.8rem;padding:.75rem;background:var(--background)}.stage-num{flex:0 0 auto;color:#6366f1;font-family:var(--font-mono);font-size:.72rem;font-weight:700}.stage-body{min-width:0;flex:1}
+  .hypothesis{margin-top:.5rem;border-radius:.45rem;padding:.4rem .55rem;background:var(--muted);font-family:var(--font-mono);font-size:.7rem}.hypothesis mark{border-radius:.25rem;padding:0 .2rem;color:#b91c1c;background:color-mix(in oklab,#ef4444 18%,transparent)}.hypothesis.corrected mark{color:#047857;background:color-mix(in oklab,#10b981 20%,transparent)}
+  :global([data-theme='dark']) .hypothesis mark{color:#fca5a5}:global([data-theme='dark']) .hypothesis.corrected mark{color:#6ee7b7}
+  .gate{display:flex;align-items:center;gap:.5rem;margin:.35rem 0;padding-left:.8rem;color:var(--muted-foreground);font-size:.66rem;line-height:1.4}.gate :global(svg){flex:0 0 auto;width:.9rem}.gate b{color:var(--foreground)}
+  .terms{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem}.terms span{border-radius:.4rem;padding:.2rem .45rem;background:var(--muted);font-family:var(--font-mono);font-size:.65rem}.terms .hit{color:#047857;background:color-mix(in oklab,#10b981 20%,transparent);font-weight:700}:global([data-theme='dark']) .terms .hit{color:#6ee7b7}
+  .legend{display:flex;gap:1rem;margin-bottom:.9rem;color:var(--muted-foreground);font-size:.68rem}.legend span{display:inline-flex;align-items:center;gap:.35rem}.swatch{width:.7rem;height:.7rem;border-radius:.2rem}.swatch.before,.bar.before{background:var(--before)}.swatch.after,.bar.after{background:var(--after)}
+  .chart{display:grid;gap:.9rem}.group{display:grid;grid-template-columns:8.5rem minmax(0,1fr) 3rem;gap:.6rem;align-items:center}.group-label{display:flex;align-items:center;gap:.45rem;min-width:0}.group-label>:global(svg){flex:0 0 auto;width:1rem;color:var(--muted-foreground)}
+  .bars{display:grid;gap:2px;min-width:0}.bar-row{display:flex;align-items:center;gap:.4rem;min-height:1rem}.bar{display:block;width:calc((100% - 3rem) * var(--f));height:.8rem;border-radius:0 4px 4px 0}.bar-row b{font-family:var(--font-mono);font-size:.64rem;font-weight:600}
+  .delta{font-family:var(--font-mono);font-size:.74rem;font-weight:700;text-align:right}
+  figcaption{margin-top:1rem;color:var(--muted-foreground);font-size:.7rem;text-align:center;line-height:1.5}
+  @media(max-width:560px){.asr-flow{padding:.9rem}.compare{grid-template-columns:1fr}.group{grid-template-columns:minmax(0,1fr) 2.6rem}.group-label{grid-column:1/-1}}
+</style>

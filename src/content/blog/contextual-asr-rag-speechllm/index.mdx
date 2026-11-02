@@ -1,0 +1,182 @@
+---
+title: 'Contextual ASR: ໃຊ້ RAG ແລະ SpeechLLM ໃຫ້ AI ຟັງຄຳສະເພາະຖືກ'
+description: 'ເປັນຫຍັງ ASR ຈຶ່ງຟັງຊື່ຢາ ແລະ ຄຳສັບສະເພາະທາງຜິດ, RAG ຊ່ວຍຄົ້ນຫາ context ໄດ້ແນວໃດ, ແລະ Error-Aware Selective Retrieval ດ້ວຍ SpeechLLM ຫຼຸດ B-WER ໂດຍບໍ່ຕ້ອງ train model ໃໝ່ໄດ້ແນວໃດ.'
+date: 2026-11-02
+tags: ['asr', 'speech', 'rag', 'speechllm', 'evaluation', 'deep-learning']
+authors: ['sulixay']
+---
+
+import Callout from '@/components/Callout.astro'
+import ContextualASRFlow from '@/components/ContextualASRFlow.astro'
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+  <img src="/merox-lao-blog/laligence-icon.svg" alt="Laligence" style="width: 40px; height: 40px;" />
+  <span style="font-size: 0.85rem; color: #888;">Laligence AI Research · Vientiane, Laos</span>
+</div>
+
+ເຄີຍສົງໄສບໍ່ວ່າ ເປັນຫຍັງລະບົບແປງສຽງເປັນຂໍ້ຄວາມ **(Automatic Speech Recognition: ASR)** ຈຶ່ງມັກຟັງຊື່ຢາ, ລະຫັດການແພດ, ຫຼື ຄຳສັບການເງິນຜິດ? ເຖິງ model ຈະເກັ່ງພຽງໃດ ແຕ່ເມື່ອພົບ **ຄຳສະເພາະທາງທີ່ບໍ່ຄຸ້ນເຄີຍ** ມັນມັກ "ເດົາ" ເປັນຄຳທົ່ວໄປທີ່ສຽງຄ້າຍກັນ.
+
+ບົດຄວາມນີ້ຈະອະທິບາຍວ່າ RAG ແລະ SpeechLLM ເຂົ້າມາແກ້ບັນຫານີ້ແນວໃດ, ເບິ່ງຂັ້ນຕອນການເຮັດວຽກ, ແລະ ອ່ານຜົນການທົດລອງຈາກງານວິໄຈໃນໂດເມນການແພດ, ການບິນ, ແລະ ການເງິນ.
+
+---
+
+## ເປັນຫຍັງ ASR ຈຶ່ງຟັງຄຳສະເພາະຜິດ?
+
+ລອງນຶກພາບເຈົ້າໜ້າທີ່ຈົດບັນທຶກໃນຫ້ອງກວດ. ຖ້າທ່ານໝໍເວົ້າຊື່ຢາ "Amoxicillin" ແລ້ວຜູ້ຈົດບໍ່ຮູ້ຈັກຄຳນີ້ ລາວກໍຈະຂຽນຄຳທີ່ໄດ້ຍິນໃກ້ຄຽງທີ່ສຸດ. ASR ກໍເຮັດແບບດຽວກັນ: ຄຳທີ່ພົບໜ້ອຍໃນ training data **(rare ຫຼື out-of-vocabulary term)** ຈະຖືກປ່ຽນເປັນຄຳທົ່ວໄປທີ່ model ຮູ້ຈັກ.
+
+ວິທີແກ້ແບບເກົ່າຄື **Custom Vocabulary** ຫຼື ການໃສ່ຄຳສັບໃນ prompt. ວິທີນີ້ໃຊ້ໄດ້ດີກັບລາຍການນ້ອຍໆ ແຕ່ຖ້າຍັດ dictionary ຂະໜາດໃຫຍ່ເຂົ້າໄປໂດຍກົງ ຈະເກີດ 2 ບັນຫາ:
+
+- **ຊ້າລົງ**: prompt ຍາວຂຶ້ນ ແລະ model ຕ້ອງປະມວນຜົນຫຼາຍຂຶ້ນ
+- **Over-biasing**: model ປ່ຽນຄຳທຳມະດາໃຫ້ກາຍເປັນຄຳສະເພາະທັງທີ່ບໍ່ມີໃຜເວົ້າ
+
+---
+
+## RAG ສຳລັບ ASR: ຄົ້ນຫາ Context ອັດຕະໂນມັດ
+
+**Retrieval-Augmented Generation (RAG)** ເຮັດວຽກຄືບັນນາຮັກທີ່ຮູ້ໃຈ: ແທນທີ່ຈະຍົກໜັງສືທັງຫ້ອງມາໃຫ້ ມັນຄົ້ນຫາສະເພາະສິ່ງທີ່ກ່ຽວຂ້ອງ.
+
+ໃນ ASR, ລະບົບຈະຖອດຂໍ້ຄວາມຮອບທຳອິດ **(first-pass hypothesis)** ກ່ອນ ແລ້ວໃຊ້ຂໍ້ຄວາມນັ້ນຄົ້ນຫາຄຳທີ່ກ່ຽວຂ້ອງຈາກ dictionary ດ້ວຍ embedding. ຄຳທີ່ຄົ້ນໄດ້ຈະກາຍເປັນ context ສັ້ນໆ ສຳລັບການຖອດຮອບຕໍ່ໄປ.
+
+<ContextualASRFlow variant="compare" />
+
+ງານວິໄຈຂອງ Siskos ແລະ ຄະນະ (Findings of EMNLP 2025) ທົດສອບແນວຄິດນີ້ເທິງ TED-LIUMv3, Earnings21, ແລະ SPGISpeech:
+
+| ເງື່ອນໄຂ | WER ຫຼຸດລົງສູງສຸດ (ທຽບກັບບໍ່ມີ context) |
+|---|---|
+| Embedding-based retrieval | ສູງສຸດ **17%** |
+| Oracle context (context ທີ່ສົມບູນແບບ) | ສູງສຸດ **24.1%** |
+
+ຊ່ອງຫວ່າງລະຫວ່າງສອງຕົວເລກນີ້ ບອກວ່າ retrieval ຍັງມີບ່ອນໃຫ້ປັບປຸງ. ນອກຈາກນີ້ Xiao ແລະ ຄະນະ (AWS ແລະ JHU) ກໍໃຊ້ first-pass hypothesis ເປັນ query ຮ່ວມກັບ text ແລະ audio LLM ເພື່ອແກ້ຂໍ້ຜິດພາດ ເຊັ່ນກັນ.
+
+---
+
+## Selective Retrieval ດ້ວຍ SpeechLLM
+
+RAG ຊ່ວຍໄດ້ຫຼາຍ ແຕ່ຍັງເຫຼືອຄຳຖາມໜຶ່ງ: **ລະບົບຮູ້ໄດ້ແນວໃດວ່າຄວນຄົ້ນຫາຕອນໃດ?** ຖ້າສົ່ງທຸກຄຳໄປຄົ້ນຫາ ກໍເສຍເວລາ ແລະ ຊັບພະຍາກອນ.
+
+Yamashita ແລະ ຄະນະ (Hitachi, 2026) ສະເໜີ **Training-Free Contextual ASR via SpeechLLM-Based Error-Aware Selective Retrieval**. ແນວຄິດຄື ໃຫ້ **SpeechLLM** (LLM ທີ່ຮັບສຽງເປັນ input ໄດ້, ໃນງານນີ້ຄື Qwen3-Omni-30B-A3B-Instruct) ເປັນທັງຜູ້ຖອດຂໍ້ຄວາມ ແລະ ຜູ້ກວດທານ ໂດຍບໍ່ຕ້ອງ update parameter ເລີຍ.
+
+<ContextualASRFlow variant="pipeline" />
+
+### ຂັ້ນຕອນທີ 1: Joint ASR ແລະ Error Localization
+
+ໃນ inference ດຽວ, SpeechLLM ສ້າງ hypothesis ພ້ອມກັບຊີ້ **span** ສັ້ນໆ (ບໍ່ເກີນ 2 ຄຳ) ທີ່ສົງໄສວ່າເປັນຄຳສະເພາະທີ່ຟັງຜິດ. ເຊັ່ນ ຖ້າ "Hydralazine" ຖືກຟັງເປັນ "Hydroxyzine", model ຈະຊີ້ "Hydroxyzine" ໄວ້.
+
+ຕົວແປທີ່ດີທີ່ສຸດຄື **Joint ICL (In-Context Learning)** ທີ່ໃຫ້ຕົວຢ່າງ audio-text 4 ຕົວຢ່າງໃນ prompt. Span ເຮັດໜ້າທີ່ເປັນ **hard gate**: ຖ້າບໍ່ມີ span ລະບົບຈະຂ້າມຂັ້ນຕອນ 2 ແລະ 3 ໄປເລີຍ.
+
+### ຂັ້ນຕອນທີ 2: Terminology Retrieval ດ້ວຍ ANE
+
+ແຕ່ລະ span ຖືກໃຊ້ເປັນ query ຄົ້ນຫາໃນ dictionary ດ້ວຍ **Acoustic Neighbor Embeddings (ANE)**. ANE ຕ່າງຈາກ embedding ທົ່ວໄປ: ມັນປຽບທຽບ **ຄວາມຄ້າຍກັນທາງສຽງ** ບໍ່ແມ່ນຄວາມໝາຍ ເຊິ່ງເໝາະກັບການຊອກຫາຄຳທີ່ "ຟັງຄ້າຍກັນ".
+
+```python
+# ຕົວຢ່າງປະກອບ: ການໃຫ້ຄະແນນ term v ຈາກຫຼາຍ query
+import numpy as np
+
+def score(g_q, g_v):
+    # r(q, v) = 1 / (1 + ||g(q) - g(v)||)
+    return 1 / (1 + np.linalg.norm(g_q - g_v))
+
+def retrieve(span_embs, term_embs, k=10):
+    if not span_embs:          # hard gate: ບໍ່ມີ span = ບໍ່ຕ້ອງຄົ້ນຫາ
+        return []
+    scores = {
+        term: max(score(q, v) for q in span_embs)
+        for term, v in term_embs.items()
+    }
+    return sorted(scores, key=scores.get, reverse=True)[:k]
+```
+
+### ຂັ້ນຕອນທີ 3: Second-Pass Re-recognition
+
+SpeechLLM ຕົວເກົ່າຟັງສຽງອີກຄັ້ງ ໂດຍມີ first-pass hypothesis ແລະ ຄຳທີ່ຄົ້ນໄດ້ top-K ເປັນ context ເພື່ອແກ້ຄຳທີ່ຜິດ.
+
+<Callout type="tip">
+ໃນການທົດລອງ, **top-10 ດີກວ່າ top-50**. ເມື່ອເພີ່ມ K ຫຼາຍເກີນໄປ ຄຳທີ່ກ່ຽວຂ້ອງໜ້ອຍຈະເຂົ້າມາ ແລະ ເພີ່ມ bias ທີ່ບໍ່ຈຳເປັນ. ໃນ RAG ສຳລັບ ASR, context ຫຼາຍກວ່າບໍ່ໄດ້ໝາຍຄວາມວ່າດີກວ່າສະເໝີ.
+</Callout>
+
+---
+
+## ຜົນການທົດລອງ
+
+ງານນີ້ທົດສອບ 3 ໂດເມນທີ່ມີຄຳສະເພາະຫຼາຍ: **MedSyn** (ການແພດ), **ATCOSIM** (ການຄວບຄຸມຈາລະຈອນທາງອາກາດ), ແລະ **Contextual Earnings-22** (ການເງິນ).
+
+### Metrics ທີ່ໃຊ້
+
+| Metric | ວັດແທກຫຍັງ |
+|---|---|
+| **WER** | ອັດຕາຄວາມຜິດພາດຂອງຄຳທັງໝົດ |
+| **B-WER** (Biased) | ຄວາມຜິດພາດຂອງຄຳທີ່ຢູ່ໃນ dictionary |
+| **U-WER** (Unbiased) | ຄວາມຜິດພາດຂອງຄຳທີ່ບໍ່ຢູ່ໃນ dictionary |
+| **R@K** | ຄຳທີ່ຖືກຕ້ອງຢູ່ໃນ K ອັນດັບທຳອິດ ຂອງຜົນຄົ້ນຫາ ຫຼາຍປານໃດ |
+| **MRR@10** | ຄຳທີ່ຖືກຕ້ອງຖືກຈັດຢູ່ອັນດັບສູງພຽງໃດ |
+
+### ຜົນຫຼັງ Second Pass (Joint ICL, top-10)
+
+<ContextualASRFlow variant="results" />
+
+| ໂດເມນ | WER (%) | B-WER (%) | ຈຳນວນ query ຫຼຸດລົງ |
+|---|---|---|:---:|
+| MedSyn | 7.30 → **5.67** | 41.43 → **28.05** | 92.6% |
+| ATCOSIM | 14.81 → **12.88** | 46.40 → **30.65** | ~81.7% |
+| Earnings | 17.97 → **17.45** | 50.93 → **45.66** | ~95.8% |
+
+ຈຳນວນ query ທຽບກັບການສົ່ງທຸກຄຳໄປຄົ້ນຫາ (All ASR 1-grams). ຄ່າ ATCOSIM ແລະ Earnings ຄິດໄລ່ຈາກຈຳນວນ query ຕໍ່ utterance ໃນ paper.
+
+ໃນ MedSyn ມີ 3 ຈຸດທີ່ໜ້າສົນໃຈ:
+
+- **Domain Recall 86.0%**: ຂໍ້ຜິດພາດຂອງຄຳສະເພາະສ່ວນໃຫຍ່ຖືກ span ຊີ້ເຖິງ
+- **Retrieval ດີຂຶ້ນ**: R@10 ເພີ່ມຈາກ 53.2 ເປັນ 61.8 ແລະ MRR@10 ຈາກ 31.9 ເປັນ 47.9 ເມື່ອທຽບກັບການສົ່ງທຸກຄຳ
+- **ຄຳທົ່ວໄປບໍ່ແຍ່ລົງ**: U-WER ຫຼຸດເລັກນ້ອຍຈາກ 2.80 ເປັນ 2.72 ສະແດງວ່າບໍ່ເກີດ over-biasing ໃນຊຸດນີ້
+
+<Callout type="warning">
+ອ່ານຜົນນີ້ດ້ວຍຄວາມລະມັດລະວັງ: **dictionary ຖືກສ້າງຈາກ reference transcript ຂອງຊຸດທົດສອບເອງ**, ແລະ MedSyn ໃຊ້ພຽງ sample 10%. ສ່ວນ ATCOSIM ແລະ Earnings ພວກເຮົາບໍ່ພົບຄ່າ U-WER ທີ່ຈະຢືນຢັນເລື່ອງ over-biasing ໄດ້. ໃນງານຈິງ dictionary ອາດບໍ່ຄົບ ຫຼື ມີຄຳເກີນ ເຮັດໃຫ້ຜົນຕ່າງຈາກນີ້ໄດ້.
+</Callout>
+
+---
+
+## ຂໍ້ຈຳກັດທີ່ຄວນຮູ້
+
+- **ບາງຂໍ້ຜິດພາດກວດຍາກ**: ຖ້າຄຳທີ່ຟັງຜິດຍັງມີຄວາມໝາຍຖືກໃນປະໂຫຍກ ການເບິ່ງແຕ່ text ຈະບໍ່ພົບ
+- **Error Precision ບໍ່ສູງ**: ໃນ MedSyn ຢູ່ທີ່ 51.9% ໝາຍຄວາມວ່າ span ເກືອບເຄິ່ງໜຶ່ງບໍ່ໄດ້ຊີ້ຂໍ້ຜິດພາດແທ້. Error Recall ຢູ່ທີ່ 76.1%
+- **ຜົນຕ່າງກັນຕາມໂດເມນ**: Earnings ຫຼຸດ WER ໄດ້ໜ້ອຍ ເຊິ່ງອາດມາຈາກສັດສ່ວນຄຳສະເພາະຕ່ຳ (5.04%)
+- **ຕ້ອງ run ສອງຮອບ**: utterance ທີ່ມີ span ຕ້ອງ inference 2 ຄັ້ງ ແລະ model 30B ຕ້ອງການ GPU ຂະໜາດໃຫຍ່
+
+<Callout type="info">
+"Training-free" ໝາຍເຖິງບໍ່ຕ້ອງ train **model** ໃໝ່. ທ່ານຍັງຕ້ອງສ້າງ ແລະ ດູແລ **dictionary** ຂອງໂດເມນ ແລະ ກຽມຕົວຢ່າງ 4 ຕົວຢ່າງສຳລັບ Joint ICL.
+</Callout>
+
+---
+
+## ຄວາມໝາຍສຳລັບພາສາລາວ
+
+ສ່ວນນີ້ເປັນການວິເຄາະຂອງພວກເຮົາ ບໍ່ແມ່ນຜົນຈາກ paper. ແນວຄິດນີ້ໜ້າສົນໃຈສຳລັບພາສາລາວ ເພາະຂໍ້ມູນສຽງມີໜ້ອຍ ແລະ ການ train ໃໝ່ມີຕົ້ນທຶນສູງ. ການສ້າງ dictionary ຊື່ບ່ອນ, ຊື່ຄົນ, ຫຼື ຄຳສັບລັດຖະການ ງ່າຍກວ່າການສ້າງ dataset ສຽງ. ແຕ່ຕ້ອງແກ້ 3 ຈຸດກ່ອນ:
+
+- **SpeechLLM ຕ້ອງຟັງລາວໄດ້ດີພໍ**: ຖ້າ first pass ຜິດຫຼາຍ span ກໍຈະບໍ່ມີປະໂຫຍດ
+- **ຕ້ອງມີ phonetic embedding ສຳລັບລາວ**: ANE ຕ້ອງຮອງຮັບລະບົບສຽງ ແລະ ວັນນະຍຸດຂອງລາວ
+- **ລາວບໍ່ມີການເວັ້ນວັກລະຫວ່າງຄຳ**: span ແລະ WER ຈຶ່ງຂຶ້ນກັບ word segmentation
+
+<Callout type="tip">
+ຖ້າຢາກທົດລອງກັບພາສາລາວ ໃຫ້ເລີ່ມຈາກໂດເມນແຄບໆ ທີ່ມີ dictionary ຊັດເຈນ ແລະ ວັດ **B-WER ແຍກຈາກ U-WER** ຕັ້ງແຕ່ຕົ້ນ. WER ລວມອາດເຊື່ອງການປ່ຽນແປງຂອງຄຳສະເພາະ ເພາະຄຳເຫຼົ່ານີ້ມີສັດສ່ວນນ້ອຍ.
+</Callout>
+
+---
+
+## ສະຫຼຸບ
+
+- ASR ມັກປ່ຽນຄຳສະເພາະເປັນຄຳທົ່ວໄປ ແລະ ການຍັດ dictionary ທັງໝົດເຮັດໃຫ້ຊ້າ ແລະ ເກີດ **over-biasing**
+- **RAG** ດຶງສະເພາະຄຳທີ່ກ່ຽວຂ້ອງ ໂດຍໃຊ້ first-pass hypothesis ເປັນ query
+- **Error-aware selective retrieval** ໃຫ້ SpeechLLM ຖອດຂໍ້ຄວາມ ແລະ ຊີ້ຈຸດສົງໄສໃນ inference ດຽວ ເຮັດໃຫ້ query ຫຼຸດລົງປະມານ 82–96%
+- **ANE** ຄົ້ນຫາຕາມຄວາມຄ້າຍກັນທາງສຽງ ແລະ second pass ໃຊ້ຜົນນັ້ນແກ້ຄຳຜິດ
+- B-WER ຫຼຸດລົງທັງ 3 ໂດເມນ ແຕ່ຜົນມີຂະໜາດຕ່າງກັນ ແລະ ຍັງຕ້ອງພິສູດກັບ dictionary ໃນງານຈິງ
+
+---
+
+## ແຫຼ່ງຂໍ້ມູນ
+
+- [Training-Free Contextual ASR via SpeechLLM-Based Error-Aware Selective Retrieval](https://arxiv.org/abs/2609.30694) — Yamashita ແລະ ຄະນະ: ຂັ້ນຕອນ, ຕົວເລກ, ແລະ ຂໍ້ຈຳກັດ
+- [Retrieval Augmented Generation based context discovery for ASR](https://arxiv.org/abs/2509.19567) — Siskos ແລະ ຄະນະ: ຜົນ 17% ແລະ 24.1%
+- [Contextual ASR with Retrieval Augmented Large Language Model](https://www.amazon.science/publications/contextual-asr-with-retrieval-augmented-large-language-model) — Xiao ແລະ ຄະນະ: ການແກ້ຂໍ້ຜິດພາດດ້ວຍ LLM ແລະ retrieval
+
+---
+
+*ຂຽນໂດຍ Laligence AI Research Team · Vientiane, Laos*
