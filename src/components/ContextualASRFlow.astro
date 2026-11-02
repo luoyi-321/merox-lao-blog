@@ -11,7 +11,7 @@ const results = [
   { icon: 'lucide:landmark', name: 'Earnings', domain: 'ການເງິນ', before: 50.93, after: 45.66 },
 ]
 const scale = 55
-const relative = (r) => Math.round(((r.before - r.after) / r.before) * 100)
+const relative = (r: (typeof results)[number]) => Math.round(((r.before - r.after) / r.before) * 100)
 ---
 
 {variant === 'compare' && (
